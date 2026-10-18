@@ -15,6 +15,7 @@
   <ItemGroup>
     <!-- Política do NXPilot.WindowsUi (sem dependências): testada sem trazer o FlaUI/WPF para o Bench. -->
     <Compile Include="..\NXPilot.WindowsUi\WindowsUiPolicy.cs" Link="Shared\WindowsUiPolicy.cs" />
+    <Compile Include="..\NXPilot.WindowsUi\UiAutomationRules.cs" Link="Shared\UiAutomationRules.cs" />
   </ItemGroup>
 
 </Project>

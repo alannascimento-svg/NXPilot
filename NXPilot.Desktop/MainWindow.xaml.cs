@@ -281,6 +281,19 @@ public partial class MainWindow : Window
             return;
         }
 
+        // --window readapp|processes: captura essas janelas (só abre; não lê nem executa nada).
+        if (ArgValue(args, "--window") is { } which)
+        {
+            Window win = which == "processes" ? new Views.ProcessesWindow() : new Views.ReadAppWindow();
+            win.Owner = this;
+            win.Show();
+            await Task.Delay(2500);
+            SaveVisual((FrameworkElement)win.Content, win, shot);
+            win.Close();
+            if (args.Contains("--exit")) Close();
+            return;
+        }
+
         // --settings: captura a janela Configurar (consulta as versões no GitHub; não instala nada).
         if (args.Contains("--settings"))
         {

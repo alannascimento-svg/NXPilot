@@ -684,6 +684,79 @@ public static class CriticalTests
             return Task.CompletedTask;
         }),
 
+        new("Janelas: monitor ≥ 20 s com limite; processo aprovado por hash; para em alvo ausente/ambíguo; excluir pede nova autorização", async () =>
+        {
+            AssertThrows(() => new NXPilot.WindowsUi.MonitorOptions(TimeSpan.FromSeconds(19), TimeSpan.FromMinutes(10)), "Intervalo < 20 s é recusado (sem loop).");
+            AssertThrows(() => new NXPilot.WindowsUi.MonitorOptions(TimeSpan.FromSeconds(30), TimeSpan.FromHours(9)), "Mais de 8 h é recusado.");
+            AssertEqual(21, new NXPilot.WindowsUi.MonitorOptions(TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10)).MaxReads, "10 min a cada 30 s = 21 leituras.");
+            var kw = NXPilot.WindowsUi.MonitorOptions.ParseKeywords(" urgente, pedido ;; ");
+            AssertEqual(2, kw.Count, "Palavras-chave separadas por vírgula/ponto e vírgula.");
+            AssertEqual(0, NXPilot.WindowsUi.MonitorMatcher.NewMatches(null, "URGENTE: pedido 1", kw).Count, "Primeira leitura é o estado inicial: não avisa.");
+            var antes = "Bom dia\nPEDIDO 1 urgente";
+            AssertEqual(0, NXPilot.WindowsUi.MonitorMatcher.NewMatches(antes, antes + "\nOi, tudo bem?", kw).Count, "Linha nova sem palavra-chave: não avisa.");
+            AssertEqual(0, NXPilot.WindowsUi.MonitorMatcher.NewMatches(antes, antes, kw).Count, "Mesmo texto: não avisa de novo.");
+            var hit = NXPilot.WindowsUi.MonitorMatcher.NewMatches(antes, antes + "\nCliente: é Urgênte o pedido 2", kw);
+            AssertEqual("Cliente: é Urgênte o pedido 2", hit.Single(), "Só a linha nova com a palavra (sem maiúsculas nem acentos).");
+            AssertEqual(1, NXPilot.WindowsUi.MonitorMatcher.NewMatches("a", "a\nb", []).Count, "Sem palavras: avisa qualquer linha nova.");
+            // Origem: só o que vem depois do cabeçalho da área (o menu lateral, antes, não conta).
+            var page = "Menu\nResumo: pilot no menu lateral\nPedido 4711\nstatus ok\ntem pilot aqui\nRodapé";
+            var area = NXPilot.WindowsUi.MonitorMatcher.Scope(page, "pedido 4711");
+            AssertFalse(area!.Contains("menu lateral"), "O que vem antes da origem fica de fora.");
+            AssertContains("tem pilot aqui", area, "O que vem depois da origem conta.");
+            AssertEqual(null, NXPilot.WindowsUi.MonitorMatcher.Scope("Menu\nPedido 9999\nstatus", "Pedido 4711"), "Origem fora da tela: nada.");
+            AssertEqual(page, NXPilot.WindowsUi.MonitorMatcher.Scope(page, null), "Sem origem: a janela toda.");
+            AssertEqual("ok", NXPilot.WindowsUi.MonitorMatcher.Scope("Pedido 4711\nx\nPedido 4711\nok", "Pedido 4711"), "Vale a última linha que é exatamente a origem.");
+
+            NXPilot.WindowsUi.UiTarget T(string name) => new("Button", null, name);
+            var steps = new List<NXPilot.WindowsUi.UiStep>
+            {
+                new(NXPilot.WindowsUi.UiStepKind.Type, new("Edit", "txtCliente", null), Text: "ACME"),
+                new(NXPilot.WindowsUi.UiStepKind.Click, T("Enviar")),
+                new(NXPilot.WindowsUi.UiStepKind.Key, Key: "Enter"),
+            };
+            var proc = new NXPilot.WindowsUi.UiProcess("Cadastro", "erp.exe", steps) { Author = "agente" };
+            AssertEqual(0, proc.Validate().Count, "Processo válido.");
+            AssertFalse(proc.IsApproved, "O agente escreve, mas não aprova.");
+            var driver = new FakeUiDriver();
+            await AssertThrowsAsync<InvalidOperationException>(() => NXPilot.WindowsUi.UiProcessRunner.RunAsync(proc, driver), "Sem aprovação não roda.");
+
+            var approved = proc.Approve();
+            var edited = approved with { Steps = steps.Select(s => s.Text == "ACME" ? s with { Text = "ACME2" } : s).ToList() };
+            AssertFalse(edited.IsApproved, "Editar um passo derruba a aprovação.");
+            AssertFalse((approved with { ProcessName = "outro.exe" }).IsApproved, "Trocar o app derruba a aprovação.");
+
+            var ok = await NXPilot.WindowsUi.UiProcessRunner.RunAsync(approved, driver);
+            AssertTrue(ok.All(r => r.Ok) && driver.Log.SequenceEqual(["type txtCliente=ACME", "click Enviar", "key Enter"]), "Enviar não pede nova autorização: executa tudo.");
+
+            driver.Log.Clear(); driver.Counts["Enviar"] = 2;
+            var amb = await NXPilot.WindowsUi.UiProcessRunner.RunAsync(approved, driver);
+            AssertContains("ambíguo", amb.Last().Message, "Dois 'Enviar': para.");
+            AssertFalse(driver.Log.Contains("click Enviar"), "Nada clicado no ambíguo.");
+            driver.Counts["Enviar"] = 0;
+            AssertContains("não encontrado", (await NXPilot.WindowsUi.UiProcessRunner.RunAsync(approved, driver)).Last().Message, "Alvo sumiu: para.");
+            driver.Counts.Clear();
+
+            var del = new NXPilot.WindowsUi.UiProcess("Limpar", "erp.exe", [new(NXPilot.WindowsUi.UiStepKind.Click, T("Excluir pedido"))]).Approve();
+            AssertTrue(del.Steps[0].IsDestructive, "Excluir é destrutivo.");
+            driver.Log.Clear();
+            var denied = await NXPilot.WindowsUi.UiProcessRunner.RunAsync(del, driver);
+            AssertContains("não autorizada", denied.Single().Message, "Sem nova autorização: não exclui.");
+            AssertEqual(0, driver.Log.Count, "Nada foi clicado.");
+            var asked = 0;
+            await NXPilot.WindowsUi.UiProcessRunner.RunAsync(del, driver, confirmDestructive: (_, _, _) => { asked++; return Task.FromResult(true); });
+            AssertTrue(asked == 1 && driver.Log.Single() == "click Excluir pedido", "Com autorização na hora: exclui.");
+
+            // Disfarçado: gravado só pelo AutomationId, mas o nome real na tela é "Apagar".
+            var hidden = new NXPilot.WindowsUi.UiProcess("X", "erp.exe", [new(NXPilot.WindowsUi.UiStepKind.Click, new("Button", "btn7", null))]).Approve();
+            AssertFalse(hidden.Steps[0].IsDestructive, "Pelo gravado não parece exclusão…");
+            driver.LiveNames["btn7"] = "Apagar registro"; driver.Log.Clear();
+            AssertContains("não autorizada", (await NXPilot.WindowsUi.UiProcessRunner.RunAsync(hidden, driver)).Single().Message, "…mas o nome real na tela é: pede autorização.");
+            AssertEqual(0, driver.Log.Count, "Nada foi apagado.");
+
+            var bad = new NXPilot.WindowsUi.UiProcess("Y", "erp.exe", [new(NXPilot.WindowsUi.UiStepKind.Key, Key: "Delete")]);
+            AssertTrue(bad.Validate().Any(p => p.Contains("tecla")), "Tecla Delete não é permitida.");
+        }),
+
         new("Agentes: instalação interna confere o SHA-256; versão testada que sumiu cai para a última; pacote completo do Codex", async () =>
         {
             var root = Path.Combine(Path.GetTempPath(), "nx-agents-" + Guid.NewGuid().ToString("N")[..8]);
@@ -806,6 +879,27 @@ public static class CriticalTests
             var text = status == System.Net.HttpStatusCode.OK ? reply(request) : body ?? "";
             return new HttpResponseMessage(status) { Content = new StringContent(text, Encoding.UTF8, "application/json") };
         }
+    }
+
+    /// <summary>Tela de mentira: conta alvos (1 por padrão), devolve o nome real e registra o que "fez".</summary>
+    private sealed class FakeUiDriver : NXPilot.WindowsUi.IUiDriver
+    {
+        public Dictionary<string, int> Counts { get; } = new();
+        public Dictionary<string, string> LiveNames { get; } = new();
+        public List<string> Log { get; } = new();
+        private static string Key(NXPilot.WindowsUi.UiTarget t) => t.Name ?? t.AutomationId ?? "";
+        public int Count(NXPilot.WindowsUi.UiTarget t) => Counts.TryGetValue(Key(t), out var c) ? c : 1;
+        public string LiveName(NXPilot.WindowsUi.UiTarget t) => LiveNames.TryGetValue(Key(t), out var n) ? n : t.Name ?? "";
+        public void Click(NXPilot.WindowsUi.UiTarget t) => Log.Add("click " + Key(t));
+        public void TypeText(NXPilot.WindowsUi.UiTarget t, string text) => Log.Add($"type {Key(t)}={text}");
+        public void PressKey(string key) => Log.Add("key " + key);
+    }
+
+    private static void AssertThrows(Action action, string message)
+    {
+        try { action(); }
+        catch (ArgumentException) { return; }
+        throw new InvalidOperationException(message + " Esperava ArgumentException.");
     }
 
     /// <summary>Rotas binárias (ou 404) por URL; o que não for rota (-1) vai para o handler interno.</summary>

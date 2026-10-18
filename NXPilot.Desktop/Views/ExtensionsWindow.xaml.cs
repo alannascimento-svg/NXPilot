@@ -210,6 +210,10 @@ public partial class ExtensionsWindow : Window
 
     // ------------------------------------------------------------ Janelas do Windows
 
+    private void OnReadAppClick(object sender, RoutedEventArgs e) => new ReadAppWindow { Owner = this }.Show();
+
+    private void OnProcessesClick(object sender, RoutedEventArgs e) => new ProcessesWindow { Owner = this }.Show();
+
     private Services.WindowsUiSettings CollectWindows() => new()
     {
         AllowedProcesses = NXPilot.WindowsUi.WindowsUiPolicy.Parse(AllowedAppsBox.Text).Allowed.ToList(),

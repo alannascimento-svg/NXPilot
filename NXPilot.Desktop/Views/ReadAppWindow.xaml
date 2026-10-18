@@ -1,0 +1,66 @@
+<Window x:Class="NXPilot.Desktop.Views.ReadAppWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Win_LerTitulo}" Width="720" Height="640"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{StaticResource BackgroundBrush}" FontFamily="Segoe UI" FontSize="13">
+    <!-- Ler o texto de um app (inclusive minimizado) e monitorar — sempre escolhido pelo usuário. -->
+    <DockPanel Margin="20,16">
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="{DynamicResource Win_LerTitulo}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBrush}"/>
+            <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,10" TextWrapping="Wrap" Text="{DynamicResource Win_LerSub}"/>
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="↻" Style="{StaticResource SubtleButton}" Margin="6,0,0,0" Click="OnRefreshClick" ToolTip="{DynamicResource Win_Atualizar}"/>
+                <Button x:Name="ReadButton" DockPanel.Dock="Right" Content="{DynamicResource Win_Ler}" Style="{StaticResource PrimaryButton}" Margin="6,0,0,0" Click="OnReadClick"/>
+                <ComboBox x:Name="AppsBox" Padding="6,3"/>
+            </DockPanel>
+
+            <!-- Monitorar: intervalo mínimo de 20 s e tempo limite obrigatório (MonitorOptions). -->
+            <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,10,0,0">
+                <StackPanel>
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="{DynamicResource Win_Origem}" VerticalAlignment="Center" Margin="0,0,8,6"/>
+                    <TextBox x:Name="OriginBox" Grid.Column="1" Padding="3,2" Margin="0,0,0,6" ToolTip="{DynamicResource Win_OrigemTip}"/>
+                    <TextBlock Grid.Row="1" Text="{DynamicResource Win_AvisarPalavras}" VerticalAlignment="Center" Margin="0,0,8,6"/>
+                    <TextBox x:Name="KeywordsBox" Grid.Row="1" Grid.Column="1" Padding="3,2" Margin="0,0,0,6" ToolTip="{DynamicResource Win_AvisarPalavrasTip}"/>
+                    <TextBlock Grid.Row="2" Text="{DynamicResource Win_AoDisparar}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox x:Name="ActionBox" Grid.Row="2" Grid.Column="1" Padding="6,2" ToolTip="{DynamicResource Win_AoDispararTip}"/>
+                </Grid>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{DynamicResource Win_MonitorarCada}" VerticalAlignment="Center"/>
+                    <TextBox x:Name="IntervalBox" Width="50" Margin="6,0" Padding="3,2" Text="60"/>
+                    <TextBlock Text="{DynamicResource Win_SegundosPor}" VerticalAlignment="Center"/>
+                    <TextBox x:Name="DurationBox" Width="50" Margin="6,0" Padding="3,2" Text="30"/>
+                    <TextBlock Text="{DynamicResource Win_Minutos}" VerticalAlignment="Center"/>
+                    <Button x:Name="MonitorButton" Content="{DynamicResource Win_Iniciar}" Style="{StaticResource SubtleButton}" Margin="12,0,0,0" Click="OnMonitorClick"/>
+                </StackPanel>
+                </StackPanel>
+            </Border>
+            <TextBlock x:Name="StatusText" TextWrapping="Wrap" FontSize="12" Margin="0,8,0,4"/>
+        </StackPanel>
+
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <Button Content="{DynamicResource Win_Copiar}" Style="{StaticResource SubtleButton}" Click="OnCopyClick"/>
+            <Button Content="{DynamicResource Ext_Cancelar}" Style="{StaticResource SubtleButton}" HorizontalAlignment="Right" IsCancel="True" Click="OnCloseClick"/>
+        </DockPanel>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBox x:Name="TextBox" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontSize="12" Padding="6"/>
+            <TextBlock Grid.Row="1" Text="{DynamicResource Win_Historico}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+            <ListBox x:Name="MonitorLog" Grid.Row="2" FontSize="12"/>
+        </Grid>
+    </DockPanel>
+</Window>
