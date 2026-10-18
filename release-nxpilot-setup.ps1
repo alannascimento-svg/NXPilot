@@ -55,11 +55,25 @@ if (-not $SkipTests) {
 
 Write-Step "Publicando NXPilot self-contained ($Runtime)..."
 if (Test-Path $AppPublishDir) { Remove-Item -LiteralPath $AppPublishDir -Recurse -Force }
-# Restore explicito com o RID antes do publish: o build da solution (sem RID) deixa o
-# project.assets.json sem 'net10.0-windows/win-x64' e o projeto temporario do WPF (_wpftmp)
-# falha com NETSDK1047 se o restore acontecer dentro do proprio publish.
-dotnet restore $AppProject -r $Runtime --nologo -v q
-dotnet publish $AppProject -c $Configuration -r $Runtime --self-contained true --no-restore -o $AppPublishDir --nologo
+# Mesma receita do release do NXProject contra o NETSDK1047: um build/restore anterior SEM
+# RID (o build da solution) deixa o project.assets.json sem 'win-x64'. Encerra os build
+# servers (seguram o obj/ e o assets.json velho sobrevive), apaga o obj/ e restaura com o RID.
+# O publish fica SEM --no-restore de proposito: o projeto temporario do WPF (*_wpftmp) refaz
+# o restore no meio e, com --no-restore, o publish leria o arquivo que ele mesmo sobrescreveu.
+dotnet build-server shutdown 2>&1 | Out-Null
+foreach ($proj in @($AppProject, $SetupProject)) {
+    $objDir = Join-Path (Split-Path $proj) "obj"
+    for ($attempt = 1; (Test-Path $objDir) -and $attempt -le 4; $attempt++) {
+        try { Remove-Item $objDir -Recurse -Force -ErrorAction Stop }
+        catch {
+            if ($attempt -eq 4) { Write-Host "Nao foi possivel remover $objDir (pasta ocupada). Feche o app/IDE e tente de novo." -ForegroundColor Red; exit 1 }
+            dotnet build-server shutdown 2>&1 | Out-Null
+            Start-Sleep -Milliseconds 700
+        }
+    }
+}
+dotnet restore $AppProject -r $Runtime -p:SelfContained=true --nologo -v q --force
+dotnet publish $AppProject -c $Configuration -r $Runtime --self-contained true -o $AppPublishDir --nologo
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Falha ao publicar NXPilot.Desktop." -ForegroundColor Red
     exit 1
@@ -67,8 +81,8 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Step "Publicando NXPilot-Setup self-contained ($Runtime)..."
 if (Test-Path $SetupPublishDir) { Remove-Item -LiteralPath $SetupPublishDir -Recurse -Force }
-dotnet restore $SetupProject -r $Runtime --nologo -v q
-dotnet publish $SetupProject -c $Configuration -r $Runtime --self-contained true --no-restore -o $SetupPublishDir --nologo
+dotnet restore $SetupProject -r $Runtime -p:SelfContained=true --nologo -v q --force
+dotnet publish $SetupProject -c $Configuration -r $Runtime --self-contained true -o $SetupPublishDir --nologo
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Falha ao publicar NXPilot-Setup." -ForegroundColor Red
     exit 1
