@@ -1,0 +1,147 @@
+<Window x:Class="NXPilot.Desktop.Views.ExtensionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Ext_Titulo}" Width="680" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False"
+        Background="{StaticResource BackgroundBrush}" FontFamily="Segoe UI" FontSize="13">
+    <!-- Uma aba por extensão (pacotes NXPilot.Databricks / NXPilot.GitRepos / NXPilot.Mail). -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="22,18">
+        <TextBlock Text="{DynamicResource Ext_Titulo}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBrush}"/>
+        <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,12" TextWrapping="Wrap" Text="{DynamicResource Ext_Subtitulo}"/>
+
+        <TabControl x:Name="Tabs" Padding="14,12">
+            <!-- ============================== Databricks ============================== -->
+            <TabItem x:Name="DatabricksTab">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="DatabricksDot" Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Databricks SQL"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <StackPanel>
+                    <TextBlock Text="{DynamicResource Ext_Host}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                    <TextBox x:Name="DbHostBox" Padding="4,3"/>
+                    <TextBlock Text="{DynamicResource Ext_Warehouse}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                    <TextBox x:Name="DbWarehouseBox" Padding="4,3" FontFamily="{StaticResource MonoFont}" FontSize="12"/>
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Ext_Catalogo}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                            <TextBox x:Name="DbCatalogBox" Padding="4,3"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="{DynamicResource Ext_Schema}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                            <TextBox x:Name="DbSchemaBox" Padding="4,3"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="{DynamicResource Ext_TokenDatabricks}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                    <PasswordBox x:Name="DbTokenBox" Padding="4,3"/>
+                    <TextBlock x:Name="DbTokenState" Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
+                    <Border Background="#EEF4FB" CornerRadius="4" Padding="10,8" Margin="0,10,0,0">
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#24527A" Text="{DynamicResource Ext_DatabricksGate}"/>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button x:Name="DbTestButton" Content="{DynamicResource Ext_TestarDatabricks}" Style="{StaticResource SubtleButton}" Click="OnDatabricksTestClick"/>
+                    </StackPanel>
+                    <TextBlock x:Name="DbStatus" TextWrapping="Wrap" FontSize="12" Margin="0,8,0,0"/>
+                </StackPanel>
+            </TabItem>
+
+            <!-- ============================== Git ============================== -->
+            <TabItem x:Name="GitTab">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="GitDot" Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Git (GitHub · Azure DevOps)"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <StackPanel>
+                    <TextBlock Text="{DynamicResource Ext_GitHubToken}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                    <PasswordBox x:Name="GhTokenBox" Padding="4,3"/>
+                    <TextBlock x:Name="GhTokenState" Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
+                    <TextBlock Text="{DynamicResource Ext_DevOpsOrg}" Style="{StaticResource Muted}" Margin="0,10,0,2"/>
+                    <TextBox x:Name="AdoOrgBox" Padding="4,3"/>
+                    <TextBlock Text="{DynamicResource Ext_DevOpsPat}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                    <PasswordBox x:Name="AdoPatBox" Padding="4,3"/>
+                    <TextBlock x:Name="AdoPatState" Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                    <Border Background="#EEF4FB" CornerRadius="4" Padding="10,8" Margin="0,10,0,0">
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#24527A" Text="{DynamicResource Ext_GitGate}"/>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button x:Name="GhTestButton" Content="{DynamicResource Ext_TestarGitHub}" Style="{StaticResource SubtleButton}" Click="OnGitHubTestClick"/>
+                        <Button x:Name="AdoTestButton" Content="{DynamicResource Ext_TestarDevOps}" Style="{StaticResource SubtleButton}" Margin="8,0,0,0" Click="OnDevOpsTestClick"/>
+                    </StackPanel>
+                    <TextBlock x:Name="GitStatus" TextWrapping="Wrap" FontSize="12" Margin="0,8,0,0"/>
+                </StackPanel>
+            </TabItem>
+
+            <!-- ============================== E-mail ============================== -->
+            <TabItem x:Name="MailTab">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="MailDot" Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="E-mail (Outlook · Gmail)"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <StackPanel>
+                    <Border Background="#FFF4E5" CornerRadius="4" Padding="10,8" Margin="0,0,0,10">
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#9A5B00" Text="{DynamicResource Ext_EmailAviso}"/>
+                    </Border>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Ext_OutlookClient}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                            <TextBox x:Name="OutlookClientBox" Padding="4,3" FontFamily="{StaticResource MonoFont}" FontSize="12"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="{DynamicResource Ext_OutlookTenant}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                            <TextBox x:Name="OutlookTenantBox" Padding="4,3"/>
+                        </StackPanel>
+                    </Grid>
+                    <DockPanel Margin="0,6,0,0">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button x:Name="OutlookLoginButton" Content="{DynamicResource Ext_Entrar}" Style="{StaticResource PrimaryButton}" Click="OnOutlookLoginClick"/>
+                            <Button Content="{DynamicResource Ext_Sair}" Style="{StaticResource SubtleButton}" Margin="6,0,0,0" Click="OnOutlookSignOutClick"/>
+                            <Button x:Name="OutlookTestButton" Content="{DynamicResource Ext_TestarEmail}" Style="{StaticResource SubtleButton}" Margin="6,0,0,0" Click="OnOutlookTestClick"/>
+                        </StackPanel>
+                        <TextBlock x:Name="OutlookSession" Style="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    </DockPanel>
+
+                    <Separator Margin="0,12"/>
+
+                    <TextBlock Text="{DynamicResource Ext_GmailClient}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                    <TextBox x:Name="GmailClientBox" Padding="4,3" FontFamily="{StaticResource MonoFont}" FontSize="12"/>
+                    <TextBlock Text="{DynamicResource Ext_GmailSecret}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                    <PasswordBox x:Name="GmailSecretBox" Padding="4,3"/>
+                    <TextBlock x:Name="GmailSecretState" Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
+                    <DockPanel Margin="0,6,0,0">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button x:Name="GmailLoginButton" Content="{DynamicResource Ext_Entrar}" Style="{StaticResource PrimaryButton}" Click="OnGmailLoginClick"/>
+                            <Button Content="{DynamicResource Ext_Sair}" Style="{StaticResource SubtleButton}" Margin="6,0,0,0" Click="OnGmailSignOutClick"/>
+                            <Button x:Name="GmailTestButton" Content="{DynamicResource Ext_TestarEmail}" Style="{StaticResource SubtleButton}" Margin="6,0,0,0" Click="OnGmailTestClick"/>
+                        </StackPanel>
+                        <TextBlock x:Name="GmailSession" Style="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    </DockPanel>
+                    <TextBox x:Name="MailStatus" IsReadOnly="True" BorderThickness="0" Background="Transparent" TextWrapping="Wrap"
+                             FontSize="12" Margin="0,10,0,0" MaxHeight="160" VerticalScrollBarVisibility="Auto"/>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <TextBlock x:Name="SaveStatus" TextWrapping="Wrap" FontSize="12" Margin="0,10,0,0"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="{DynamicResource Ext_Cancelar}" Style="{StaticResource SubtleButton}" IsCancel="True"/>
+            <Button Content="{DynamicResource Ext_Salvar}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" IsDefault="True" Click="OnSaveClick"/>
+        </StackPanel>
+    </StackPanel>
+    </ScrollViewer>
+</Window>

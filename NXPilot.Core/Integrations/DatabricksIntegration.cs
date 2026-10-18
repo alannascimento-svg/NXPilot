@@ -31,21 +31,26 @@ public sealed class DatabricksSettings
     internal static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NXPilot", "databricks.json");
 
-    /// <summary>Configuração salva; sem arquivo, cai nas variáveis DATABRICKS_* (útil no Bench).</summary>
+    /// <summary>Campos salvos (token decifrado só em memória); sem arquivo, vazio.</summary>
     [SupportedOSPlatform("windows")]
-    public static DatabricksConnection? LoadConnection()
+    public static DatabricksSettings Load()
     {
         try
         {
             if (File.Exists(FilePath) && JsonSerializer.Deserialize<DatabricksSettings>(File.ReadAllText(FilePath)) is { } s)
             {
                 s.Token = Secret.Unprotect(s.TokenProtected);
-                if (s.ToConnection() is { IsComplete: true } c) return c;
+                return s;
             }
         }
         catch { /* arquivo inválido */ }
-        return DatabricksConnection.FromEnvironment();
+        return new DatabricksSettings();
     }
+
+    /// <summary>Configuração salva; sem arquivo, cai nas variáveis DATABRICKS_* (útil no Bench).</summary>
+    [SupportedOSPlatform("windows")]
+    public static DatabricksConnection? LoadConnection() =>
+        Load().ToConnection() is { IsComplete: true } c ? c : DatabricksConnection.FromEnvironment();
 
     [SupportedOSPlatform("windows")]
     public void Save()

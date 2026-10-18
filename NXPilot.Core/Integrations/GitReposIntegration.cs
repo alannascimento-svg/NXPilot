@@ -25,6 +25,9 @@ public sealed class GitRepoSettings : IGitCredentialProvider
     public string GitHubTokenProtected { get; set; } = "";
     public string AzureDevOpsTokenProtected { get; set; } = "";
 
+    /// <summary>O PAT do DevOps veio do NXProject (não é gravado no arquivo do NXPilot).</summary>
+    [JsonIgnore] public bool AzureDevOpsFromNXProject { get; set; }
+
     public GitCredential? For(GitProvider provider) => provider switch
     {
         GitProvider.GitHub when GitHubToken.Length > 0 => new(provider, GitHubToken),
@@ -49,6 +52,7 @@ public sealed class GitRepoSettings : IGitCredentialProvider
         if (s.AzureDevOpsToken.Length == 0 && DevOpsConnection.FromNXProject() is { } nx)
         {
             s.AzureDevOpsToken = nx.Pat;
+            s.AzureDevOpsFromNXProject = true;
             if (s.AzureDevOpsOrganizationUrl.Length == 0) s.AzureDevOpsOrganizationUrl = nx.OrganizationUrl;
         }
         return s;
@@ -58,7 +62,7 @@ public sealed class GitRepoSettings : IGitCredentialProvider
     public void Save()
     {
         GitHubTokenProtected = Secret.Protect(GitHubToken);
-        AzureDevOpsTokenProtected = Secret.Protect(AzureDevOpsToken);
+        AzureDevOpsTokenProtected = AzureDevOpsFromNXProject ? "" : Secret.Protect(AzureDevOpsToken);
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
         File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
     }

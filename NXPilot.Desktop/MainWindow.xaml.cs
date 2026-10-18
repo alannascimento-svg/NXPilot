@@ -186,6 +186,9 @@ public partial class MainWindow : Window
     private void OnSimulatorChecked(object sender, RoutedEventArgs e) => Vm.Channels.UseOfficialApi = false;
 
     /// <summary>Provedor do 3º degrau da cascata (LLaMA, Copilot, Azure, M365, OpenRouter).</summary>
+    /// <summary>Extensões: Databricks SQL, Git (GitHub/Azure DevOps) e E-mail (Outlook/Gmail).</summary>
+    private void OnExtensionsClick(object sender, RoutedEventArgs e) => new Views.ExtensionsWindow { Owner = this }.ShowDialog();
+
     private void OnProviderClick(object sender, RoutedEventArgs e)
     {
         var win = new Views.AiProviderWindow(Vm.Lab.Provider) { Owner = this };
@@ -267,6 +270,18 @@ public partial class MainWindow : Window
             var copy = new NXPilot.Ai.AiProviderSettings { Kind = kind,
                 Endpoint = NXPilot.Ai.AiProviderSettings.DefaultEndpoint(kind), Model = NXPilot.Ai.AiProviderSettings.DefaultModel(kind) };
             var win = new Views.AiProviderWindow(copy) { Owner = this };
+            win.Show();
+            await Task.Delay(800);
+            SaveVisual((FrameworkElement)win.Content, win, shot);
+            win.Close();
+            if (args.Contains("--exit")) Close();
+            return;
+        }
+
+        // --extensions databricks|git|mail: captura a janela de Extensões nessa aba (sem salvar nada).
+        if (ArgValue(args, "--extensions") is { } extTab)
+        {
+            var win = new Views.ExtensionsWindow(extTab) { Owner = this };
             win.Show();
             await Task.Delay(800);
             SaveVisual((FrameworkElement)win.Content, win, shot);
