@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pacote à parte: cliente da SQL Statement Execution API do Databricks + camada de serviço.
+    Sem dependências (só HttpClient e System.Text.Json) e sem referência ao NXPilot.Core —
+    o NXPilot liga o gate pela interface ISqlStatementApprover.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <PackageId>NXPilot.Databricks</PackageId>
+    <Authors>Nexus XData Tecnologia Ltda</Authors>
+    <PackageDescription>Cliente .NET da SQL Statement Execution API do Databricks (SQL Warehouse) com camada de serviço e aprovação por instrução.</PackageDescription>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

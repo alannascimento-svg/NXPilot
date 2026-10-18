@@ -17,4 +17,9 @@
     <PackageReference Include="LLamaSharp" Version="0.27.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Pacote à parte (sem dependências): SQL Warehouse do Databricks; o gate entra por GateSqlApprover. -->
+    <ProjectReference Include="..\NXPilot.Databricks\NXPilot.Databricks.csproj" />
+  </ItemGroup>
+
 </Project>

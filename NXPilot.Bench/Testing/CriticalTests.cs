@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using NXPilot.Agents;
 using NXPilot.Ai;
+using NXPilot.Databricks;
 using NXPilot.Integrations;
 using NXPilot.Messaging;
 using NXPilot.Planning;
@@ -285,6 +286,103 @@ public static class CriticalTests
             finally { try { Directory.Delete(root, true); } catch { } }
             return Task.CompletedTask;
         }),
+
+        new("Databricks: SQL classificado — comentário, texto e WITH não enganam; escrita nunca é leitura", () =>
+        {
+            void Expect(string sql, SqlStatementKind kind, bool destructive = false)
+            {
+                var r = SqlStatementClassifier.Classify(sql);
+                AssertEqual(kind, r.Kind, $"Tipo de: {sql}");
+                AssertEqual(destructive, r.IsDestructive, $"Destrutivo em: {sql}");
+            }
+            Expect("SELECT * FROM t WHERE x = 'DROP TABLE t'", SqlStatementKind.Read);
+            Expect("-- DELETE FROM t\nSELECT 1", SqlStatementKind.Read);
+            Expect("/* a /* b */ DROP */ SHOW TABLES", SqlStatementKind.Read);
+            Expect("SELECT `delete` FROM t", SqlStatementKind.Read);
+            Expect("EXPLAIN DROP TABLE t", SqlStatementKind.Read);
+            Expect("WITH c AS (SELECT 1) SELECT * FROM c", SqlStatementKind.Read);
+            Expect("WITH c AS (SELECT 1) INSERT INTO t SELECT * FROM c", SqlStatementKind.Write);
+            Expect("update t set a = 1", SqlStatementKind.Write);
+            Expect("DELETE FROM t", SqlStatementKind.Write, true);
+            Expect("INSERT OVERWRITE t SELECT 1", SqlStatementKind.Write, true);
+            Expect("CREATE OR REPLACE TABLE t AS SELECT 1", SqlStatementKind.Schema, true);
+            Expect("GRANT SELECT ON t TO `x`", SqlStatementKind.Admin);
+            Expect("USE CATALOG main", SqlStatementKind.Session);
+            Expect("FOO BAR", SqlStatementKind.Unknown);
+            Expect("SELECT 1; DROP TABLE t", SqlStatementKind.Schema, true);
+            AssertEqual(2, SqlStatementClassifier.Classify("SELECT ';'; SELECT 2").Statements.Count, "';' dentro de texto não separa instrução.");
+            AssertEqual(GateOutcome.AutoApprove, DecisionGate.Decide(GateSqlApprover.Risk(SqlStatementClassifier.Classify("SELECT 1"))), "Leitura passa sozinha.");
+            AssertEqual(RiskLevel.Alto, GateSqlApprover.Risk(SqlStatementClassifier.Classify("MERGE INTO t USING s ON 1=1")).Level, "Escrita é ALTO.");
+            AssertEqual(RiskLevel.Medio, GateSqlApprover.Risk(SqlStatementClassifier.Classify("FOO")).Level, "Desconhecido pergunta (MÉDIO).");
+            return Task.CompletedTask;
+        }),
+
+        new("Databricks: escrita sem aprovação não chega ao warehouse; aprovada executa, espera e junta os blocos", async () =>
+        {
+            var conn = new DatabricksConnection("adb-1.azuredatabricks.net/", "dapiSEGREDO", "/sql/1.0/warehouses/wh1");
+            AssertEqual("https://adb-1.azuredatabricks.net", conn.Host, "Host normalizado.");
+            AssertEqual("wh1", conn.WarehouseId, "Warehouse tirado do HTTP path.");
+            AssertFalse(conn.ToString().Contains("dapiSEGREDO"), "Token fora do ToString.");
+
+            var gets = 0;
+            var http = new FakeHttp(req => (req.Method.Method, req.RequestUri!.AbsolutePath) switch
+            {
+                ("POST", "/api/2.0/sql/statements") => """{"statement_id":"s1","status":{"state":"PENDING"}}""",
+                ("GET", "/api/2.0/sql/statements/s1") => ++gets < 2 ? """{"statement_id":"s1","status":{"state":"RUNNING"}}"""
+                    : """{"statement_id":"s1","status":{"state":"SUCCEEDED"},"manifest":{"schema":{"columns":[{"name":"id","position":0,"type_name":"INT"},{"name":"nome","position":1,"type_name":"STRING"}]},"total_row_count":3,"total_chunk_count":2},"result":{"chunk_index":0,"data_array":[["1","a"],["2",null]],"next_chunk_index":1}}""",
+                ("GET", "/api/2.0/sql/statements/s1/result/chunks/1") => """{"chunk_index":1,"data_array":[["3","c"]]}""",
+                _ => throw new InvalidOperationException("chamada inesperada: " + req.RequestUri),
+            });
+
+            using (var denied = new DatabricksSqlService(new DatabricksSqlClient(conn, http), new GateSqlApprover()))
+            {
+                await AssertThrowsAsync<SqlStatementDeniedException>(() => denied.ExecuteAsync("DELETE FROM t"), "ALTO sem ninguém para aprovar é negado.");
+                await AssertThrowsAsync<SqlStatementDeniedException>(() => denied.QueryAsync("UPDATE t SET a = 1"), "QueryAsync recusa escrita.");
+                await AssertThrowsAsync<SqlStatementDeniedException>(() => denied.QueryAsync("SELECT 1; SELECT 2"), "Uma instrução por vez.");
+                AssertEqual(0, http.Requests.Count, "Nada negado chegou ao Databricks.");
+            }
+
+            SqlStatementReview? asked = null;
+            using var svc = new DatabricksSqlService(new DatabricksSqlClient(conn, http),
+                new GateSqlApprover((review, risk, _) => { asked = review; return Task.FromResult(true); }));
+            var r = await svc.ExecuteAsync("UPDATE t SET nome = :n WHERE id = 1", [new SqlParameter("n", "x")]);
+            AssertEqual(SqlStatementKind.Write, asked?.Kind, "Escrita foi perguntada ao usuário.");
+            AssertEqual(3, r.Rows.Count, "Os dois blocos foram juntados.");
+            AssertEqual(null, r.Value(1, "nome"), "NULL vira null.");
+            AssertEqual("c", r.Value(2, "NOME"), "Coluna por nome, sem diferenciar maiúsculas.");
+            var post = http.Bodies.First();
+            AssertContains("\"warehouse_id\":\"wh1\"", post, "Envia o warehouse.");
+            AssertContains("\"name\":\"n\"", post, "Envia o parâmetro nomeado.");
+            AssertTrue(http.Requests.All(q => q.Headers.Authorization?.Parameter == "dapiSEGREDO"), "Bearer em todas as chamadas.");
+        }),
+
+        new("Databricks: desistir cancela no warehouse; erro HTTP vem sem o token", async () =>
+        {
+            var conn = new DatabricksConnection("https://adb-1.azuredatabricks.net", "dapiSEGREDO", "wh1");
+            var cancelled = false;
+            using var cts = new CancellationTokenSource();
+            var http = new FakeHttp(req =>
+            {
+                var path = req.RequestUri!.AbsolutePath;
+                if (path.EndsWith("/cancel")) { cancelled = true; return "{}"; }
+                if (req.Method == HttpMethod.Post) { cts.CancelAfter(50); return """{"statement_id":"s9","status":{"state":"RUNNING"}}"""; }
+                return """{"statement_id":"s9","status":{"state":"RUNNING"}}""";
+            });
+            using (var svc = new DatabricksSqlService(new DatabricksSqlClient(conn, http)))
+                await AssertThrowsAsync<OperationCanceledException>(() => svc.QueryAsync("SELECT * FROM grande", ct: cts.Token), "Cancelamento propaga.");
+            AssertTrue(cancelled, "A instrução foi cancelada no warehouse.");
+
+            var fail = new FakeHttp(_ => throw new HttpRequestException("não deveria"), status: System.Net.HttpStatusCode.Unauthorized,
+                body: """{"error_code":"UNAUTHENTICATED","message":"Invalid access token."}""");
+            using var bad = new DatabricksSqlService(new DatabricksSqlClient(conn, fail));
+            try { await bad.TestConnectionAsync(); throw new InvalidOperationException("Esperava DatabricksException."); }
+            catch (DatabricksException e)
+            {
+                AssertEqual(401, e.HttpStatus, "Status HTTP.");
+                AssertEqual("UNAUTHENTICATED", e.ErrorCode, "error_code do corpo.");
+                AssertFalse(e.Message.Contains("dapiSEGREDO"), "Token fora da mensagem.");
+            }
+        }),
     };
 
     // ---------------------------------------------------------------- apoio
@@ -310,6 +408,21 @@ public static class CriticalTests
         {
             LastRequest = requestJson;
             return Task.FromResult(reply(requestJson));
+        }
+    }
+
+    /// <summary>Databricks de mentira: responde JSON por rota (ou um status fixo) e guarda as chamadas.</summary>
+    private sealed class FakeHttp(Func<HttpRequestMessage, string> reply,
+        System.Net.HttpStatusCode status = System.Net.HttpStatusCode.OK, string? body = null) : HttpMessageHandler
+    {
+        public List<HttpRequestMessage> Requests { get; } = new();
+        public List<string> Bodies { get; } = new();
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Requests.Add(request);
+            if (request.Content != null) Bodies.Add(await request.Content.ReadAsStringAsync(ct));
+            var text = status == System.Net.HttpStatusCode.OK ? reply(request) : body ?? "";
+            return new HttpResponseMessage(status) { Content = new StringContent(text, Encoding.UTF8, "application/json") };
         }
     }
 

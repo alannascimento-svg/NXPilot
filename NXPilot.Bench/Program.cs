@@ -49,6 +49,13 @@ if (args.Length > 0 && args[0] == "--codex-models")
 if (args.Length > 0 && args[0] == "--devops-test")
     return await DevOpsTestAsync();
 
+// Databricks SQL Warehouse: --databricks-setup (pergunta host/warehouse/token e salva com DPAPI)
+// e --databricks ["SQL"] (só leitura; sem SQL faz SELECT 1 e lista os catálogos).
+if (args.Length > 0 && args[0] == "--databricks-setup" && OperatingSystem.IsWindows())
+    return DatabricksSetup();
+if (args.Length > 0 && args[0] == "--databricks" && OperatingSystem.IsWindows())
+    return await DatabricksTestAsync(args.Length > 1 ? args[1] : null);
+
 // Teste de ponta a ponta com o Claude Code real: NXPilot.Bench.exe --agent-test [modelo]
 if (args.Length > 0 && args[0] == "--agent-test")
     return await AgentTestAsync(args.Length > 1 ? args[1] : "haiku");
@@ -311,6 +318,55 @@ static async Task<int> DevOpsTestAsync()
     foreach (var g in items.GroupBy(i => i.Type)) Console.WriteLine($"  {g.Key}: {g.Count()}");
     Console.WriteLine($"Com descrição: {items.Count(i => i.Description.Length > 0)} | com critérios de aceite: {items.Count(i => i.AcceptanceCriteria.Length > 0)}");
     return 0;
+}
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+static int DatabricksSetup()
+{
+    string Ask(string label) { Console.Write(label); return Console.ReadLine()?.Trim() ?? ""; }
+    var s = new NXPilot.Integrations.DatabricksSettings
+    {
+        Host = Ask("Host do workspace (ex.: adb-123.azuredatabricks.net): "),
+        WarehouseId = Ask("Warehouse ID ou HTTP path (/sql/1.0/warehouses/…): "),
+        Catalog = Ask("Catálogo padrão (Enter = nenhum): "),
+        Schema = Ask("Schema padrão (Enter = nenhum): "),
+    };
+    Console.Write("Token (PAT, não aparece na tela): ");
+    var token = new System.Text.StringBuilder();
+    for (var k = Console.ReadKey(true); k.Key != ConsoleKey.Enter; k = Console.ReadKey(true))
+        if (k.Key == ConsoleKey.Backspace) { if (token.Length > 0) token.Length--; } else if (!char.IsControl(k.KeyChar)) token.Append(k.KeyChar);
+    Console.WriteLine();
+    s.Token = token.ToString();
+    if (!s.ToConnection().IsComplete) { Console.WriteLine("Faltou host, warehouse ou token — nada foi salvo."); return 1; }
+    s.Save();
+    Console.WriteLine("Salvo em %LOCALAPPDATA%\\NXPilot\\databricks.json (token cifrado com DPAPI). Teste: NXPilot.Bench.exe --databricks");
+    return 0;
+}
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+static async Task<int> DatabricksTestAsync(string? sql)
+{
+    var conn = NXPilot.Integrations.DatabricksSettings.LoadConnection();
+    if (conn == null) { Console.WriteLine("Sem conexão: rode --databricks-setup (ou defina DATABRICKS_HOST/TOKEN/WAREHOUSE_ID)."); return 1; }
+    Console.WriteLine($"Conexão: {conn}");
+    using var svc = new NXPilot.Databricks.DatabricksSqlService(conn, log: m => Console.WriteLine("  " + m));
+    try
+    {
+        if (sql == null)
+        {
+            Console.WriteLine("SELECT 1 (warehouse parado pode levar alguns minutos para ligar)…");
+            await svc.TestConnectionAsync();
+            Console.WriteLine("Catálogos: " + string.Join(", ", await svc.ListCatalogsAsync()));
+            return 0;
+        }
+        var r = await svc.QueryAsync(sql, options: new NXPilot.Databricks.SqlExecutionOptions { MaxRows = 50 });
+        Console.WriteLine(string.Join(" | ", r.Columns.Select(c => $"{c.Name}:{c.TypeName}")));
+        foreach (var row in r.Rows.Take(20)) Console.WriteLine(string.Join(" | ", row.Select(v => v ?? "NULL")));
+        Console.WriteLine($"{r.Rows.Count} de {r.TotalRowCount} linha(s){(r.Truncated ? " (cortado)" : "")} em {r.Elapsed.TotalSeconds:F1}s");
+        return 0;
+    }
+    catch (NXPilot.Databricks.SqlStatementDeniedException e) { Console.WriteLine($"NEGADO: {e.Message} (o Bench só executa leitura)"); return 1; }
+    catch (NXPilot.Databricks.DatabricksException e) { Console.WriteLine($"ERRO: {e.Message}"); return 1; }
 }
 
 // PBIP: detecção do projeto e validação dos JSON alterados (sem Power BI Desktop instalado).
