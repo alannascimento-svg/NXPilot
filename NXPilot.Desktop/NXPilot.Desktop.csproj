@@ -13,6 +13,10 @@
     <RootNamespace>NXPilot.Desktop</RootNamespace>
     <!-- Main próprio (Program.cs): desvia para o modo hook do agente antes de iniciar o WPF. -->
     <StartupObject>NXPilot.Desktop.Program</StartupObject>
+    <!-- Todo restore (até o build comum da solution) já inclui o alvo win-x64 do publish: sem
+         isso o projeto temporário do WPF (*_wpftmp) lê um project.assets.json sem win-x64 e o
+         publish falha com NETSDK1047. Não muda a pasta de saída do build. -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>
