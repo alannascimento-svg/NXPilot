@@ -7,9 +7,14 @@ O NXPilot é distribuído sob um modelo "Open Core" com licenciamento dual:
 
   • Edição Community (esta licença): gratuita para qualquer pessoa física ou
     empresa, conforme os termos abaixo.
-  • Edição Comercial / Enterprise (NXAgentic): licença paga, com suporte oficial
-    e recursos adicionais, oferecida separadamente pela Nexus XData Tecnologia
-    Ltda sob contrato próprio.
+  • Edição Comercial / Enterprise (NXAgentic-Provider): licença paga, para
+    empresas que querem aproveitar melhor o uso de skills corporativas, com
+    suporte oficial e recursos adicionais, oferecida separadamente pela Nexus
+    XData Tecnologia Ltda sob contrato próprio.
+
+O modelo Open Core abrange somente o NXPilot. O NXAgentic-Provider é a versão
+comercial (Enterprise) e não é Open Core: seu código não é publicado e ele não é
+licenciado por esta licença.
 
 A mesma base de código pode ser licenciada por uma destas duas vias. Quem não
 puder ou não quiser cumprir as condições da Edição Community pode contratar a
@@ -152,11 +157,13 @@ O Licenciante oferece, mediante contratação e remuneração separadas:
   • a Edição Comercial / Enterprise, que pode incluir módulos e recursos
     exclusivos (por exemplo, suporte oficial, SLA, registro de decisões em
     equipe, políticas e permissões, login corporativo, relatórios de auditoria,
-    entre outros), conforme disponibilidade, comercializada sob o nome
-    NXAgentic;
+    skills corporativas, entre outros), conforme disponibilidade,
+    comercializada sob o nome NXAgentic-Provider, inclusive na forma de serviço
+    de IA da Nexus XData;
   • suporte técnico, manutenção, garantias e indenização contratuais.
 
-Os módulos e recursos da Edição Comercial / Enterprise (NXAgentic) não fazem
+Os módulos, recursos e serviços da Edição Comercial / Enterprise
+(NXAgentic-Provider) não fazem
 parte do Software, não são distribuídos com ele e não são licenciados por esta
 licença: seguem exclusivamente o contrato comercial próprio. O Software funciona
 de forma completa sem eles; quando instalados, eles se conectam ao Software por
@@ -246,7 +253,7 @@ sujeita à cláusula 4 e a contrato específico com a Nexus XData Tecnologia Ltd
 7. Marcas
 --------------------------------------------------------------------------------
 
-"NXPilot", "NXAgentic", "NXProject" e "Nexus XData" são marcas do Licenciante. Esta licença não concede
+"NXPilot", "NXAgentic", "NXAgentic-Provider", "NXProject" e "Nexus XData" são marcas do Licenciante. Esta licença não concede
 direito de uso das marcas, exceto para a atribuição exigida na cláusula 3.
 
 --------------------------------------------------------------------------------

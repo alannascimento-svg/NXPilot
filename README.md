@@ -21,18 +21,24 @@ provedores (GitHub Copilot/Models, Azure OpenAI, Microsoft 365, OpenRouter), int
 
 ## Edições (Open Core)
 
-| | **NXPilot Community** (este repositório) | **NXAgentic** (comercial) |
+O **Open Core abrange somente o NXPilot**. O **NXAgentic-Provider** é a versão comercial (Enterprise),
+para empresas que querem aproveitar melhor o uso de **skills corporativas** — não é Open Core e seu
+código não é publicado.
+
+| | **NXPilot Community** (este repositório) | **NXAgentic-Provider** (comercial / Enterprise) |
 |---|---|---|
 | Preço | gratuito, inclusive para empresas (uso interno) | licença paga |
 | Agentes, plano em fases, worktree, verificação cruzada | ✔ | ✔ |
 | **Gate, cascata de risco, log e auditoria local** | ✔ — segurança nunca é recurso pago | ✔ |
-| Planejador | Basic | Intelligence (planejamento avançado, roteamento de modelos) |
-| Recursos de equipe (políticas, decisões em equipe, relatórios) | — | Enterprise |
+| Planejador | Basic | avançado (roteamento de modelos, avaliação do plano) |
+| Skills corporativas, políticas, equipe, relatórios | — | ✔ |
 
-O NXPilot funciona completo sem o NXAgentic. O módulo comercial se conecta pela fachada pública
-`IAgentPlanner` (`NXPilot.Core/Planning`) e só é carregado se estiver **assinado pela Nexus XData**;
-se falhar, o NXPilot segue com o planejador Basic. Nenhum código, prompt ou contexto seu é enviado
-à Nexus XData, e não há telemetria.
+O NXPilot funciona completo sem o NXAgentic-Provider. A versão comercial se conecta pela fachada
+pública `IAgentPlanner` (`NXPilot.Core/Planning`); um módulo local só é carregado se estiver
+**assinado pela Nexus XData**, e qualquer falha faz o NXPilot seguir com o planejador Basic.
+Sem o NXAgentic-Provider, nenhum código, prompt ou contexto seu é enviado à Nexus XData, e não há
+telemetria. Mesmo com ele, o serviço só **sugere**: toda ação dos agentes continua passando pelo
+gate local e por você.
 
 ## Requisitos
 

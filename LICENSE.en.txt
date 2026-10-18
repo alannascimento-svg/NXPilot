@@ -9,9 +9,14 @@ NXPilot is distributed under an "Open Core" model with dual licensing:
 
   • Community Edition (this license): free of charge for any individual or
     company, under the terms below.
-  • Commercial / Enterprise Edition (NXAgentic): paid license, with official
+  • Commercial / Enterprise Edition (NXAgentic-Provider): paid license, for
+    companies that want to make better use of corporate skills, with official
     support and additional features, offered separately by Nexus XData
     Tecnologia Ltda under its own agreement.
+
+The Open Core model covers NXPilot only. NXAgentic-Provider is the commercial
+(Enterprise) version and is not Open Core: its code is not published and it is
+not licensed under this license.
 
 The same codebase may be licensed through either of these two channels. Anyone
 who cannot or does not wish to comply with the conditions of the Community
@@ -150,11 +155,13 @@ The Licensor offers, upon separate contracting and payment:
     companies that want their own terms;
   • the Commercial / Enterprise Edition, which may include exclusive modules and
     features (for example, official support, SLA, team decision log, policies
-    and permissions, corporate sign-in, audit reports, among others), subject
-    to availability, marketed under the name NXAgentic;
+    and permissions, corporate sign-in, audit reports, corporate skills, among
+    others), subject to availability, marketed under the name
+    NXAgentic-Provider, including as a Nexus XData AI service;
   • technical support, maintenance, warranties and contractual indemnification.
 
-The modules and features of the Commercial / Enterprise Edition (NXAgentic) are
+The modules, features and services of the Commercial / Enterprise Edition
+(NXAgentic-Provider) are
 not part of the Software, are not distributed with it and are not licensed under
 this license: they are governed exclusively by their own commercial agreement.
 The Software works completely without them; when installed, they connect to the
@@ -241,7 +248,7 @@ clause 4 and to a specific agreement with Nexus XData Tecnologia Ltda.
 7. Trademarks
 --------------------------------------------------------------------------------
 
-"NXPilot", "NXAgentic", "NXProject" and "Nexus XData" are trademarks of the Licensor. This license
+"NXPilot", "NXAgentic", "NXAgentic-Provider", "NXProject" and "Nexus XData" are trademarks of the Licensor. This license
 grants no right to use the trademarks, except for the attribution required in
 clause 3.
 
