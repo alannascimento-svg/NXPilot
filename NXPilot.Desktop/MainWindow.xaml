@@ -36,7 +36,7 @@
                 <StackPanel VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="NX" Foreground="White" FontWeight="Bold" FontSize="18"/>
-                        <TextBlock Text="Agentic" Foreground="#CFE0F5" FontSize="18" Margin="2,0,0,0"/>
+                        <TextBlock Text="Pilot" Foreground="#CFE0F5" FontSize="18" Margin="2,0,0,0"/>
                         <Border Background="#3D6BB0" CornerRadius="3" Padding="6,0" Margin="10,0,0,0" VerticalAlignment="Center">
                             <TextBlock Text="{DynamicResource Main_CommunityPrototipo}" Foreground="White" FontSize="10.5"/>
                         </Border>

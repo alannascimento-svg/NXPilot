@@ -2,8 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
     <!-- English UI strings. Same keys as Strings.pt-BR.xaml. -->
-    <sys:String x:Key="Main_NxpilotPrototipo">NXPilot — prototype</sys:String>
-    <sys:String x:Key="Main_CommunityPrototipo">Community · prototype</sys:String>
+    <sys:String x:Key="Main_NxpilotPrototipo">NXPilot Community</sys:String>
+    <sys:String x:Key="Main_CommunityPrototipo">Community</sys:String>
     <sys:String x:Key="Main_SimularAcaoDoAgente">▶  Simulate agent action</sys:String>
     <sys:String x:Key="Main_UmAgentePedeUma">An agent requests an action; the gate classifies it and decides whether it needs you.</sys:String>
     <sys:String x:Key="Main_Ajuda">?  Help</sys:String>
