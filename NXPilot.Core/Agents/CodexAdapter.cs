@@ -27,13 +27,15 @@ public sealed class CodexAdapter(string? model = null, string? executablePath = 
     /// <summary>JSON Schema da resposta final (--output-schema); nulo = texto livre.</summary>
     public string? OutputSchema { get; init; }
 
-    /// <summary>PATH → pasta do NXProject-Setup → codex.exe da extensão do VS Code (a mais nova).</summary>
+    /// <summary>PATH → instalador oficial (…\Programs\OpenAI\Codex\bin, usado também pelo NX.AgentInstaller) → pasta do NXProject-Setup → codex.exe da extensão do VS Code (a mais nova).</summary>
     public static string? Locate()
     {
+        var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var candidates = (Environment.GetEnvironmentVariable("PATH") ?? "")
             .Split(';', StringSplitOptions.RemoveEmptyEntries)
             .Select(d => Path.Combine(d.Trim(), "codex.exe"))
-            .Append(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NXProject", "bin", "codex.exe"));
+            .Append(Path.Combine(local, "Programs", "OpenAI", "Codex", "bin", "codex.exe"))
+            .Append(Path.Combine(local, "NXProject", "bin", "codex.exe"));
         if (candidates.FirstOrDefault(File.Exists) is { } found) return found;
 
         var extensions = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vscode", "extensions");

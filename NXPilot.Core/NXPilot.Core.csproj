@@ -24,6 +24,8 @@
     <ProjectReference Include="..\NXPilot.GitRepos\NXPilot.GitRepos.csproj" />
     <!-- Pacote à parte (sem dependências): leitura de e-mail Outlook/Gmail, somente leitura. -->
     <ProjectReference Include="..\NXPilot.Mail\NXPilot.Mail.csproj" />
+    <!-- Pacote compartilhado com o NXProject: instala/localiza Claude Code e Codex (interno ou script). -->
+    <ProjectReference Include="..\NX.AgentInstaller\NX.AgentInstaller.csproj" />
   </ItemGroup>
 
 </Project>

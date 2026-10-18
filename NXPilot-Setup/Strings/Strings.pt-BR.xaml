@@ -20,4 +20,9 @@
     <sys:String x:Key="Setup_4IaLocalLlama">4 · IA Local LLaMA (opcional)</sys:String>
     <sys:String x:Key="Setup_UsadaSoNasAcoes">Usada só nas ações em que o ONNX fica em dúvida (cascata). É a mesma IA Local do NXProject — se ele já está instalado, nada a fazer. Para instalar: NXProject → IA → Gerenciar IA Local.</sys:String>
     <sys:String x:Key="Setup_AbrirPasta">abrir pasta</sys:String>
+    <sys:String x:Key="Setup_ComoInstalar">Como instalar</sys:String>
+    <sys:String x:Key="Setup_ModoInterno">Interna (recomendada)</sys:String>
+    <sys:String x:Key="Setup_ModoScript">Script oficial</sys:String>
+    <sys:String x:Key="Setup_Versao">Versão</sys:String>
+    <sys:String x:Key="Setup_NotaAgentes">Interna: o Setup baixa do site oficial, confere o SHA-256 e instala nas mesmas pastas do instalador oficial, sem rodar script (use se o antivírus bloquear o PowerShell). Script: roda o instalador oficial numa janela do PowerShell. Depois, entre na sua conta: rode claude ou codex uma vez num terminal.</sys:String>
 </ResourceDictionary>

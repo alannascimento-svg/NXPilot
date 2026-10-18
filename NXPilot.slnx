@@ -6,4 +6,5 @@
   <Project Path="NXPilot.Databricks/NXPilot.Databricks.csproj" />
   <Project Path="NXPilot.GitRepos/NXPilot.GitRepos.csproj" />
   <Project Path="NXPilot.Mail/NXPilot.Mail.csproj" />
+  <Project Path="NX.AgentInstaller/NX.AgentInstaller.csproj" />
 </Solution>

@@ -606,6 +606,88 @@ public static class CriticalTests
                 AssertContains("entre de novo", e.Message, "Orienta novo login.");
             }
         }),
+
+        new("Agentes: instalação interna confere o SHA-256; versão testada que sumiu cai para a última; pacote completo do Codex", async () =>
+        {
+            var root = Path.Combine(Path.GetTempPath(), "nx-agents-" + Guid.NewGuid().ToString("N")[..8]);
+            try
+            {
+                static string Sha(byte[] b) => Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(b));
+                var exe = new byte[4096]; exe[0] = (byte)'M'; exe[1] = (byte)'Z';
+                var platform = System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "win32-arm64" : "win32-x64";
+                var target = platform == "win32-arm64" ? "aarch64-pc-windows-msvc" : "x86_64-pc-windows-msvc";
+
+                // Pacote do Codex (tar.gz) com o layout que o install.ps1 oficial exige.
+                var tgz = new MemoryStream();
+                using (var gz = new System.IO.Compression.GZipStream(tgz, System.IO.Compression.CompressionLevel.Fastest, leaveOpen: true))
+                using (var tar = new System.Formats.Tar.TarWriter(gz))
+                    foreach (var f in new[] { "codex-package.json", "bin/codex.exe", "bin/codex-code-mode-host.exe", "codex-path/rg.exe", "codex-resources/codex-command-runner.exe", "codex-resources/codex-windows-sandbox-setup.exe" })
+                        tar.WriteEntry(new System.Formats.Tar.PaxTarEntry(System.Formats.Tar.TarEntryType.RegularFile, f) { DataStream = new MemoryStream(exe) });
+                var package = tgz.ToArray();
+                var corrupt = false;
+
+                var http = new FakeHttp(req =>
+                {
+                    var u = req.RequestUri!.ToString();
+                    return u switch
+                    {
+                        "https://claude.test/latest" => "9.9.9",
+                        "https://claude.test/9.9.9/manifest.json" => "{\"platforms\":{\"" + platform + "\":{\"checksum\":\"" + Sha(exe) + "\"}}}",
+                        "https://codex.test/channels/latest" => """{"tag_name":"rust-v1.2.3"}""",
+                        _ => throw new KeyNotFoundException(u),
+                    };
+                });
+                // Rotas binárias / 404 ficam num handler próprio (o FakeHttp devolve texto).
+                var bin = new RoutingHttp(u => u switch
+                {
+                    _ when u == $"https://claude.test/9.9.9/{platform}/claude.exe" => (200, corrupt ? new byte[] { (byte)'M', (byte)'Z', 0 } : exe),
+                    "https://codex.test/releases/1.2.3/codex-package_SHA256SUMS" => (200, Encoding.ASCII.GetBytes($"{Sha(package)}  codex-package-{target}.tar.gz\n")),
+                    _ when u == $"https://codex.test/releases/1.2.3/codex-package-{target}.tar.gz" => (200, package),
+                    _ when u.Contains("/2.1.301/") || u.Contains("/0.162.0/") || u.Contains("rust-v0.162.0") => (404, Array.Empty<byte>()),
+                    _ => (-1, Array.Empty<byte>()), // não é rota binária: cai no FakeHttp
+                }, http);
+
+                var selfInstall = new List<string>();
+                var options = new NX.AgentInstaller.AgentInstallOptions
+                {
+                    UserProfile = Path.Combine(root, "home"), LocalAppData = Path.Combine(root, "local"), CodexHome = Path.Combine(root, "home", ".codex"),
+                    ClaudeDownloadBase = "https://claude.test", CodexReleasesBase = "https://codex.test", CodexGitHubApi = "https://gh.test/releases",
+                    UpdateUserPath = false,
+                    ClaudeSelfInstall = (path, t, _) => { selfInstall.Add(t); AssertTrue(File.Exists(path), "Binário conferido antes de rodar."); return Task.FromResult((0, "ok")); },
+                };
+                var installer = new NX.AgentInstaller.AgentInstaller(options, bin);
+
+                var claude = await installer.InstallAsync(NX.AgentInstaller.AgentCli.ClaudeCode, NX.AgentInstaller.InstallMode.Internal, NX.AgentInstaller.VersionChoice.Tested);
+                AssertTrue(claude.FellBackToLatest, "Testada (2.1.301) sumiu: cai para a última.");
+                AssertEqual("9.9.9", claude.Version, "Instalou a última.");
+                AssertContains("não está mais disponível", claude.Message, "Avisa a queda.");
+                AssertEqual("latest", selfInstall.Single(), "Na queda, segue a última (claude install latest).");
+                AssertFalse(Directory.EnumerateFiles(Path.Combine(options.UserProfile, ".claude", "downloads")).Any(), "Download temporário apagado.");
+
+                corrupt = true;
+                await AssertThrowsAsync<NX.AgentInstaller.AgentInstallException>(() => installer.InstallAsync(NX.AgentInstaller.AgentCli.ClaudeCode,
+                    NX.AgentInstaller.InstallMode.Internal, NX.AgentInstaller.VersionChoice.Latest), "Checksum errado: não instala.");
+                AssertEqual(1, selfInstall.Count, "O binário adulterado nunca foi executado.");
+
+                var codex = await installer.InstallAsync(NX.AgentInstaller.AgentCli.Codex, NX.AgentInstaller.InstallMode.Internal, NX.AgentInstaller.VersionChoice.Latest);
+                AssertEqual("1.2.3", codex.Version, "Versão do rust-v1.2.3.");
+                AssertTrue(File.Exists(Path.Combine(options.CodexVisibleBin, "codex.exe")), "codex.exe visível pela junção …\\OpenAI\\Codex\\bin.");
+                AssertTrue(File.Exists(Path.Combine(options.CodexStandaloneRoot, "current", "codex-resources", "codex-windows-sandbox-setup.exe")), "Sandbox do Windows junto (pacote completo).");
+                AssertEqual($"1.2.3-{target}", File.ReadAllText(Path.Combine(options.CodexStandaloneRoot, "auto-update-version")), "Última: continua se atualizando.");
+                var again = await installer.InstallAsync(NX.AgentInstaller.AgentCli.Codex, NX.AgentInstaller.InstallMode.Internal, NX.AgentInstaller.VersionChoice.Latest);
+                AssertEqual(codex.ExecutablePath, again.ExecutablePath, "Reinstalar é idempotente (junção trocada, não duplicada).");
+
+                AssertContains("CODEX_RELEASE='0.162.0'", installer.ScriptCommand(NX.AgentInstaller.AgentCli.Codex, "0.162.0"), "Script oficial do Codex com versão.");
+                AssertEqual("irm https://claude.ai/install.ps1 | iex", installer.ScriptCommand(NX.AgentInstaller.AgentCli.ClaudeCode), "Script oficial do Claude.");
+            }
+            finally
+            {
+                // Junções primeiro (Directory.Delete numa junção apaga só o link).
+                foreach (var j in new[] { Path.Combine(root, "local", "Programs", "OpenAI", "Codex", "bin"), Path.Combine(root, "home", ".codex", "packages", "standalone", "current") })
+                    try { if (Directory.Exists(j)) Directory.Delete(j); } catch { }
+                if (Directory.Exists(root)) ForceDelete(root);
+            }
+        }),
     };
 
     // ---------------------------------------------------------------- apoio
@@ -646,6 +728,17 @@ public static class CriticalTests
             if (request.Content != null) Bodies.Add(await request.Content.ReadAsStringAsync(ct));
             var text = status == System.Net.HttpStatusCode.OK ? reply(request) : body ?? "";
             return new HttpResponseMessage(status) { Content = new StringContent(text, Encoding.UTF8, "application/json") };
+        }
+    }
+
+    /// <summary>Rotas binárias (ou 404) por URL; o que não for rota (-1) vai para o handler interno.</summary>
+    private sealed class RoutingHttp(Func<string, (int Status, byte[] Body)> route, HttpMessageHandler inner) : DelegatingHandler(inner)
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var (status, body) = route(request.RequestUri!.ToString());
+            if (status < 0) return base.SendAsync(request, ct);
+            return Task.FromResult(new HttpResponseMessage((System.Net.HttpStatusCode)status) { Content = new ByteArrayContent(body) });
         }
     }
 

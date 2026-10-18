@@ -23,8 +23,9 @@ public partial class MainWindow : Window
 {
     private const string AppExeName = "NxPilot.exe";
 
-    private const string ClaudeInstallCommand = "irm https://claude.ai/install.ps1 | iex";
-    private const string CodexInstallCommand = "npm install -g @openai/codex";
+    /// <summary>Instalação dos agentes (pacote NX.AgentInstaller, compartilhado com o NXProject).</summary>
+    private readonly NX.AgentInstaller.AgentInstallOptions _agentOptions = new();
+    private readonly NX.AgentInstaller.AgentInstaller _agents;
 
     private readonly string _installDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Apps", "NXPilot");
@@ -37,21 +38,48 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _agents = new NX.AgentInstaller.AgentInstaller(_agentOptions);
         _payloadDir = ResolvePayloadDir();
         VersionRun.Text = "v" + (typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "?");
         AppPathRun.Text = T("Pasta: ", "Folder: ") + $"{_installDir}  ";
         OnnxPathRun.Text = T("Pasta: ", "Folder: ") + $"{_onnx.Folder}  ";
-        ClaudeCommand.Text = ClaudeInstallCommand;
-        CodexCommand.Text = CodexInstallCommand;
         LanguageBox.SelectedIndex = IsEnglish ? 1 : 0;
-        Loaded += (_, _) => RefreshAll();
+        Loaded += async (_, _) =>
+        {
+            RefreshAll();
+            await TryShotAsync();
+        };
+    }
+
+    /// <summary>
+    /// Captura para documentação: NXPilot-Setup.exe --shot saida.png. Renderiza só a própria
+    /// janela (RenderTargetBitmap) — nunca a tela — e fecha.
+    /// </summary>
+    private async Task TryShotAsync()
+    {
+        var args = Environment.GetCommandLineArgs();
+        var i = Array.IndexOf(args, "--shot");
+        if (i < 0 || i + 1 >= args.Length) return;
+        await Task.Delay(4000); // WSL/versões dos agentes
+        var root = (FrameworkElement)VisualTreeHelper.GetChild(this, 0); // área cliente inteira (com as margens)
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap((int)(root.ActualWidth * dpi.DpiScaleX), (int)(root.ActualHeight * dpi.DpiScaleY),
+            dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        bmp.Render(root);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
+        using (var fs = File.Create(args[i + 1])) encoder.Save(fs);
+        Close();
     }
 
     private void RefreshAll()
     {
         AppPathRun.Text = T("Pasta: ", "Folder: ") + $"{_installDir}  ";
         OnnxPathRun.Text = T("Pasta: ", "Folder: ") + $"{_onnx.Folder}  ";
-        RefreshStep1(); RefreshStep2(); RefreshAgents(); RefreshLlama();
+        VersionLatestItem.Content = T("Última publicada (atualiza sozinha)", "Latest release (auto-updates)");
+        VersionTestedItem.Content = T($"Testada com o NXPilot (Claude {_agentOptions.TestedClaudeVersion} · Codex {_agentOptions.TestedCodexVersion})",
+                                      $"Tested with NXPilot (Claude {_agentOptions.TestedClaudeVersion} · Codex {_agentOptions.TestedCodexVersion})");
+        RefreshStep1(); RefreshStep2(); RefreshAgents(); RefreshLlama(); UpdateAgentCommands();
     }
 
     private void OnLanguageChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -249,39 +277,67 @@ public partial class MainWindow : Window
 
     private enum Where { None, Windows, Wsl }
 
+    /// <summary>
+    /// NX.AgentInstaller.AgentLocator: PATH, pastas dos instaladores oficiais, pasta do NXProject
+    /// e extensões do VS Code — quem já tem o agente (de qualquer forma) não reinstala.
+    /// </summary>
     private void RefreshAgents()
     {
-        var claude = FindOnWindows("claude");
-        var codex = FindOnWindows("codex");
-        SetAgentStatus(ClaudeStatus, claude ? Where.Windows : Where.None);
-        SetAgentStatus(CodexStatus, codex ? Where.Windows : Where.None);
-        if (!claude) _ = CheckWslAsync("claude", ClaudeStatus);
-        if (!codex) _ = CheckWslAsync("codex", CodexStatus);
+        foreach (var (cli, status, name) in new[] { (NX.AgentInstaller.AgentCli.ClaudeCode, ClaudeStatus, "claude"), (NX.AgentInstaller.AgentCli.Codex, CodexStatus, "codex") })
+        {
+            if (NX.AgentInstaller.AgentLocator.Find(cli, _agentOptions) is { } found)
+            {
+                status.Text = T($"✓ {found.Version ?? "instalado"} ({found.Source})", $"✓ {found.Version ?? "installed"} ({SourceEn(found.Source)})");
+                status.Foreground = Brushes.Green;
+            }
+            else _ = CheckWslAsync(name, status);
+        }
     }
+
+    private static string SourceEn(string source) => source switch
+    {
+        "instalador oficial" => "official installer",
+        "extensão do VS Code" => "VS Code extension",
+        _ => source,
+    };
 
     private void OnRecheckClick(object sender, RoutedEventArgs e) => RefreshAgents();
 
-    /// <summary>
-    /// PATH + ~/.local/bin (instalador nativo do Claude Code) + %LOCALAPPDATA%\NXProject\bin
-    /// (onde o NXProject-Setup instala Codex/Claude): quem já instalou pelo NXProject não reinstala.
-    /// </summary>
-    private static bool FindOnWindows(string cli)
-    {
-        var dirs = (Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User) + ";" +
-                    Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine) + ";" +
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "bin") + ";" +
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NXProject", "bin"))
-            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        string[] exts = { ".exe", ".cmd", ".ps1" };
-        if (dirs.Any(d => exts.Any(x => File.Exists(Path.Combine(Environment.ExpandEnvironmentVariables(d), cli + x))))) return true;
+    private NX.AgentInstaller.InstallMode SelectedMode => ModeScript.IsChecked == true ? NX.AgentInstaller.InstallMode.Script : NX.AgentInstaller.InstallMode.Internal;
+    private NX.AgentInstaller.VersionChoice SelectedVersion => VersionBox.SelectedItem == VersionTestedItem ? NX.AgentInstaller.VersionChoice.Tested : NX.AgentInstaller.VersionChoice.Latest;
 
-        // Binário nativo que vem nas extensões do VS Code — é o que o NXPilot usa quando não há
-        // instalação no PATH (mesma busca do ClaudeCodeAdapter/CodexAdapter).
-        var extensions = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vscode", "extensions");
-        if (!Directory.Exists(extensions)) return false;
-        return cli == "claude"
-            ? Directory.EnumerateDirectories(extensions, "anthropic.claude-code-*").Any(d => File.Exists(Path.Combine(d, "resources", "native-binary", "claude.exe")))
-            : Directory.EnumerateDirectories(extensions, "openai.chatgpt-*").Any(d => File.Exists(Path.Combine(d, "bin", "windows-x86_64", "codex.exe")));
+    private void OnInstallOptionChanged(object sender, RoutedEventArgs e) => UpdateAgentCommands();
+
+    /// <summary>Comando oficial equivalente à escolha (para ver/copiar; é o que o modo Script roda).</summary>
+    private void UpdateAgentCommands()
+    {
+        if (ClaudeCommand == null || VersionBox == null) return; // eventos durante o InitializeComponent
+        var tested = SelectedVersion == NX.AgentInstaller.VersionChoice.Tested;
+        ClaudeCommand.Text = _agents.ScriptCommand(NX.AgentInstaller.AgentCli.ClaudeCode, tested ? _agentOptions.TestedClaudeVersion : null);
+        CodexCommand.Text = _agents.ScriptCommand(NX.AgentInstaller.AgentCli.Codex, tested ? _agentOptions.TestedCodexVersion : null);
+    }
+
+    private async void OnInstallAgentClick(object sender, RoutedEventArgs e)
+    {
+        var cli = (sender as Button)?.Tag as string == "claude" ? NX.AgentInstaller.AgentCli.ClaudeCode : NX.AgentInstaller.AgentCli.Codex;
+        ClaudeInstallButton.IsEnabled = CodexInstallButton.IsEnabled = false;
+        ErrorText.Visibility = Visibility.Collapsed;
+        try
+        {
+            var r = await _agents.InstallAsync(cli, SelectedMode, SelectedVersion, new Progress<string>(m => AgentProgress.Text = m));
+            AgentProgress.Text = r.Message + (r.FellBackToLatest ? "" : T(" Entre na sua conta rodando o agente uma vez num terminal.", " Sign in by running the agent once in a terminal."));
+        }
+        catch (Exception ex)
+        {
+            AgentProgress.Text = "";
+            ShowError((cli == NX.AgentInstaller.AgentCli.ClaudeCode ? "Claude Code: " : "Codex: ") + ex.Message +
+                      (SelectedMode == NX.AgentInstaller.InstallMode.Script ? T(" Tente a instalação Interna.", " Try the Built-in install.") : ""));
+        }
+        finally
+        {
+            ClaudeInstallButton.IsEnabled = CodexInstallButton.IsEnabled = true;
+            RefreshAgents();
+        }
     }
 
     private async Task CheckWslAsync(string cli, TextBlock status)
@@ -321,7 +377,7 @@ public partial class MainWindow : Window
 
     private void OnCopyCommand(object sender, RoutedEventArgs e)
     {
-        var text = (sender as Button)?.Tag as string == "claude" ? ClaudeInstallCommand : CodexInstallCommand;
+        var text = (sender as Button)?.Tag as string == "claude" ? ClaudeCommand.Text : CodexCommand.Text;
         try { Clipboard.SetText(text); } catch { /* área de transferência ocupada por outro app */ }
     }
 

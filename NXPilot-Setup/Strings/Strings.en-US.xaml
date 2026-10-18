@@ -20,4 +20,9 @@
     <sys:String x:Key="Setup_4IaLocalLlama">4 · Local AI LLaMA (optional)</sys:String>
     <sys:String x:Key="Setup_UsadaSoNasAcoes">Used only for actions where ONNX is unsure (cascade). It is the same Local AI as NXProject — if it is already installed, nothing to do. To install: NXProject → AI → Manage Local AI.</sys:String>
     <sys:String x:Key="Setup_AbrirPasta">open folder</sys:String>
+    <sys:String x:Key="Setup_ComoInstalar">How to install</sys:String>
+    <sys:String x:Key="Setup_ModoInterno">Built-in (recommended)</sys:String>
+    <sys:String x:Key="Setup_ModoScript">Official script</sys:String>
+    <sys:String x:Key="Setup_Versao">Version</sys:String>
+    <sys:String x:Key="Setup_NotaAgentes">Built-in: the Setup downloads from the official site, checks the SHA-256 and installs into the same folders as the official installer, without running a script (use it if your antivirus blocks PowerShell). Script: runs the official installer in a PowerShell window. Then sign in to your account: run claude or codex once in a terminal.</sys:String>
 </ResourceDictionary>

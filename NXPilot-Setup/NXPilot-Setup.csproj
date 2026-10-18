@@ -27,4 +27,9 @@
     </Compile>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Instala/localiza Claude Code e Codex (interno ou script) — mesmo pacote do NXProject-Setup. -->
+    <ProjectReference Include="..\NX.AgentInstaller\NX.AgentInstaller.csproj" />
+  </ItemGroup>
+
 </Project>
