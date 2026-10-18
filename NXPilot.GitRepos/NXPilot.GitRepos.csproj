@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pacote à parte: GitHub e Azure DevOps Repos. Baixar/commitar/enviar é o próprio git (CLI),
+    com o token só em variável de ambiente do processo; a REST API entra só no que o git não faz
+    (listar repositórios, abrir pull request). Sem dependências e sem referência ao NXPilot.Core:
+    o gate entra pela interface IGitOperationApprover.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <PackageId>NXPilot.GitRepos</PackageId>
+    <Authors>Nexus XData Tecnologia Ltda</Authors>
+    <PackageDescription>Clone, commit, push e pull request no GitHub e no Azure DevOps Repos, com camada de serviço e aprovação por operação.</PackageDescription>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

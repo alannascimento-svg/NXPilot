@@ -20,6 +20,8 @@
   <ItemGroup>
     <!-- Pacote à parte (sem dependências): SQL Warehouse do Databricks; o gate entra por GateSqlApprover. -->
     <ProjectReference Include="..\NXPilot.Databricks\NXPilot.Databricks.csproj" />
+    <!-- Pacote à parte (sem dependências): GitHub e Azure DevOps Repos; o gate entra por GateGitApprover. -->
+    <ProjectReference Include="..\NXPilot.GitRepos\NXPilot.GitRepos.csproj" />
   </ItemGroup>
 
 </Project>

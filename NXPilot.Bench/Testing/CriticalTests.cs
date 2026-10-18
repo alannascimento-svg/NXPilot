@@ -9,6 +9,7 @@ using System.Text.Json;
 using NXPilot.Agents;
 using NXPilot.Ai;
 using NXPilot.Databricks;
+using NXPilot.GitRepos;
 using NXPilot.Integrations;
 using NXPilot.Messaging;
 using NXPilot.Planning;
@@ -383,6 +384,124 @@ public static class CriticalTests
                 AssertFalse(e.Message.Contains("dapiSEGREDO"), "Token fora da mensagem.");
             }
         }),
+
+        new("Git: URLs do GitHub/DevOps; token só no ambiente do processo, limitado ao host e apagado das mensagens", () =>
+        {
+            var gh = GitRepository.Parse("https://github.com/nexusxdata/NXPilot");
+            AssertEqual((GitProvider.GitHub, "nexusxdata", "NXPilot", "https://github.com/nexusxdata/NXPilot.git"), (gh.Provider, gh.Owner, gh.Name, gh.CloneUrl), "GitHub.");
+            var ado = GitRepository.Parse("https://empresa@dev.azure.com/empresa/Dados%20BI/_git/pipelines");
+            AssertEqual((GitProvider.AzureDevOps, "empresa", "Dados BI", "pipelines"), (ado.Provider, ado.Owner, ado.Project, ado.Name), "Azure DevOps.");
+            AssertFalse(ado.CloneUrl.Contains('@'), "Usuário embutido na URL é descartado.");
+            AssertEqual("https://dev.azure.com/empresa", ado.AzureOrganizationUrl, "Organização.");
+            var vs = GitRepository.Parse("https://empresa.visualstudio.com/Dados/_git/pipelines");
+            AssertEqual(("empresa", "Dados", "https://empresa.visualstudio.com"), (vs.Owner, vs.Project, vs.AzureOrganizationUrl), "visualstudio.com.");
+
+            var cred = new GitCredential(GitProvider.GitHub, "ghp_SEGREDO");
+            var env = GitCli.Environment(cred, gh.HostRoot);
+            AssertTrue(env.Any(e => e.Key.StartsWith("GIT_CONFIG_KEY_") && e.Value == "http.https://github.com/.extraHeader"), "Cabeçalho só para github.com.");
+            AssertTrue(env.Any(e => e.Key == "GIT_TERMINAL_PROMPT" && e.Value == "0"), "Nunca pede senha no console.");
+            var header = env.First(e => e.Value.StartsWith("Authorization: Basic ")).Value["Authorization: Basic ".Length..];
+            AssertEqual("x-access-token:ghp_SEGREDO", Encoding.UTF8.GetString(Convert.FromBase64String(header)), "Formato do GitHub.");
+            AssertEqual("fatal: ***", GitCli.Redact("fatal: ghp_SEGREDO", cred), "Token puro apagado.");
+            AssertEqual("x ***", GitCli.Redact("x " + header, cred), "Token em Base64 apagado.");
+            AssertEqual("0", GitCli.Environment(null, null).First(e => e.Key == "GIT_CONFIG_COUNT").Value, "Sem token, nenhum cabeçalho.");
+            AssertFalse(cred.ToString().Contains("SEGREDO"), "Token fora do ToString.");
+            return Task.CompletedTask;
+        }),
+
+        new("Git: clone e commit locais passam; push sem aprovação não chega ao servidor; aprovado envia", async () =>
+        {
+            if (!HasGit()) Skip("git não encontrado");
+            var root = Path.Combine(Path.GetTempPath(), "nx-gitrepos-" + Guid.NewGuid().ToString("N")[..8]);
+            try
+            {
+                var bare = Path.Combine(root, "origin.git");
+                var seed = Path.Combine(root, "seed");
+                Directory.CreateDirectory(seed);
+                GitOut(root, "init", "--bare", "-b", "main", bare);
+                GitOut(seed, "init", "-b", "main");
+                File.WriteAllText(Path.Combine(seed, "README.md"), "x");
+                GitOut(seed, "add", "-A");
+                GitOut(seed, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-m", "base");
+                GitOut(seed, "push", bare, "main");
+
+                var repo = new GitRepository(GitProvider.Other, bare, "local", "origin");
+                var local = new GitRepoService(new StaticGitCredentials());
+                var wc = await local.CloneOrPullAsync(repo, Path.Combine(root, "wc"));
+                AssertEqual(wc, await local.CloneOrPullAsync(repo, wc), "Mesma pasta e mesmo repositório: faz pull.");
+                await AssertThrowsAsync<GitRepoException>(() => local.CreateBranchAsync(wc, "nome inválido.."), "Branch com nome inválido.");
+                await local.CreateBranchAsync(wc, "feature/x");
+                AssertEqual(null, await local.CommitAsync(wc, "nada"), "Sem mudança, sem commit.");
+                File.WriteAllText(Path.Combine(wc, "nb.py"), "print(1)");
+                AssertEqual("??", (await local.StatusAsync(wc)).Single().Status, "Arquivo novo no status.");
+                var sha = await local.CommitAsync(wc, "Notebook novo", "NXPilot", "nxpilot@local");
+                AssertEqual(40, sha?.Length, "Commit local feito.");
+
+                await AssertThrowsAsync<GitOperationDeniedException>(() => local.PushAsync(wc), "Push sem aprovador é negado.");
+                await AssertThrowsAsync<GitOperationDeniedException>(() => new GitRepoService(new StaticGitCredentials(), new GateGitApprover()).PushAsync(wc),
+                    "Push MÉDIO sem ninguém para aprovar é negado.");
+                AssertFalse(GitOut(bare, "branch", "--list", "feature/x").Contains("feature/x"), "Nada chegou ao servidor.");
+
+                GitOperationReview? asked = null;
+                var gated = new GitRepoService(new StaticGitCredentials(), new GateGitApprover((r, _, _) => { asked = r; return Task.FromResult(true); }));
+                await gated.PushAsync(wc);
+                AssertEqual(GitOperationKind.Push, asked?.Kind, "Push foi perguntado.");
+                AssertFalse(asked!.TargetsDefaultBranch, "feature/x não é a principal.");
+                AssertContains("feature/x", GitOut(bare, "branch", "--list", "feature/x"), "Branch chegou ao servidor.");
+                AssertEqual(RiskLevel.Alto, GateGitApprover.Risk(asked with { TargetsDefaultBranch = true }).Level, "Push na principal é ALTO.");
+            }
+            finally { if (Directory.Exists(root)) ForceDelete(root); }
+        }),
+
+        new("Git APIs: PR no GitHub e no DevOps; Databricks Git folder só muda de branch com aprovação", async () =>
+        {
+            var gh = new FakeHttp(req => req.RequestUri!.AbsolutePath switch
+            {
+                "/user/repos" => """[{"clone_url":"https://github.com/o/r.git","name":"r","owner":{"login":"o"},"default_branch":"main","html_url":"https://github.com/o/r"}]""",
+                "/repos/o/r/pulls" => """{"number":7,"html_url":"https://github.com/o/r/pull/7"}""",
+                var p => throw new InvalidOperationException(p),
+            });
+            using (var api = new GitHubApi("ghp_SEGREDO", gh))
+            {
+                AssertEqual("main", (await api.ListRepositoriesAsync()).Single().DefaultBranch, "Repositórios do GitHub.");
+                var pr = await api.CreatePullRequestAsync(GitRepository.Parse("https://github.com/o/r"), "feature/x", "main", "T", "D");
+                AssertEqual("7", pr.Id, "Número do PR.");
+                AssertContains("\"head\":\"feature/x\"", gh.Bodies.Last(), "head = branch de origem.");
+                AssertContains("\"base\":\"main\"", gh.Bodies.Last(), "base = destino.");
+                AssertTrue(gh.Requests.All(r => r.Headers.UserAgent.Count > 0), "User-Agent (obrigatório no GitHub).");
+            }
+
+            var ado = new FakeHttp(req => req.RequestUri!.AbsolutePath switch
+            {
+                "/empresa/_apis/git/repositories" => """{"value":[{"remoteUrl":"https://empresa@dev.azure.com/empresa/Dados/_git/pipe","defaultBranch":"refs/heads/main"}]}""",
+                "/empresa/Dados/_apis/git/repositories/pipe/pullrequests" => """{"pullRequestId":42}""",
+                var p => throw new InvalidOperationException(p),
+            });
+            using (var api = new AzureReposApi("https://dev.azure.com/empresa/", "PAT", ado))
+            {
+                var repo = (await api.ListRepositoriesAsync()).Single();
+                AssertEqual(("Dados", "pipe", "main"), (repo.Project, repo.Name, repo.DefaultBranch), "Repositórios do DevOps.");
+                var pr = await api.CreatePullRequestAsync(repo, "feature/x", "main", "T", "D");
+                AssertEqual("42", pr.Id, "Id do PR.");
+                AssertContains("\"sourceRefName\":\"refs/heads/feature/x\"", ado.Bodies.Last(), "Ref completa da origem.");
+                AssertEqual("Basic", ado.Requests[0].Headers.Authorization?.Scheme, "PAT em Basic.");
+            }
+
+            var db = new FakeHttp(req => (req.Method.Method, req.RequestUri!.AbsolutePath) switch
+            {
+                ("GET", "/api/2.0/workspace/get-status") => """{"object_type":"REPO","object_id":99}""",
+                ("GET", "/api/2.0/repos/99") => """{"id":99,"path":"/Repos/eu/pipe","url":"https://dev.azure.com/empresa/Dados/_git/pipe","branch":"main"}""",
+                ("PATCH", "/api/2.0/repos/99") => """{"id":99,"path":"/Repos/eu/pipe","branch":"feature/x","head_commit_id":"abc"}""",
+                var p => throw new InvalidOperationException(p.ToString()),
+            });
+            using var repos = new DatabricksReposClient(new DatabricksConnection("adb-1.azuredatabricks.net", "dapiX", ""), db);
+            await AssertThrowsAsync<GitOperationDeniedException>(() => GitDatabricksSync.SyncAsync(repos, "/Repos/eu/pipe", "feature/x", new GateGitApprover()),
+                "Deploy sem aprovação é negado.");
+            AssertFalse(db.Requests.Any(r => r.Method == HttpMethod.Patch), "Nada mudou no workspace.");
+            var synced = await GitDatabricksSync.SyncAsync(repos, "/Repos/eu/pipe", "feature/x", new GateGitApprover((_, _, _) => Task.FromResult(true)));
+            AssertEqual(("feature/x", "abc"), (synced.Branch, synced.HeadCommitId), "Git folder na branch nova.");
+            AssertContains("\"branch\":\"feature/x\"", db.Bodies.Last(), "PATCH com a branch.");
+        }),
     };
 
     // ---------------------------------------------------------------- apoio
@@ -450,6 +569,16 @@ public static class CriticalTests
         foreach (var a in args) psi.ArgumentList.Add(a);
         using var p = Process.Start(psi)!;
         p.WaitForExit();
+    }
+
+    private static string GitOut(string cwd, params string[] args)
+    {
+        var psi = new ProcessStartInfo("git") { WorkingDirectory = cwd, UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var a in args) psi.ArgumentList.Add(a);
+        using var p = Process.Start(psi)!;
+        var output = p.StandardOutput.ReadToEnd();
+        p.WaitForExit();
+        return output;
     }
 
     /// <summary>Objetos do git são somente leitura: tira o atributo antes de apagar.</summary>

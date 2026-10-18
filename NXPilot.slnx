@@ -4,4 +4,5 @@
   <Project Path="NXPilot.Desktop/NXPilot.Desktop.csproj" />
   <Project Path="NXPilot.Core/NXPilot.Core.csproj" />
   <Project Path="NXPilot.Databricks/NXPilot.Databricks.csproj" />
+  <Project Path="NXPilot.GitRepos/NXPilot.GitRepos.csproj" />
 </Solution>

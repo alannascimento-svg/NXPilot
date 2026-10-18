@@ -56,6 +56,12 @@ if (args.Length > 0 && args[0] == "--databricks-setup" && OperatingSystem.IsWind
 if (args.Length > 0 && args[0] == "--databricks" && OperatingSystem.IsWindows())
     return await DatabricksTestAsync(args.Length > 1 ? args[1] : null);
 
+// GitHub / Azure DevOps Repos: --git-setup (tokens com DPAPI) e --git-repos github|devops (lista os repositórios).
+if (args.Length > 0 && args[0] == "--git-setup" && OperatingSystem.IsWindows())
+    return GitSetup();
+if (args.Length > 1 && args[0] == "--git-repos" && OperatingSystem.IsWindows())
+    return await GitReposTestAsync(args[1]);
+
 // Teste de ponta a ponta com o Claude Code real: NXPilot.Bench.exe --agent-test [modelo]
 if (args.Length > 0 && args[0] == "--agent-test")
     return await AgentTestAsync(args.Length > 1 ? args[1] : "haiku");
@@ -320,6 +326,49 @@ static async Task<int> DevOpsTestAsync()
     return 0;
 }
 
+static string ReadSecret(string label)
+{
+    Console.Write(label);
+    var token = new System.Text.StringBuilder();
+    for (var k = Console.ReadKey(true); k.Key != ConsoleKey.Enter; k = Console.ReadKey(true))
+        if (k.Key == ConsoleKey.Backspace) { if (token.Length > 0) token.Length--; } else if (!char.IsControl(k.KeyChar)) token.Append(k.KeyChar);
+    Console.WriteLine();
+    return token.ToString();
+}
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+static int GitSetup()
+{
+    var s = NXPilot.Integrations.GitRepoSettings.Load();
+    Console.WriteLine("Enter em branco mantém o valor atual.");
+    var gh = ReadSecret($"Token do GitHub ({(s.GitHubToken.Length > 0 ? "definido" : "vazio")}, não aparece na tela): ");
+    if (gh.Length > 0) s.GitHubToken = gh;
+    Console.Write($"Organização do Azure DevOps ({(s.AzureDevOpsOrganizationUrl.Length > 0 ? s.AzureDevOpsOrganizationUrl : "ex.: https://dev.azure.com/empresa")}): ");
+    var org = Console.ReadLine()?.Trim() ?? "";
+    if (org.Length > 0) s.AzureDevOpsOrganizationUrl = org;
+    var pat = ReadSecret($"PAT do Azure DevOps ({(s.AzureDevOpsToken.Length > 0 ? "definido" : "vazio")}; Code Read & Write): ");
+    if (pat.Length > 0) s.AzureDevOpsToken = pat;
+    s.Save();
+    Console.WriteLine("Salvo em %LOCALAPPDATA%\\NXPilot\\git-repos.json (tokens com DPAPI). Teste: --git-repos github | devops");
+    return 0;
+}
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+static async Task<int> GitReposTestAsync(string which)
+{
+    var s = NXPilot.Integrations.GitRepoSettings.Load();
+    var provider = which.StartsWith("dev", StringComparison.OrdinalIgnoreCase) ? NXPilot.GitRepos.GitProvider.AzureDevOps : NXPilot.GitRepos.GitProvider.GitHub;
+    var svc = new NXPilot.GitRepos.GitRepoService(s, log: m => Console.WriteLine("  " + m));
+    try
+    {
+        var repos = await svc.ListRepositoriesAsync(provider, s.AzureDevOpsOrganizationUrl);
+        Console.WriteLine($"{provider}: {repos.Count} repositório(s)");
+        foreach (var r in repos.Take(30)) Console.WriteLine($"  {r} ({r.DefaultBranch ?? "?"}) — {r.CloneUrl}");
+        return 0;
+    }
+    catch (NXPilot.GitRepos.GitRepoException e) { Console.WriteLine("ERRO: " + e.Message); return 1; }
+}
+
 [System.Runtime.Versioning.SupportedOSPlatform("windows")]
 static int DatabricksSetup()
 {
@@ -331,12 +380,7 @@ static int DatabricksSetup()
         Catalog = Ask("Catálogo padrão (Enter = nenhum): "),
         Schema = Ask("Schema padrão (Enter = nenhum): "),
     };
-    Console.Write("Token (PAT, não aparece na tela): ");
-    var token = new System.Text.StringBuilder();
-    for (var k = Console.ReadKey(true); k.Key != ConsoleKey.Enter; k = Console.ReadKey(true))
-        if (k.Key == ConsoleKey.Backspace) { if (token.Length > 0) token.Length--; } else if (!char.IsControl(k.KeyChar)) token.Append(k.KeyChar);
-    Console.WriteLine();
-    s.Token = token.ToString();
+    s.Token = ReadSecret("Token (PAT, não aparece na tela): ");
     if (!s.ToConnection().IsComplete) { Console.WriteLine("Faltou host, warehouse ou token — nada foi salvo."); return 1; }
     s.Save();
     Console.WriteLine("Salvo em %LOCALAPPDATA%\\NXPilot\\databricks.json (token cifrado com DPAPI). Teste: NXPilot.Bench.exe --databricks");
