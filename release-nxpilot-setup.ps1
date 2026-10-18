@@ -55,7 +55,11 @@ if (-not $SkipTests) {
 
 Write-Step "Publicando NXPilot self-contained ($Runtime)..."
 if (Test-Path $AppPublishDir) { Remove-Item -LiteralPath $AppPublishDir -Recurse -Force }
-dotnet publish $AppProject -c $Configuration -r $Runtime --self-contained true -o $AppPublishDir --nologo
+# Restore explicito com o RID antes do publish: o build da solution (sem RID) deixa o
+# project.assets.json sem 'net10.0-windows/win-x64' e o projeto temporario do WPF (_wpftmp)
+# falha com NETSDK1047 se o restore acontecer dentro do proprio publish.
+dotnet restore $AppProject -r $Runtime --nologo -v q
+dotnet publish $AppProject -c $Configuration -r $Runtime --self-contained true --no-restore -o $AppPublishDir --nologo
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Falha ao publicar NXPilot.Desktop." -ForegroundColor Red
     exit 1
@@ -63,7 +67,8 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Step "Publicando NXPilot-Setup self-contained ($Runtime)..."
 if (Test-Path $SetupPublishDir) { Remove-Item -LiteralPath $SetupPublishDir -Recurse -Force }
-dotnet publish $SetupProject -c $Configuration -r $Runtime --self-contained true -o $SetupPublishDir --nologo
+dotnet restore $SetupProject -r $Runtime --nologo -v q
+dotnet publish $SetupProject -c $Configuration -r $Runtime --self-contained true --no-restore -o $SetupPublishDir --nologo
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Falha ao publicar NXPilot-Setup." -ForegroundColor Red
     exit 1
