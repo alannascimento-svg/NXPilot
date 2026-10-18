@@ -21,8 +21,12 @@
     <sys:String x:Key="Setup_UsadaSoNasAcoes">Usada só nas ações em que o ONNX fica em dúvida (cascata). É a mesma IA Local do NXProject — se ele já está instalado, nada a fazer. Para instalar: NXProject → IA → Gerenciar IA Local.</sys:String>
     <sys:String x:Key="Setup_AbrirPasta">abrir pasta</sys:String>
     <sys:String x:Key="Setup_ComoInstalar">Como instalar</sys:String>
-    <sys:String x:Key="Setup_ModoInterno">Interna (recomendada)</sys:String>
+    <sys:String x:Key="Setup_ModoInterno">Automática (recomendada)</sys:String>
     <sys:String x:Key="Setup_ModoScript">Script oficial</sys:String>
     <sys:String x:Key="Setup_Versao">Versão</sys:String>
-    <sys:String x:Key="Setup_NotaAgentes">Interna: o Setup baixa do site oficial, confere o SHA-256 e instala nas mesmas pastas do instalador oficial, sem rodar script (use se o antivírus bloquear o PowerShell). Script: roda o instalador oficial numa janela do PowerShell. Depois, entre na sua conta: rode claude ou codex uma vez num terminal.</sys:String>
+    <sys:String x:Key="Setup_NotaAgentes">Automática: na área do usuário, sem administrador e sem script. Depois de instalar, entre na sua conta rodando claude ou codex uma vez num terminal.</sys:String>
+    <sys:String x:Key="Setup_ModoInternoTip">Instalação automática na área do usuário (sem administrador): o Setup baixa do site oficial, confere o SHA-256 e instala sem rodar script — use esta se o antivírus bloquear o PowerShell.</sys:String>
+    <sys:String x:Key="Setup_ModoScriptTip">Roda o instalador oficial (Anthropic / OpenAI) numa janela do PowerShell. Alguns antivírus bloqueiam — nesse caso use a Automática.</sys:String>
+    <sys:String x:Key="Setup_CopiarTip">Copia o comando oficial para instalar manualmente (cole no PowerShell).</sys:String>
+    <sys:String x:Key="Setup_InstalarAgenteTip">Instala do jeito escolhido acima. Na Automática: área do usuário, sem administrador.</sys:String>
 </ResourceDictionary>

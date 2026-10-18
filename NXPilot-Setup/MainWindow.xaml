@@ -86,8 +86,8 @@
                             </Grid.RowDefinitions>
                             <TextBlock Text="{DynamicResource Setup_ComoInstalar}" FontSize="11" Foreground="#555" VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                <RadioButton x:Name="ModeInternal" Content="{DynamicResource Setup_ModoInterno}" IsChecked="True" Margin="0,0,14,0" Checked="OnInstallOptionChanged"/>
-                                <RadioButton x:Name="ModeScript" Content="{DynamicResource Setup_ModoScript}" Checked="OnInstallOptionChanged"/>
+                                <RadioButton x:Name="ModeInternal" Content="{DynamicResource Setup_ModoInterno}" ToolTip="{DynamicResource Setup_ModoInternoTip}" IsChecked="True" Margin="0,0,14,0" Checked="OnInstallOptionChanged"/>
+                                <RadioButton x:Name="ModeScript" Content="{DynamicResource Setup_ModoScript}" ToolTip="{DynamicResource Setup_ModoScriptTip}" Checked="OnInstallOptionChanged"/>
                             </StackPanel>
                             <TextBlock Grid.Row="1" Text="{DynamicResource Setup_Versao}" FontSize="11" Foreground="#555" VerticalAlignment="Center" Margin="0,6,10,0"/>
                             <ComboBox x:Name="VersionBox" Grid.Row="1" Grid.Column="1" Margin="0,6,0,0" Padding="6,2" SelectionChanged="OnInstallOptionChanged">
@@ -101,8 +101,8 @@
                             <TextBlock Text="Claude Code" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,12">
-                            <Button x:Name="ClaudeInstallButton" DockPanel.Dock="Right" Content="{DynamicResource Setup_Instalar}" Padding="10,2" Margin="6,0,0,0" Tag="claude" Click="OnInstallAgentClick"/>
-                            <Button DockPanel.Dock="Right" Content="{DynamicResource Setup_Copiar}" Padding="10,2" Margin="6,0,0,0" Tag="claude" Click="OnCopyCommand"/>
+                            <Button x:Name="ClaudeInstallButton" DockPanel.Dock="Right" Content="{DynamicResource Setup_Instalar}" Padding="10,2" Margin="6,0,0,0" Tag="claude" ToolTip="{DynamicResource Setup_InstalarAgenteTip}" Click="OnInstallAgentClick"/>
+                            <Button DockPanel.Dock="Right" Content="{DynamicResource Setup_Copiar}" Padding="10,2" Margin="6,0,0,0" Tag="claude" ToolTip="{DynamicResource Setup_CopiarTip}" Click="OnCopyCommand"/>
                             <TextBox x:Name="ClaudeCommand" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas" FontSize="11" Padding="4,3" BorderBrush="#DDE1E6"/>
                         </DockPanel>
 
@@ -111,8 +111,8 @@
                             <TextBlock Text="Codex" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Margin="0,0,0,8">
-                            <Button x:Name="CodexInstallButton" DockPanel.Dock="Right" Content="{DynamicResource Setup_Instalar}" Padding="10,2" Margin="6,0,0,0" Tag="codex" Click="OnInstallAgentClick"/>
-                            <Button DockPanel.Dock="Right" Content="{DynamicResource Setup_Copiar}" Padding="10,2" Margin="6,0,0,0" Tag="codex" Click="OnCopyCommand"/>
+                            <Button x:Name="CodexInstallButton" DockPanel.Dock="Right" Content="{DynamicResource Setup_Instalar}" Padding="10,2" Margin="6,0,0,0" Tag="codex" ToolTip="{DynamicResource Setup_InstalarAgenteTip}" Click="OnInstallAgentClick"/>
+                            <Button DockPanel.Dock="Right" Content="{DynamicResource Setup_Copiar}" Padding="10,2" Margin="6,0,0,0" Tag="codex" ToolTip="{DynamicResource Setup_CopiarTip}" Click="OnCopyCommand"/>
                             <TextBox x:Name="CodexCommand" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas" FontSize="11" Padding="4,3" BorderBrush="#DDE1E6"/>
                         </DockPanel>
                         <TextBlock x:Name="AgentProgress" Style="{StaticResource Note}" Margin="0,0,0,6" Foreground="#24527A"/>
