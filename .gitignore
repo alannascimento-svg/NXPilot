@@ -8,3 +8,22 @@ out/
 *.pfx
 *.snk
 settings.json
+
+# Notas internas (pendências, testes com contas reais): ficam só na máquina, nunca no GitHub.
+todo.md
+
+# Configurações e tokens do NXPilot. Moram em %LOCALAPPDATA%\NXPilot (fora do repositório);
+# listados aqui para nunca entrarem por engano se alguém copiar um deles para o projeto.
+ai-provider.json
+entra-token.json
+databricks.json
+git-repos.json
+mail.json
+mail-token-*.json
+windows-ui.json
+windows-processes.json
+config_nxproject.json
+local-ai.json
+*.secret.json
+.env
+.env.*
