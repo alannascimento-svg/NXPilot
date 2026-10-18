@@ -189,6 +189,9 @@ public partial class MainWindow : Window
     /// <summary>Extensões: Databricks SQL, Git (GitHub/Azure DevOps) e E-mail (Outlook/Gmail).</summary>
     private void OnExtensionsClick(object sender, RoutedEventArgs e) => new Views.ExtensionsWindow { Owner = this }.ShowDialog();
 
+    /// <summary>Configurar: versão instalada, verificar atualização e voltar versão.</summary>
+    private void OnSettingsClick(object sender, RoutedEventArgs e) => new Views.SettingsWindow { Owner = this }.ShowDialog();
+
     private void OnProviderClick(object sender, RoutedEventArgs e)
     {
         var win = new Views.AiProviderWindow(Vm.Lab.Provider) { Owner = this };
@@ -272,6 +275,18 @@ public partial class MainWindow : Window
             var win = new Views.AiProviderWindow(copy) { Owner = this };
             win.Show();
             await Task.Delay(800);
+            SaveVisual((FrameworkElement)win.Content, win, shot);
+            win.Close();
+            if (args.Contains("--exit")) Close();
+            return;
+        }
+
+        // --settings: captura a janela Configurar (consulta as versões no GitHub; não instala nada).
+        if (args.Contains("--settings"))
+        {
+            var win = new Views.SettingsWindow { Owner = this };
+            win.Show();
+            await Task.Delay(5000);
             SaveVisual((FrameworkElement)win.Content, win, shot);
             win.Close();
             if (args.Contains("--exit")) Close();

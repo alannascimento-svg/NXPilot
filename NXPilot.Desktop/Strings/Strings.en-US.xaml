@@ -217,4 +217,14 @@
     <sys:String x:Key="Ext_JanelasListar">List open windows</sys:String>
     <sys:String x:Key="Ext_JanelasCapturar">Capture</sys:String>
     <sys:String x:Key="Ext_JanelasLer">Read text</sys:String>
+    <sys:String x:Key="Main_Configurar">⚙  Settings</sys:String>
+    <sys:String x:Key="Cfg_Titulo">Settings</sys:String>
+    <sys:String x:Key="Cfg_Versao">Version</sys:String>
+    <sys:String x:Key="Cfg_Verificar">Check for update</sys:String>
+    <sys:String x:Key="Cfg_VoltarVersao">Install another version (roll back)</sys:String>
+    <sys:String x:Key="Cfg_InstalarVersao">Install this version</sys:String>
+    <sys:String x:Key="Cfg_VoltarNota">Downloads the chosen version's package from GitHub, checks the SHA-256 and restarts NXPilot. Your settings, tasks and history are kept.</sys:String>
+    <sys:String x:Key="Cfg_SetupMudou">A new Setup is available (runtime or libraries changed). Run it to update NXPilot's base.</sys:String>
+    <sys:String x:Key="Cfg_BaixarSetup">Download Setup</sys:String>
+    <sys:String x:Key="Cfg_Fechar">Close</sys:String>
 </ResourceDictionary>

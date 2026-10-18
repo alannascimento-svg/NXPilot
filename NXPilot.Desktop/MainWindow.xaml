@@ -78,6 +78,7 @@
                     </Button>
                     <Button x:Name="WorkItemsButton" Content="{DynamicResource Main_WorkItemsAzureDevops}" Style="{StaticResource NavButton}" Click="OnWorkItemsClick"/>
                     <Button x:Name="ExtensionsButton" Content="{DynamicResource Main_Extensoes}" Style="{StaticResource NavButton}" Click="OnExtensionsClick"/>
+                    <Button x:Name="SettingsButton" Content="{DynamicResource Main_Configurar}" Style="{StaticResource NavButton}" Click="OnSettingsClick"/>
 
                     <TextBlock Text="{DynamicResource Main_Agentes}" Style="{StaticResource SectionHeader}"/>
                     <ItemsControl x:Name="AgentsList" ItemsSource="{Binding Agents}">

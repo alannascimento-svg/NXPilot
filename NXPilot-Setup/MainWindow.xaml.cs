@@ -15,9 +15,10 @@ using static NXPilot.NxText;
 namespace NXPilot.Setup;
 
 /// <summary>
-/// Instalador do NXPilot. Diferente do NXProject-Setup, ainda não há release no GitHub:
-/// o app vem DENTRO do Setup (mesma pasta, mesmo runtime self-contained) e o Passo 1 só
-/// copia. Quando houver repositório público, o Passo 1 passa a baixar o pacote do núcleo.
+/// Instalador do NXPilot no modelo do NXProject-Setup: traz a BASE (runtime self-contained e
+/// bibliotecas) e um app embutido; o Passo 1 copia tudo e, se o GitHub tiver uma versão mais
+/// nova do app (NXPilot-Release.zip), aplica por cima. Sem internet, fica a versão embutida.
+/// O Setup vive na release fixa nxpilot-setup-latest e só muda quando a base muda.
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -144,6 +145,12 @@ public partial class MainWindow : Window
                 try { File.Delete(Path.Combine(_installDir, legacy)); } catch { /* em uso: some na próxima atualização */ }
             RemoveLegacyInstall();
 
+            // Modelo do NXProject: o Setup traz a base (runtime + bibliotecas) e um app embutido;
+            // se o GitHub tiver uma versão mais nova do app (NXPilot-Release.zip), aplica por cima.
+            // Sem internet, fica a versão embutida — a instalação nunca depende da rede.
+            Step1StatusText.Text = T("Procurando a versão mais nova…", "Looking for the latest version…");
+            var updateNote = await UpdateToLatestAsync();
+
             // Sem o runtime ao lado do exe, o Windows mostra o diálogo genérico "instale o
             // .NET" — erro confuso. Falha aqui, apontando o que faltou.
             var missing = RequiredFiles.Where(f => !File.Exists(Path.Combine(_installDir, f))).ToList();
@@ -153,7 +160,7 @@ public partial class MainWindow : Window
             CreateDesktopShortcut(InstalledExe);
             Step1Progress.Value = 100;
             RefreshStep1();
-            Step1StatusText.Text += T(" Atalho criado na área de trabalho.", " Desktop shortcut created.");
+            Step1StatusText.Text += T(" Atalho criado na área de trabalho.", " Desktop shortcut created.") + updateNote;
         }
         catch (Exception ex)
         {
@@ -161,6 +168,26 @@ public partial class MainWindow : Window
             Step1StatusText.Text = T("Instalação interrompida.", "Installation interrupted.");
         }
         finally { Step1Button.IsEnabled = PayloadPresent; }
+    }
+
+    /// <summary>Aplica o NXPilot-Release.zip mais novo do GitHub, se for mais novo que o embutido. Devolve a nota para o status.</summary>
+    private async Task<string> UpdateToLatestAsync()
+    {
+        try
+        {
+            var bundled = Version.TryParse(FileVersionInfo.GetVersionInfo(Path.Combine(_payloadDir, AppExeName)).FileVersion, out var b) ? b : new Version(0, 0);
+            var updates = new NXPilot.Updates.UpdateService();
+            if (await updates.CheckForUpdateAsync(bundled) is not { } latest) return "";
+            var package = await updates.DownloadAsync(latest, new Progress<string>(m => Step1StatusText.Text = m));
+            await Task.Run(() => NXPilot.Updates.UpdateService.Apply(package, _installDir));
+            NXPilot.Updates.UpdateService.CleanupOldFiles(_installDir); // o app está fechado: dá para apagar já
+            try { Directory.Delete(Path.GetDirectoryName(package)!, true); } catch { }
+            return T($" Atualizado para a {latest.Tag}.", $" Updated to {latest.Tag}.");
+        }
+        catch (Exception ex) when (ex is NXPilot.Updates.UpdateException or System.Net.Http.HttpRequestException or TaskCanceledException)
+        {
+            return T(" (Sem acesso ao GitHub: instalada a versão que vem no Setup.)", " (No access to GitHub: installed the version bundled in the Setup.)");
+        }
     }
 
     private static readonly string[] RequiredFiles =

@@ -7,17 +7,24 @@ do NXProject: testa, sobe a versao, empacota, valida, commita, cria a tag e publ
   .\release-nxpilot-new-version.ps1 -Bump minor     # 0.1.0.02 -> 0.2.0.01
   .\release-nxpilot-new-version.ps1 -Sign           # assina os binarios antes de compactar
   .\release-nxpilot-new-version.ps1 -NoPublish      # so local: commit + tag, sem push nem GitHub Release
+  .\release-nxpilot-new-version.ps1 -WithSetup      # republica o Setup mesmo sem a base mudar
+
+Modelo do NXProject: cada versao publica SO o NXPilot-Release.zip (nucleo do app, poucos MB),
+que o Setup e o "Configurar -> Verificar atualizacao" do app baixam. O Setup (base: runtime e
+bibliotecas) vive na release FIXA nxpilot-setup-latest e so e republicado quando a base muda.
 
 Ordem (cada passo so roda se o anterior passou):
   1. build + smoke test + testes criticos (build-nxpilot.ps1) — falhou, nada muda
   2. versao nova em Directory.Build.props (vale para app, Setup e Bench)
-  3. NXPilot-Setup.zip com o app dentro (release-nxpilot-setup.ps1) + validacao do zip
+  3. publica o app e monta o Setup local (release-nxpilot-setup.ps1); NXPilot-Release.zip com
+     o nucleo + validacao; compara a base com a ultima publicada
   4. commit "Release vX" SO com arquivos ja rastreados (git add -u; nunca adiciona untracked)
   5. tag anotada vX no commit da versao
-  6. com remoto 'origin': push do branch e da tag e GitHub Release com o NXPilot-Setup.zip.
+  6. com remoto 'origin': push do branch e da tag e GitHub Release com o NXPilot-Release.zip.
      A tag so e publicada se o commit ja estiver no remoto (o "Source code" da release tem
      que casar com os binarios — mesma regra do NXProject).
      Notas da release: release-notes.md (se existir; "{versao}" vira a versao nova).
+  7. se a base mudou (ou -WithSetup): Setup + carimbo na release fixa nxpilot-setup-latest.
 #>
 param(
     [ValidateSet("Release", "Debug")]
@@ -25,17 +32,25 @@ param(
     [ValidateSet("build", "patch", "minor", "major")]
     [string]$Bump = "build",
     [switch]$Sign,
-    [switch]$NoPublish
+    [switch]$NoPublish,
+    # Republica o Setup na release fixa mesmo sem a base mudar (ex.: mudou a tela do Setup).
+    [switch]$WithSetup
 )
 
 $SolutionDir = $PSScriptRoot
 $PropsFile = Join-Path $SolutionDir "Directory.Build.props"
 $SetupZip = Join-Path $SolutionDir "dist\setup\NXPilot-Setup.zip"
+$AppPublishDir = Join-Path $SolutionDir "dist\app\publish-win-x64"
+$ReleaseDir = Join-Path $SolutionDir "dist\release"
+$ReleaseZip = Join-Path $ReleaseDir "NXPilot-Release.zip"
 $GitHubRepo = "nexusxdata/NXPilot"
-$RequiredInZip = @(
-    "NXPilot-Setup.exe", "NxPilot.exe", "NxPilot.dll", "NXPilot.Core.dll", "NxPilot.runtimeconfig.json",
+$SetupTag = "nxpilot-setup-latest"
+# Nucleo do app (vai em cada versao). O resto (runtime, ONNX, LLamaSharp, FlaUI...) e a BASE,
+# que vem no Setup — mesma regra do release-nxpilot-setup.ps1.
+$CorePattern = '^(NxPilot|NXPilot\.(Core|Databricks|GitRepos|Mail|WindowsUi)|NX\.AgentInstaller)\.(exe|dll|deps\.json|runtimeconfig\.json)$'
+$RequiredInRelease = @(
+    "NxPilot.exe", "NxPilot.dll", "NxPilot.deps.json", "NxPilot.runtimeconfig.json", "NXPilot.Core.dll",
     "NXPilot.Databricks.dll", "NXPilot.GitRepos.dll", "NXPilot.Mail.dll", "NX.AgentInstaller.dll", "NXPilot.WindowsUi.dll",
-    "hostfxr.dll", "hostpolicy.dll", "coreclr.dll", "PresentationFramework.dll", "onnxruntime.dll",
     "LICENSE.txt", "LICENSE.en.txt", "THIRD-PARTY-NOTICES.txt"
 )
 
@@ -118,39 +133,48 @@ Write-Host ""
 Write-Host ">> Versao: $CurrentVersion -> $NewVersion" -ForegroundColor Yellow
 Set-Version $NewVersion
 
-# ── 3. Pacote ──
-Write-Step "Gerando NXPilot-Setup.zip $Tag..."
+# ── 3. Pacotes ──
+# O script do Setup publica o app (dist\app) e monta o Setup local (base + app embutido).
+# O Setup so SOBE para o GitHub se a base mudou (ou -WithSetup) — passo 6.
+Write-Step "Publicando o app e montando o Setup local $Tag..."
 $setupArgs = @{ Configuration = $Configuration; SkipTests = $true }
 if ($Sign) { $setupArgs.Sign = $true }
 & (Join-Path $SolutionDir "release-nxpilot-setup.ps1") @setupArgs
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $SetupZip)) {
     Set-Version $CurrentVersion
-    Fail "Falha ao gerar o Setup. Versao revertida para $CurrentVersion."
+    Fail "Falha ao publicar o app/Setup. Versao revertida para $CurrentVersion."
 }
 
-Write-Step "Validando o conteudo do NXPilot-Setup.zip..."
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$zip = [System.IO.Compression.ZipFile]::OpenRead($SetupZip)
-try {
-    $names = $zip.Entries | ForEach-Object { $_.FullName }
-    $missing = $RequiredInZip | Where-Object { $names -notcontains $_ }
-}
-finally { $zip.Dispose() }
+Write-Step "Gerando NXPilot-Release.zip (nucleo do app)..."
+$stage = Join-Path $ReleaseDir "stage"
+if (Test-Path $ReleaseDir) { Remove-Item -LiteralPath $ReleaseDir -Recurse -Force }
+New-Item -ItemType Directory -Path $stage -Force | Out-Null
+Get-ChildItem -Path $AppPublishDir -File | Where-Object { $_.Name -match $CorePattern } | Copy-Item -Destination $stage
+foreach ($doc in @("LICENSE.txt", "LICENSE.en.txt", "THIRD-PARTY-NOTICES.txt")) { Copy-Item (Join-Path $SolutionDir $doc) $stage }
+$missing = $RequiredInRelease | Where-Object { -not (Test-Path (Join-Path $stage $_)) }
 if ($missing) {
     Set-Version $CurrentVersion
-    Fail "Arquivos ausentes no zip: $($missing -join ', '). Versao revertida para $CurrentVersion."
+    Fail "Arquivos ausentes no NXPilot-Release.zip: $($missing -join ', '). Versao revertida para $CurrentVersion."
 }
-$exeVersion = (Get-Item (Join-Path $SolutionDir "dist\setup\publish-win-x64\NxPilot.exe")).VersionInfo.ProductVersion
+$exeVersion = (Get-Item (Join-Path $stage "NxPilot.exe")).VersionInfo.ProductVersion
 if ($exeVersion -notlike "$NewVersion*") {
     Set-Version $CurrentVersion
     Fail "NxPilot.exe saiu com a versao '$exeVersion' (esperado $NewVersion). Versao revertida."
 }
-$sizeMb = [Math]::Round((Get-Item $SetupZip).Length / 1MB, 1)
-Write-Host "  OK: $($RequiredInZip.Count) arquivos essenciais, NxPilot.exe $exeVersion, $sizeMb MB." -ForegroundColor DarkGray
+Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $ReleaseZip -Force
+$sizeMb = [Math]::Round((Get-Item $ReleaseZip).Length / 1MB, 1)
+Write-Host "  OK: $((Get-ChildItem $stage).Count) arquivos, NxPilot.exe $exeVersion, $sizeMb MB." -ForegroundColor DarkGray
+
+# A base mudou desde o ultimo Setup publicado? (lista de arquivos de terceiros + tamanho)
+$BaseNow = Join-Path $SolutionDir "dist\setup\base-files.txt"
+$BasePublished = Join-Path $SolutionDir "dist\setup\base-files.published.txt"
+$NeedSetup = $WithSetup -or -not (Test-Path $BasePublished) -or
+             ((Get-Content $BaseNow -Raw) -ne (Get-Content $BasePublished -Raw))
+Write-Host ("  Setup (base): " + $(if ($NeedSetup) { "sera republicado na release $SetupTag." } else { "sem mudanca — nao sera republicado." })) -ForegroundColor DarkGray
 
 if (-not $IsGit) {
     Write-Host ""
-    Write-Host "Versao $NewVersion gerada (sem git): $SetupZip" -ForegroundColor Green
+    Write-Host "Versao $NewVersion gerada (sem git): $ReleaseZip" -ForegroundColor Green
     exit 0
 }
 
@@ -174,12 +198,12 @@ $global:LASTEXITCODE = 0
 if ($NoPublish -or -not $origin) {
     Write-Host ""
     Write-Host "Versao $Tag gerada localmente." -ForegroundColor Green
-    Write-Host "  Pacote: $SetupZip ($sizeMb MB)" -ForegroundColor DarkGray
+    Write-Host "  Pacote: $ReleaseZip ($sizeMb MB)" -ForegroundColor DarkGray
     if (-not $origin) {
         Write-Host "  Sem remoto 'origin': nada foi enviado. Para publicar depois:" -ForegroundColor Yellow
         Write-Host "    gh repo create $GitHubRepo --public --source . --remote origin" -ForegroundColor DarkGray
         Write-Host "    git push -u origin HEAD; git push origin $Tag" -ForegroundColor DarkGray
-        Write-Host "    gh release create $Tag '$SetupZip' --verify-tag --title 'NXPilot Community $Tag' --repo $GitHubRepo" -ForegroundColor DarkGray
+        Write-Host "    gh release create $Tag '$ReleaseZip' --verify-tag --title 'NXPilot Community $Tag' --repo $GitHubRepo" -ForegroundColor DarkGray
     }
     exit 0
 }
@@ -190,21 +214,38 @@ git -C $SolutionDir push origin $branch
 git -C $SolutionDir push origin $Tag
 $remoteHead = (git -C $SolutionDir rev-parse "origin/$branch" 2>$null)
 if (-not $remoteHead -or $remoteHead.Trim() -ne $ReleaseCommit) {
-    Fail "O commit da versao nao chegou ao remoto; a release NAO foi publicada. Rode o push e depois: gh release create $Tag '$SetupZip' --verify-tag --repo $GitHubRepo"
+    Fail "O commit da versao nao chegou ao remoto; a release NAO foi publicada. Rode o push e depois: gh release create $Tag '$ReleaseZip' --verify-tag --repo $GitHubRepo"
 }
 
 Write-Step "Publicando GitHub Release $Tag..."
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-    Fail "gh CLI nao encontrado. Instale (https://cli.github.com), faca 'gh auth login' e rode: gh release create $Tag '$SetupZip' --verify-tag --repo $GitHubRepo"
+    Fail "gh CLI nao encontrado. Instale (https://cli.github.com), faca 'gh auth login' e rode: gh release create $Tag '$ReleaseZip' --verify-tag --repo $GitHubRepo"
 }
 $NotesSource = Join-Path $SolutionDir "release-notes.md"
 $Notes = if (Test-Path $NotesSource) { (Get-Content $NotesSource -Raw -Encoding UTF8).Replace("{versao}", $Tag) }
          else { "NXPilot Community $Tag — Inteligencia Artificial Automatica, e nao autonoma: voce no controle." }
 $NotesFile = Join-Path ([System.IO.Path]::GetTempPath()) "nxpilot-notes-$Tag.md"
 [System.IO.File]::WriteAllText($NotesFile, $Notes, (New-Object System.Text.UTF8Encoding $false))
-gh release create $Tag $SetupZip --verify-tag --title "NXPilot Community $Tag" --notes-file $NotesFile --repo $GitHubRepo
+gh release create $Tag $ReleaseZip --verify-tag --title "NXPilot Community $Tag" --notes-file $NotesFile --repo $GitHubRepo
 if ($LASTEXITCODE -ne 0) { Fail "Falha ao criar a release. Verifique: gh auth status" }
 
 Write-Host ""
-Write-Host "Release $Tag publicada!" -ForegroundColor Green
+Write-Host "Release $Tag publicada (NXPilot-Release.zip, $sizeMb MB)!" -ForegroundColor Green
 Write-Host "  https://github.com/$GitHubRepo/releases/tag/$Tag" -ForegroundColor DarkGray
+
+# ── 7. Setup (base) na release fixa — so quando mudou ──
+if ($NeedSetup) {
+    Write-Step "Republicando o Setup na release fixa $SetupTag..."
+    # Sobe o Setup ja montado neste release (mesma base e app embutido desta versao).
+    gh release view $SetupTag --repo $GitHubRepo --json tagName 2>$null | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        gh release create $SetupTag --repo $GitHubRepo --prerelease --latest=false --title "NXPilot Setup (instalador)" `
+            --notes "Instalador do NXPilot (base: runtime .NET e bibliotecas). Esta release e fixa e sempre traz o NXPilot-Setup.zip mais recente; ao instalar, ele baixa a versao mais nova do app. As versoes do app tem tags proprias (vX.Y.Z.WW)."
+        if ($LASTEXITCODE -ne 0) { Fail "Falha ao criar a release $SetupTag (a versao $Tag ja foi publicada)." }
+    }
+    gh release upload $SetupTag $SetupZip (Join-Path $SolutionDir "dist\setup\NXPilot-Setup.timestamp.txt") --repo $GitHubRepo --clobber
+    if ($LASTEXITCODE -ne 0) { Fail "Falha ao enviar o Setup (a versao $Tag ja foi publicada). Rode: .\release-nxpilot-setup.ps1 -Upload" }
+    Copy-Item $BaseNow $BasePublished -Force
+    Write-Host "  Setup publicado: https://github.com/$GitHubRepo/releases/tag/$SetupTag" -ForegroundColor DarkGray
+}
+$global:LASTEXITCODE = 0

@@ -607,6 +607,71 @@ public static class CriticalTests
             }
         }),
 
+        new("Atualização: só versões com o pacote do app; SHA-256 conferido; troca arquivo em uso sem script; Setup só quando a base muda", async () =>
+        {
+            var root = Path.Combine(Path.GetTempPath(), "nx-update-" + Guid.NewGuid().ToString("N")[..8]);
+            try
+            {
+                // Pacote v1.0.0.03 (NxPilot.exe + Core) e o hash que o GitHub publica no campo "digest".
+                var pkgDir = Path.Combine(root, "pkg"); Directory.CreateDirectory(pkgDir);
+                File.WriteAllText(Path.Combine(pkgDir, "NxPilot.exe"), "novo-exe");
+                File.WriteAllText(Path.Combine(pkgDir, "NXPilot.Core.dll"), "novo-core");
+                var zip = Path.Combine(root, "NXPilot-Release.zip");
+                System.IO.Compression.ZipFile.CreateFromDirectory(pkgDir, zip);
+                var zipBytes = File.ReadAllBytes(zip);
+                var good = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(zipBytes));
+                var digest = good;
+
+                string Releases() => $$$"""
+                    [
+                      {"tag_name":"v1.0.0.03","draft":false,"published_at":"2026-10-19T10:00:00Z","html_url":"h3","assets":[{"name":"NXPilot-Release.zip","browser_download_url":"https://dl/v3.zip","digest":"sha256:{{{digest}}}"}]},
+                      {"tag_name":"nxpilot-setup-latest","draft":false,"published_at":"2026-10-19T09:00:00Z","html_url":"hs","assets":[{"name":"NXPilot-Setup.zip","browser_download_url":"https://dl/setup.zip"}]},
+                      {"tag_name":"v1.0.0.02","draft":false,"published_at":"2026-10-18T10:00:00Z","html_url":"h2","assets":[{"name":"NXPilot-Release.zip","browser_download_url":"https://dl/v2.zip"}]},
+                      {"tag_name":"v1.0.0.01","draft":false,"published_at":"2026-10-18T09:00:00Z","html_url":"h1","assets":[{"name":"NXPilot-Setup.zip","browser_download_url":"https://dl/old.zip"}]},
+                      {"tag_name":"v9.9.9.99","draft":true,"published_at":"2026-10-19T11:00:00Z","html_url":"hd","assets":[{"name":"NXPilot-Release.zip","browser_download_url":"https://dl/draft.zip"}]}
+                    ]
+                    """;
+                var http = new RoutingHttp(u => u switch
+                {
+                    "https://dl/v3.zip" => (200, zipBytes),
+                    "https://dl/stamp.txt" => (200, Encoding.ASCII.GetBytes("2026-10-19T09:00:00.0000000Z")),
+                    _ when u.EndsWith("/releases/tags/nxpilot-setup-latest") => (200, Encoding.UTF8.GetBytes(
+                        """{"html_url":"hs","assets":[{"name":"NXPilot-Setup.zip","browser_download_url":"https://dl/setup.zip"},{"name":"NXPilot-Setup.timestamp.txt","browser_download_url":"https://dl/stamp.txt"}]}""")),
+                    _ when u.Contains("/releases?") => (200, Encoding.UTF8.GetBytes(Releases())),
+                    _ => (404, Array.Empty<byte>()),
+                }, new FakeHttp(_ => "{}"));
+                var updates = new NXPilot.Updates.UpdateService(http);
+
+                var versions = await updates.ListVersionsAsync();
+                AssertEqual("v1.0.0.03,v1.0.0.02", string.Join(",", versions.Select(v => v.Tag)), "Ignora o Setup fixo, versões sem o pacote do app e rascunhos.");
+                AssertEqual(null, await updates.CheckForUpdateAsync(new Version(1, 0, 0, 3)), "Já na mais nova: nada a fazer.");
+                var latest = await updates.CheckForUpdateAsync(new Version(1, 0, 0, 1));
+                AssertEqual("v1.0.0.03", latest?.Tag, "Mais nova que a instalada.");
+
+                // App instalado com o exe "em uso" (aberto como o processo do app: permite renomear, não apagar).
+                var app = Path.Combine(root, "app"); Directory.CreateDirectory(app);
+                File.WriteAllText(Path.Combine(app, "NxPilot.exe"), "velho-exe");
+                File.WriteAllText(Path.Combine(app, "settings-do-usuario.json"), "{}");
+                var extracted = await updates.DownloadAsync(latest!);
+                using (new FileStream(Path.Combine(app, "NxPilot.exe"), FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete))
+                    AssertEqual(2, NXPilot.Updates.UpdateService.Apply(extracted, app), "Dois arquivos trocados.");
+                AssertEqual("novo-exe", File.ReadAllText(Path.Combine(app, "NxPilot.exe")), "Exe em uso foi trocado (renomeado para .nxold).");
+                AssertTrue(File.Exists(Path.Combine(app, "settings-do-usuario.json")), "Arquivos fora do pacote ficam.");
+                AssertEqual(1, NXPilot.Updates.UpdateService.CleanupOldFiles(app), "O .nxold some no próximo início.");
+
+                digest = new string('0', 64);
+                var tampered = (await updates.ListVersionsAsync())[0];
+                await AssertThrowsAsync<NXPilot.Updates.UpdateException>(() => updates.DownloadAsync(tampered), "SHA-256 diferente: não instala.");
+
+                var setup = await updates.GetSetupReleaseAsync();
+                AssertEqual(new DateTimeOffset(2026, 10, 19, 9, 0, 0, TimeSpan.Zero), setup?.BuiltAt, "Carimbo do Setup publicado.");
+                AssertTrue(NXPilot.Updates.UpdateService.SetupChanged(setup!.BuiltAt.AddDays(-1), setup.BuiltAt), "Base mais nova publicada: avisa.");
+                AssertFalse(NXPilot.Updates.UpdateService.SetupChanged(setup.BuiltAt, setup.BuiltAt), "Mesma base: não avisa.");
+                AssertFalse(NXPilot.Updates.UpdateService.SetupChanged(null, setup.BuiltAt), "Sem carimbo instalado: nunca dispara (sem falso positivo).");
+            }
+            finally { if (Directory.Exists(root)) ForceDelete(root); }
+        }),
+
         new("Janelas do Windows: só apps liberados (por nome de processo); lista vazia não vê nada", () =>
         {
             var empty = new NXPilot.WindowsUi.WindowsUiPolicy([]);

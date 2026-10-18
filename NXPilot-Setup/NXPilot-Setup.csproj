@@ -25,6 +25,10 @@
     <Compile Include="..\NXPilot.Core\Onnx\OnnxModelStore.cs">
       <Link>Shared\OnnxModelStore.cs</Link>
     </Compile>
+    <!-- Versão mais nova do app (NXPilot-Release.zip do GitHub) por cima da base embutida. -->
+    <Compile Include="..\NXPilot.Core\Updates\UpdateService.cs">
+      <Link>Shared\UpdateService.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

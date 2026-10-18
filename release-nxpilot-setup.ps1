@@ -1,24 +1,31 @@
 <#
 .SYNOPSIS
-Gera o NXPilot-Setup.zip: instalador self-contained que ja carrega o app inteiro.
+Gera o NXPilot-Setup.zip (a BASE: runtime + bibliotecas de terceiros + um app embutido) e,
+com -Upload, publica na release FIXA "nxpilot-setup-latest" do GitHub.
 
-Diferente do NXProject (Setup com libs de terceiros + nucleo baixado do GitHub), no
-NXPilot o app vai DENTRO do Setup: uma release = um NXPilot-Setup.zip. Os dois
-sao publicados self-contained com o mesmo SDK, entao compartilham o mesmo runtime solto
-na pasta — o app nao duplica o runtime. O Setup instala copiando a pasta (menos os
-arquivos dele mesmo) para %USERPROFILE%\Apps\NXPilot.
+Mesmo modelo do NXProject: o Setup NAO acompanha cada versao. Cada versao publica so o
+NXPilot-Release.zip (o nucleo do app), que o Setup e o "Verificar atualizacao" do app baixam.
+O Setup so e republicado quando a base muda (runtime/bibliotecas) ou o proprio Setup muda.
+Ele continua levando um app embutido: sem internet, instala essa versao.
 
-  .\release-nxpilot-setup.ps1           # gera dist\setup\NXPilot-Setup.zip
-  .\release-nxpilot-setup.ps1 -Sign     # assina os binarios proprios antes de compactar
+O carimbo de build (setup-build-timestamp.txt) vai dentro do Setup, e o Setup o grava na
+pasta do app ao instalar. Na release fixa vai junto o NXPilot-Setup.timestamp.txt com o
+mesmo valor: o app compara os dois para saber se ha um Setup novo (sem falso positivo).
 
-Versao nova (testes, versao, Setup, commit, tag, release): .\release-nxpilot-new-version.ps1
+  .\release-nxpilot-setup.ps1                 # gera dist\setup\NXPilot-Setup.zip
+  .\release-nxpilot-setup.ps1 -Upload         # ...e publica na release fixa nxpilot-setup-latest
+  .\release-nxpilot-setup.ps1 -Sign           # assina os binarios proprios antes de compactar
+
+Versao nova do app (testes, versao, pacote, commit, tag, release): .\release-nxpilot-new-version.ps1
 #>
 param(
     [ValidateSet("Release", "Debug")]
     [string]$Configuration = "Release",
 
     [switch]$Sign,
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [switch]$Upload,
+    [string]$SetupTag = "nxpilot-setup-latest"
 )
 
 $SolutionDir = $PSScriptRoot
@@ -111,6 +118,22 @@ foreach ($doc in @("LICENSE.txt", "LICENSE.en.txt", "THIRD-PARTY-NOTICES.txt")) 
 }
 Write-Host "  Licenca e avisos incluidos: LICENSE.txt, LICENSE.en.txt, THIRD-PARTY-NOTICES.txt" -ForegroundColor DarkGray
 
+# Carimbo de build da base: dentro do Setup (vai para a pasta do app) e ao lado do zip
+# (vai para a release fixa). Mesmo valor nos dois lugares.
+$stamp = [DateTime]::UtcNow.ToString("o")
+Set-Content -Path (Join-Path $SetupPublishDir "setup-build-timestamp.txt") -Value $stamp -Encoding ascii -NoNewline
+$StampFile = Join-Path $SolutionDir "dist\setup\NXPilot-Setup.timestamp.txt"
+Set-Content -Path $StampFile -Value $stamp -Encoding ascii -NoNewline
+
+# Lista da base (tudo que NAO e o nucleo do app, com tamanho): o release de versao compara com
+# a ultima base publicada para saber se precisa republicar o Setup.
+$CorePattern = '^(NxPilot|NXPilot\.(Core|Databricks|GitRepos|Mail|WindowsUi)|NX\.AgentInstaller)\.(exe|dll|pdb|deps\.json|runtimeconfig\.json)$'
+$BaseList = Join-Path $SolutionDir "dist\setup\base-files.txt"
+Get-ChildItem -Path $AppPublishDir -Recurse -File |
+    Where-Object { $_.Name -notmatch $CorePattern } |
+    ForEach-Object { "{0}|{1}" -f $_.FullName.Substring($AppPublishDir.Length).TrimStart('\'), $_.Length } |
+    Sort-Object | Set-Content -Path $BaseList -Encoding utf8
+
 Write-Step "Validando conteudo do pacote..."
 $missing = $RequiredFiles | Where-Object { -not (Test-Path (Join-Path $SetupPublishDir $_)) }
 if ($missing) {
@@ -140,3 +163,20 @@ Write-Host "NXPilot-Setup.zip gerado com sucesso! (NXPilot $version)" -Foregroun
 Write-Host "  $SetupOutputZip ($sizeMb MB)" -ForegroundColor DarkGray
 Write-Host "  Para testar sem zipar: .\run-nxpilot-setup.ps1" -ForegroundColor DarkGray
 Write-Host "  Versao nova com commit, tag e GitHub Release: .\release-nxpilot-new-version.ps1" -ForegroundColor DarkGray
+
+if ($Upload) {
+    Write-Step "Publicando o Setup na release fixa $SetupTag..."
+    gh release view $SetupTag --repo nexusxdata/NXPilot --json tagName 2>$null | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        # Pre-release e nunca "Latest": a pagina de releases destaca a versao do app, nao a base.
+        gh release create $SetupTag --repo nexusxdata/NXPilot --prerelease --latest=false `
+            --title "NXPilot Setup (instalador)" `
+            --notes "Instalador do NXPilot (base: runtime .NET e bibliotecas). Esta release e fixa e sempre traz o NXPilot-Setup.zip mais recente; ao instalar, ele baixa a versao mais nova do app. As versoes do app tem tags proprias (vX.Y.Z.WW)."
+        if ($LASTEXITCODE -ne 0) { Write-Host "Falha ao criar a release $SetupTag." -ForegroundColor Red; exit 1 }
+    }
+    gh release upload $SetupTag $SetupOutputZip $StampFile --repo nexusxdata/NXPilot --clobber
+    if ($LASTEXITCODE -ne 0) { Write-Host "Falha ao enviar o Setup para $SetupTag." -ForegroundColor Red; exit 1 }
+    # A base publicada passa a ser esta: o release de versao so republica se ela mudar.
+    Copy-Item $BaseList (Join-Path $SolutionDir "dist\setup\base-files.published.txt") -Force
+    Write-Host "  https://github.com/nexusxdata/NXPilot/releases/tag/$SetupTag" -ForegroundColor DarkGray
+}

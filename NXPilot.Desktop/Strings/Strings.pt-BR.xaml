@@ -217,4 +217,14 @@
     <sys:String x:Key="Ext_JanelasListar">Listar janelas abertas</sys:String>
     <sys:String x:Key="Ext_JanelasCapturar">Capturar</sys:String>
     <sys:String x:Key="Ext_JanelasLer">Ler textos</sys:String>
+    <sys:String x:Key="Main_Configurar">⚙  Configurar</sys:String>
+    <sys:String x:Key="Cfg_Titulo">Configurar</sys:String>
+    <sys:String x:Key="Cfg_Versao">Versão</sys:String>
+    <sys:String x:Key="Cfg_Verificar">Verificar atualização</sys:String>
+    <sys:String x:Key="Cfg_VoltarVersao">Instalar outra versão (voltar versão)</sys:String>
+    <sys:String x:Key="Cfg_InstalarVersao">Instalar esta versão</sys:String>
+    <sys:String x:Key="Cfg_VoltarNota">Baixa o pacote da versão escolhida no GitHub, confere o SHA-256 e reinicia o NXPilot. Suas configurações, tarefas e histórico são mantidos.</sys:String>
+    <sys:String x:Key="Cfg_SetupMudou">Há um Setup novo (runtime ou bibliotecas mudaram). Rode-o para atualizar a base do NXPilot.</sys:String>
+    <sys:String x:Key="Cfg_BaixarSetup">Baixar Setup</sys:String>
+    <sys:String x:Key="Cfg_Fechar">Fechar</sys:String>
 </ResourceDictionary>
