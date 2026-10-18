@@ -17,12 +17,12 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
-    <!-- FlaUI (MIT): abrir o .pbip no Power BI Desktop e capturar a janela para conferência. -->
-    <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NXPilot.Core\NXPilot.Core.csproj" />
+    <!-- Janelas do Windows (FlaUI, MIT): extensões "Power BI Desktop" e "Automatizar janelas do Windows". -->
+    <ProjectReference Include="..\NXPilot.WindowsUi\NXPilot.WindowsUi.csproj" />
   </ItemGroup>
 
 </Project>

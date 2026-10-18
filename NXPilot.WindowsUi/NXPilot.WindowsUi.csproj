@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pacote à parte: janelas do Windows pela UI Automation (FlaUI, MIT). Base comum das extensões
+    "Power BI Desktop" e "Automatizar janelas do Windows". Esta versão só VÊ (listar, ler textos,
+    capturar) e só nos apps liberados (WindowsUiPolicy); clicar/digitar virá com aprovação.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <PackageId>NXPilot.WindowsUi</PackageId>
+    <Authors>Nexus XData Tecnologia Ltda</Authors>
+    <PackageDescription>Lista, lê e captura janelas do Windows (UI Automation via FlaUI) somente nos aplicativos liberados.</PackageDescription>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- UI Automation (MIT): achar a janela, ler a árvore de elementos e capturar a imagem. -->
+    <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

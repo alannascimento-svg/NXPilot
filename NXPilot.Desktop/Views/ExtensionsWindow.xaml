@@ -135,6 +135,52 @@
                              FontSize="12" Margin="0,10,0,0" MaxHeight="160" VerticalScrollBarVisibility="Auto"/>
                 </StackPanel>
             </TabItem>
+
+            <!-- ============================== Power BI Desktop ============================== -->
+            <TabItem x:Name="PowerBiTab">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="PowerBiDot" Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Power BI Desktop"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <StackPanel>
+                    <TextBlock x:Name="PowerBiLocation" TextWrapping="Wrap" FontSize="12"/>
+                    <Border Background="#EEF4FB" CornerRadius="4" Padding="10,8" Margin="0,10,0,0">
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#24527A" Text="{DynamicResource Ext_PowerBiComo}"/>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button x:Name="PowerBiTestButton" Content="{DynamicResource Ext_PowerBiTestar}" Style="{StaticResource SubtleButton}" Click="OnPowerBiTestClick"/>
+                    </StackPanel>
+                    <TextBox x:Name="PowerBiStatus" IsReadOnly="True" BorderThickness="0" Background="Transparent" TextWrapping="Wrap" FontSize="12" Margin="0,8,0,0"/>
+                </StackPanel>
+            </TabItem>
+
+            <!-- ============================== Janelas do Windows ============================== -->
+            <TabItem x:Name="WindowsTab">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="WindowsDot" Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{DynamicResource Ext_JanelasTitulo}"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <StackPanel>
+                    <Border Background="#FFF4E5" CornerRadius="4" Padding="10,8" Margin="0,0,0,10">
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#9A5B00" Text="{DynamicResource Ext_JanelasAviso}"/>
+                    </Border>
+                    <TextBlock Text="{DynamicResource Ext_JanelasLiberados}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                    <TextBox x:Name="AllowedAppsBox" AcceptsReturn="True" Height="54" Padding="4,3" VerticalScrollBarVisibility="Auto"
+                             FontFamily="{StaticResource MonoFont}" FontSize="12"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,6">
+                        <Button Content="{DynamicResource Ext_JanelasListar}" Style="{StaticResource SubtleButton}" Click="OnListWindowsClick"/>
+                        <Button x:Name="WindowCaptureButton" Content="{DynamicResource Ext_JanelasCapturar}" Style="{StaticResource SubtleButton}" Margin="8,0,0,0" IsEnabled="False" Click="OnWindowCaptureClick"/>
+                        <Button x:Name="WindowReadButton" Content="{DynamicResource Ext_JanelasLer}" Style="{StaticResource SubtleButton}" Margin="8,0,0,0" IsEnabled="False" Click="OnWindowReadClick"/>
+                    </StackPanel>
+                    <ListBox x:Name="WindowsList" Height="110" FontSize="12" SelectionChanged="OnWindowSelected"/>
+                    <TextBox x:Name="WindowsStatus" IsReadOnly="True" BorderThickness="0" Background="Transparent" TextWrapping="Wrap"
+                             FontSize="12" Margin="0,8,0,0" MaxHeight="140" VerticalScrollBarVisibility="Auto"/>
+                </StackPanel>
+            </TabItem>
         </TabControl>
 
         <TextBlock x:Name="SaveStatus" TextWrapping="Wrap" FontSize="12" Margin="0,10,0,0"/>

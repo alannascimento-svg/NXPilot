@@ -607,6 +607,18 @@ public static class CriticalTests
             }
         }),
 
+        new("Janelas do Windows: só apps liberados (por nome de processo); lista vazia não vê nada", () =>
+        {
+            var empty = new NXPilot.WindowsUi.WindowsUiPolicy([]);
+            AssertFalse(empty.IsAllowed("EXCEL"), "Nada liberado por padrão.");
+            var p = NXPilot.WindowsUi.WindowsUiPolicy.Parse("EXCEL.EXE\n  pbidesktop ; C:\\SAP\\saplogon.exe,,");
+            AssertTrue(p.IsAllowed("excel") && p.IsAllowed("PBIDesktop") && p.IsAllowed("saplogon"), "Nome do processo sem .exe, sem caminho e sem maiúsculas.");
+            AssertFalse(p.IsAllowed("chrome") || p.IsAllowed("") || p.IsAllowed(null), "O resto continua bloqueado.");
+            AssertEqual(3, p.Allowed.Count, "Separadores vazios ignorados.");
+            AssertTrue(NXPilot.WindowsUi.WindowsUiPolicy.PowerBiOnly.IsAllowed("PBIDesktop") && !NXPilot.WindowsUi.WindowsUiPolicy.PowerBiOnly.IsAllowed("EXCEL"), "Extensão Power BI só vê o Power BI.");
+            return Task.CompletedTask;
+        }),
+
         new("Agentes: instalação interna confere o SHA-256; versão testada que sumiu cai para a última; pacote completo do Codex", async () =>
         {
             var root = Path.Combine(Path.GetTempPath(), "nx-agents-" + Guid.NewGuid().ToString("N")[..8]);

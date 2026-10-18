@@ -24,6 +24,7 @@ public partial class ExtensionsWindow : Window
     private readonly DatabricksSettings _db;
     private readonly GitRepoSettings _git;
     private readonly MailSettings _mail;
+    private readonly Services.WindowsUiSettings _windows;
 
     public ExtensionsWindow(string? tab = null)
     {
@@ -32,6 +33,8 @@ public partial class ExtensionsWindow : Window
         _db = DatabricksSettings.Load();
         _git = GitRepoSettings.Load();
         _mail = MailSettings.Load();
+        _windows = Services.WindowsUiSettings.Load();
+        AllowedAppsBox.Text = string.Join(Environment.NewLine, _windows.AllowedProcesses);
 
         DbHostBox.Text = _db.Host;
         DbWarehouseBox.Text = _db.WarehouseId;
@@ -46,6 +49,8 @@ public partial class ExtensionsWindow : Window
         {
             "git" => GitTab,
             "mail" or "email" => MailTab,
+            "powerbi" => PowerBiTab,
+            "windows" or "janelas" => WindowsTab,
             _ => DatabricksTab,
         };
         Refresh();
@@ -71,6 +76,13 @@ public partial class ExtensionsWindow : Window
         OutlookSession.Text = outlook.Text;
         GmailSession.Text = gmail.Text;
         Dot(MailDot, outlook.SignedIn || gmail.SignedIn);
+
+        var pbi = Services.PowerBiDesktop.Locate();
+        PowerBiLocation.Text = pbi != null
+            ? T($"Power BI Desktop encontrado: {pbi}", $"Power BI Desktop found: {pbi}")
+            : T("Power BI Desktop não encontrado. Instale pela Microsoft Store ou em powerbi.microsoft.com/desktop.", "Power BI Desktop not found. Install it from the Microsoft Store or powerbi.microsoft.com/desktop.");
+        Dot(PowerBiDot, pbi != null);
+        Dot(WindowsDot, _windows.AllowedProcesses.Count > 0);
     }
 
     private static (bool SignedIn, string Text) Session(MailProvider provider)
@@ -177,6 +189,81 @@ public partial class ExtensionsWindow : Window
         return ($"{provider}: {list.Count}\n{string.Join('\n', lines)}", Brushes.Black);
     });
 
+    // ------------------------------------------------------------ Power BI Desktop
+
+    private async void OnPowerBiTestClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "Power BI Project (*.pbip)|*.pbip", Title = T("Projeto Power BI", "Power BI project") };
+        if (dialog.ShowDialog(this) != true) return;
+        PowerBiTestButton.IsEnabled = false;
+        Status(PowerBiStatus, T("Abrindo no Power BI Desktop (pode levar alguns minutos)…", "Opening in Power BI Desktop (may take a few minutes)…"), Brushes.DimGray);
+        try
+        {
+            var png = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"nxpilot-powerbi-{DateTime.Now:yyyyMMdd-HHmmss}.png");
+            await Services.PowerBiDesktop.OpenAndCaptureAsync(dialog.FileName, png);
+            Status(PowerBiStatus, T($"Capturado: {png}", $"Captured: {png}"), Brushes.Green);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(png) { UseShellExecute = true });
+        }
+        catch (Exception ex) { Status(PowerBiStatus, ex.Message, Brushes.Firebrick); }
+        finally { PowerBiTestButton.IsEnabled = true; }
+    }
+
+    // ------------------------------------------------------------ Janelas do Windows
+
+    private Services.WindowsUiSettings CollectWindows() => new()
+    {
+        AllowedProcesses = NXPilot.WindowsUi.WindowsUiPolicy.Parse(AllowedAppsBox.Text).Allowed.ToList(),
+    };
+
+    /// <summary>Lista TODAS as janelas (só aqui, na tela, para escolher o que liberar); o agente só vê as liberadas.</summary>
+    private void OnListWindowsClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var ui = new NXPilot.WindowsUi.WindowsUiService(CollectWindows().Policy);
+            WindowsList.Items.Clear();
+            foreach (var w in ui.ListWindows(allowedOnly: false).OrderByDescending(w => w.Allowed).ThenBy(w => w.ProcessName))
+                WindowsList.Items.Add(new ListBoxItem
+                {
+                    Content = $"{(w.Allowed ? "✓" : "  ")} {w.ProcessName} — {w.Title}",
+                    Tag = w,
+                    Foreground = w.Allowed ? Brushes.Black : Brushes.Gray,
+                    ToolTip = w.Allowed ? null : T($"Não liberado: adicione \"{w.ProcessName}\" à lista para o NXPilot poder ver.", $"Not allowed: add \"{w.ProcessName}\" to the list so NXPilot can see it."),
+                });
+            Status(WindowsStatus, T($"{WindowsList.Items.Count} janela(s). ✓ = liberada.", $"{WindowsList.Items.Count} window(s). ✓ = allowed."), Brushes.DimGray);
+        }
+        catch (Exception ex) { Status(WindowsStatus, ex.Message, Brushes.Firebrick); }
+    }
+
+    private NXPilot.WindowsUi.WindowInfo? SelectedWindow => (WindowsList.SelectedItem as ListBoxItem)?.Tag as NXPilot.WindowsUi.WindowInfo;
+
+    private void OnWindowSelected(object sender, SelectionChangedEventArgs e) =>
+        WindowCaptureButton.IsEnabled = WindowReadButton.IsEnabled = SelectedWindow is { Allowed: true };
+
+    private void OnWindowCaptureClick(object sender, RoutedEventArgs e) => WithWindow((ui, w) =>
+    {
+        var png = ui.Capture(w, System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"nxpilot-janela-{DateTime.Now:yyyyMMdd-HHmmss}.png"));
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(png) { UseShellExecute = true });
+        return T($"Capturado: {png}", $"Captured: {png}");
+    });
+
+    private void OnWindowReadClick(object sender, RoutedEventArgs e) => WithWindow((ui, w) =>
+    {
+        var elements = ui.ReadElements(w);
+        return T($"{elements.Count} elemento(s) — é isto que o agente receberia:\n\n", $"{elements.Count} element(s) — this is what the agent would get:\n\n") + ui.ToAgentContext(w, elements);
+    });
+
+    private void WithWindow(Func<NXPilot.WindowsUi.WindowsUiService, NXPilot.WindowsUi.WindowInfo, string> action)
+    {
+        if (SelectedWindow is not { } w) return;
+        try
+        {
+            using var ui = new NXPilot.WindowsUi.WindowsUiService(CollectWindows().Policy); // confere a lista como está na tela
+            Status(WindowsStatus, action(ui, w), Brushes.Black);
+        }
+        catch (Exception ex) { Status(WindowsStatus, ex.Message, Brushes.Firebrick); }
+    }
+
     // ------------------------------------------------------------ salvar
 
     private void OnSaveClick(object sender, RoutedEventArgs e)
@@ -186,6 +273,7 @@ public partial class ExtensionsWindow : Window
             CollectDatabricks().Save();
             CollectGit().Save();
             CollectMail().Save();
+            CollectWindows().Save();
             DialogResult = true;
         }
         catch (Exception ex) { Status(SaveStatus, T("Não salvou: ", "Not saved: ") + ex.Message, Brushes.Firebrick); }

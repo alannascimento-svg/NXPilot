@@ -7,4 +7,5 @@
   <Project Path="NXPilot.GitRepos/NXPilot.GitRepos.csproj" />
   <Project Path="NXPilot.Mail/NXPilot.Mail.csproj" />
   <Project Path="NX.AgentInstaller/NX.AgentInstaller.csproj" />
+  <Project Path="NXPilot.WindowsUi/NXPilot.WindowsUi.csproj" />
 </Solution>

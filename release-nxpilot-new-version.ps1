@@ -34,7 +34,7 @@ $SetupZip = Join-Path $SolutionDir "dist\setup\NXPilot-Setup.zip"
 $GitHubRepo = "nexusxdata/NXPilot"
 $RequiredInZip = @(
     "NXPilot-Setup.exe", "NxPilot.exe", "NxPilot.dll", "NXPilot.Core.dll", "NxPilot.runtimeconfig.json",
-    "NXPilot.Databricks.dll", "NXPilot.GitRepos.dll", "NXPilot.Mail.dll", "NX.AgentInstaller.dll",
+    "NXPilot.Databricks.dll", "NXPilot.GitRepos.dll", "NXPilot.Mail.dll", "NX.AgentInstaller.dll", "NXPilot.WindowsUi.dll",
     "hostfxr.dll", "hostpolicy.dll", "coreclr.dll", "PresentationFramework.dll", "onnxruntime.dll",
     "LICENSE.txt", "LICENSE.en.txt", "THIRD-PARTY-NOTICES.txt"
 )
