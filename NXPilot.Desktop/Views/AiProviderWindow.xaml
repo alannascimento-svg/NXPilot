@@ -1,0 +1,80 @@
+<Window x:Class="NXPilot.Desktop.Views.AiProviderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Prov_ProvedorDeIaDa}" Width="620" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False"
+        Background="{StaticResource BackgroundBrush}" FontFamily="Segoe UI" FontSize="13">
+    <!-- Rolagem: com zoom de 125% e todos os campos visíveis, a janela passaria da tela. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="22,18">
+        <TextBlock Text="{DynamicResource Prov_3oDegrauDaCascata}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBrush}"/>
+        <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,12" TextWrapping="Wrap"
+                   Text="{DynamicResource Prov_SoEChamadoQuando}"/>
+
+        <TextBlock Text="{DynamicResource Prov_Provedor}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+        <ComboBox x:Name="ProviderBox" SelectionChanged="OnProviderChanged" Padding="6,4"/>
+        <TextBlock x:Name="ProviderHint" Style="{StaticResource Muted}" Margin="0,6,0,0"/>
+
+        <Border x:Name="RemoteWarning" Background="#FFF4E5" CornerRadius="4" Padding="10,8" Margin="0,10,0,0">
+            <TextBlock TextWrapping="Wrap" Foreground="#9A5B00" FontSize="12"
+                       Text="{DynamicResource Prov_ComProvedorRemotoO}"/>
+        </Border>
+
+        <StackPanel x:Name="RemoteFields" Margin="0,10,0,0">
+            <TextBlock Text="{DynamicResource Prov_EndpointChatCompletions}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+            <TextBox x:Name="EndpointBox" Padding="4,3"/>
+            <StackPanel x:Name="ModelPanel">
+                <TextBlock Text="{DynamicResource Prov_Modelo}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                <TextBox x:Name="ModelBox" Padding="4,3"/>
+            </StackPanel>
+            <StackPanel x:Name="KeyPanel">
+                <TextBlock x:Name="KeyLabel" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                <PasswordBox x:Name="KeyBox" Padding="4,3"/>
+                <TextBlock x:Name="KeyState" Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
+            </StackPanel>
+
+            <!-- Microsoft 365: login corporativo (Entra ID), igual ao NXProject. -->
+            <StackPanel x:Name="M365Panel" Margin="0,8,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Prov_TenantId}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                        <TextBox x:Name="TenantBox" Padding="4,3"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="{DynamicResource Prov_ClientIdRegistroDe}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                        <TextBox x:Name="ClientBox" Padding="4,3"/>
+                    </StackPanel>
+                </Grid>
+                <TextBlock Text="{DynamicResource Prov_Escopo}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                <TextBox x:Name="ScopeBox" Padding="4,3"/>
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <Button x:Name="LoginButton" Content="{DynamicResource Prov_EntrarComAConta}" Style="{StaticResource PrimaryButton}" Click="OnLoginClick"/>
+                    <Button Content="{DynamicResource Prov_Sair}" Style="{StaticResource SubtleButton}" Margin="8,0,0,0" Click="OnSignOutClick"/>
+                </StackPanel>
+                <TextBox x:Name="LoginCode" IsReadOnly="True" BorderThickness="0" Background="Transparent" FontSize="12"
+                         TextWrapping="Wrap" Margin="0,6,0,0"/>
+                <TextBlock x:Name="SessionText" Style="{StaticResource Muted}" FontSize="11"/>
+            </StackPanel>
+        </StackPanel>
+
+        <Expander Header="{DynamicResource Prov_PorQueNaoDa}" Margin="0,14,0,0" Foreground="{StaticResource PrimaryBrush}">
+            <TextBlock TextWrapping="Wrap" Style="{StaticResource Muted}" Margin="0,6,0,0" Foreground="#444"
+                       Text="{DynamicResource Prov_OMicrosoft365Copilot}"/>
+        </Expander>
+
+        <TextBlock x:Name="StatusText" TextWrapping="Wrap" FontSize="12" Margin="0,12,0,0"/>
+        <DockPanel Margin="0,12,0,0">
+            <Button x:Name="TestButton" Content="{DynamicResource Prov_TestarConexao}" Style="{StaticResource SubtleButton}" Click="OnTestClick"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="{DynamicResource Prov_Cancelar}" Style="{StaticResource SubtleButton}" IsCancel="True"/>
+                <Button Content="{DynamicResource Prov_Salvar}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" IsDefault="True" Click="OnSaveClick"/>
+            </StackPanel>
+        </DockPanel>
+    </StackPanel>
+    </ScrollViewer>
+</Window>

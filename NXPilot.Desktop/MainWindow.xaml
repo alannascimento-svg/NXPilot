@@ -1,0 +1,671 @@
+<Window x:Class="NXPilot.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:NXPilot.Desktop.ViewModels"
+        xmlns:tut="clr-namespace:NXPilot.Desktop.Tutorial"
+        Title="{DynamicResource Main_NxpilotPrototipo}" Height="860" Width="1480" MinWidth="1100" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}" FontFamily="Segoe UI" FontSize="13"
+        Foreground="{StaticResource TextBrush}">
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="52"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="28"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="340"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ============================== Cabeçalho ============================== -->
+        <Border x:Name="HeaderBar" Grid.ColumnSpan="3" Background="{StaticResource PrimaryBrush}">
+            <!-- Três colunas: marca+slogan | título (encolhe com "…") | gate e botões (sempre visíveis). -->
+            <Grid Margin="16,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <!-- Marca + slogan: o nome em cima, a promessa do produto embaixo. -->
+                <StackPanel VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="NX" Foreground="White" FontWeight="Bold" FontSize="18"/>
+                        <TextBlock Text="Agentic" Foreground="#CFE0F5" FontSize="18" Margin="2,0,0,0"/>
+                        <Border Background="#3D6BB0" CornerRadius="3" Padding="6,0" Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{DynamicResource Main_CommunityPrototipo}" Foreground="White" FontSize="10.5"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="{DynamicResource Main_Slogan}" Foreground="#CFE0F5" FontSize="10.5" FontStyle="Italic" Margin="0,-2,0,0"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding TaskTitle}" ToolTip="{Binding TaskTitle}" Foreground="White" FontSize="14"
+                           Margin="24,0,16,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="GateStatusText" Text="{Binding GateStatus}" ToolTip="{Binding GateStatus}" Foreground="#CFE0F5" FontSize="12"
+                               VerticalAlignment="Center" Margin="0,0,14,0" MaxWidth="320" TextTrimming="CharacterEllipsis"/>
+                    <Button x:Name="SimulateButton" Content="{DynamicResource Main_SimularAcaoDoAgente}" Command="{Binding SimulateAgentActionCommand}"
+                            Style="{StaticResource SubtleButton}" ToolTip="{DynamicResource Main_UmAgentePedeUma}"/>
+                    <ComboBox x:Name="LanguageBox" Width="64" Margin="8,0,0,0" VerticalAlignment="Center" Padding="8,5"
+                              SelectionChanged="OnLanguageChanged" ToolTip="Idioma / Language">
+                        <ComboBoxItem Content="PT" Tag="pt-BR"/>
+                        <ComboBoxItem Content="EN" Tag="en-US"/>
+                    </ComboBox>
+                    <Button x:Name="HelpButton" Content="{DynamicResource Main_Ajuda}" Click="OnHelpClick" Margin="8,0,0,0"
+                            Style="{StaticResource SubtleButton}" ToolTip="{DynamicResource Main_LicoesGuiadasSobreO}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============================== Barra lateral ============================== -->
+        <Border x:Name="Sidebar" Grid.Row="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="12">
+                    <Button x:Name="NewTaskButton" Content="{DynamicResource Main_NovaTarefa}" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Stretch" Padding="12,8" Click="OnNewTaskClick"/>
+                    <Button x:Name="HistoryButton" Content="{DynamicResource Main_Historico}" Style="{StaticResource NavButton}" Margin="0,8,0,0" Click="OnHistoryClick"/>
+                    <Button x:Name="NotificationsButton" Style="{StaticResource NavButton}" Click="OnNotificationsClick">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{DynamicResource Main_Notificacoes}"/>
+                            <Border Background="{StaticResource DangerBrush}" CornerRadius="9" Padding="6,0" Margin="8,0,0,0" VerticalAlignment="Center"
+                                    Visibility="{Binding Notifications.UnreadCount, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="{Binding Notifications.UnreadCount}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                            </Border>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="WorkItemsButton" Content="{DynamicResource Main_WorkItemsAzureDevops}" Style="{StaticResource NavButton}" Click="OnWorkItemsClick"/>
+
+                    <TextBlock Text="{DynamicResource Main_Agentes}" Style="{StaticResource SectionHeader}"/>
+                    <ItemsControl x:Name="AgentsList" ItemsSource="{Binding Agents}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,10">
+                                    <DockPanel>
+                                        <Ellipse Width="8" Height="8" Fill="{Binding Status, Converter={StaticResource Semantic}, ConverterParameter=fg}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Elapsed}" Style="{StaticResource Muted}"/>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                    </DockPanel>
+                                    <TextBlock Text="{Binding Task}" Style="{StaticResource Muted}" Margin="16,2,0,0"/>
+                                    <ItemsControl ItemsSource="{Binding Children}" Margin="24,4,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Style="{StaticResource Muted}">
+                                                    <Run Text="└ "/><Run Text="{Binding Name, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding Task, Mode=OneWay}"/>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="{DynamicResource Main_Artefatos}" Style="{StaticResource SectionHeader}"/>
+                    <ItemsControl x:Name="ArtifactsList" ItemsSource="{Binding Artifacts}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding Glyph}" Width="22" FontSize="14"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}"/>
+                                        <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Muted}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ============================== Centro (abas) ============================== -->
+        <TabControl x:Name="MainTabs" Grid.Row="1" Grid.Column="1" Margin="16,4,16,12">
+
+            <!-- Plano: fluxo Spec → Fases → Execução → Verificação -->
+            <TabItem Header="{DynamicResource Main_Plano}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="PlanContent" Margin="0,12,0,0">
+                        <!-- Tarefa REAL (Nova tarefa): plano do agente e aprovação. -->
+                        <Border x:Name="TaskCard" Style="{StaticResource Card}" Visibility="{Binding HasTask, Converter={StaticResource BoolToVis}}"
+                                BorderBrush="{StaticResource PrimaryBrush}">
+                            <StackPanel>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentTask.CostLabel}" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{DynamicResource Task_TarefaReal}" Style="{StaticResource SectionHeader}" Margin="0"/>
+                                </DockPanel>
+                                <TextBlock Text="{Binding CurrentTask.Title}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                <TextBlock Text="{Binding CurrentTask.Info.Intent}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,0">
+                                    <Run Text="{DynamicResource Task_CriteriosLabel}"/><Run Text=": "/><Run Text="{Binding CurrentTask.Info.Criteria, Mode=OneWay}"/>
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource Muted}" FontSize="11.5" Margin="0,6,0,0" TextWrapping="Wrap">
+                                    <Run Text="{DynamicResource Task_Worktree}"/><Run Text=": "/><Run Text="{Binding CurrentTask.Worktree, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/><Run Text="  ·  "/><Run Text="{Binding CurrentTask.Branch, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
+                                </TextBlock>
+                                <Border Background="{StaticResource PrimarySoftBrush}" CornerRadius="4" Padding="10,6" Margin="0,10,0,0">
+                                    <TextBlock Text="{Binding CurrentTask.StateLabel}" Foreground="{StaticResource PrimaryBrush}" FontWeight="SemiBold"/>
+                                </Border>
+
+                                <TextBlock Text="{DynamicResource Task_PlanoDoAgente}" Style="{StaticResource SectionHeader}"/>
+                                <TextBox Text="{Binding CurrentTask.PlanText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" MaxHeight="320"
+                                         VerticalScrollBarVisibility="Auto" Padding="8" FontSize="12.5" BorderBrush="{StaticResource BorderBrush}"/>
+
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button Content="{DynamicResource Task_AprovarExecutar}" Command="{Binding ApprovePlanCommand}" Margin="0,0,8,6"
+                                            Style="{StaticResource PrimaryButton}" Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}"
+                                            Visibility="{Binding CurrentTask.CanApprove, Converter={StaticResource BoolToVis}}"/>
+                                    <Button Content="{DynamicResource Task_Descartar}" Command="{Binding DiscardPlanCommand}" Style="{StaticResource DangerButton}" Margin="0,0,8,6"
+                                            Visibility="{Binding CurrentTask.CanDiscard, Converter={StaticResource BoolToVis}}"/>
+                                    <Button Content="{DynamicResource Task_Interromper}" Command="{Binding StopTaskCommand}" Style="{StaticResource DangerButton}" Margin="0,0,8,6"
+                                            Visibility="{Binding CurrentTask.IsRunning, Converter={StaticResource BoolToVis}}"/>
+                                    <Button Content="{DynamicResource Task_AbrirWorktree}" Command="{Binding OpenWorktreeCommand}" Style="{StaticResource SubtleButton}" Margin="0,0,8,6"/>
+                                    <Button Content="{DynamicResource Task_CapturarPowerBi}" Command="{Binding CapturePowerBiCommand}" Style="{StaticResource SubtleButton}" Margin="0,0,8,6"
+                                            Visibility="{Binding CurrentTask.HasPowerBi, Converter={StaticResource BoolToVis}}"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Demonstração: some quando há tarefa real. -->
+                        <StackPanel Visibility="{Binding HasTask, Converter={StaticResource BoolToVis}, ConverterParameter=not}">
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Main_Intencao}" FontWeight="SemiBold" FontSize="15"/>
+                                <TextBlock TextWrapping="Wrap" Margin="0,6,0,0"
+                                           Text="{DynamicResource Main_CriarOOrquestradorDo}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="{DynamicResource Main_Fluxo}" Style="{StaticResource SectionHeader}"/>
+                        <UniformGrid Rows="1">
+                            <UniformGrid.Resources>
+                                <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                                    <Setter Property="Margin" Value="0,0,10,0"/>
+                                </Style>
+                            </UniformGrid.Resources>
+                            <Border><StackPanel><TextBlock Text="{DynamicResource Main_1Spec}" FontWeight="SemiBold"/><TextBlock Text="{DynamicResource Main_IntencaoRestricoesECriterios}" Style="{StaticResource Muted}"/></StackPanel></Border>
+                            <Border><StackPanel><TextBlock Text="{DynamicResource Main_2Fases}" FontWeight="SemiBold"/><TextBlock Text="{DynamicResource Main_PlanoPorArquivoUma}" Style="{StaticResource Muted}"/></StackPanel></Border>
+                            <Border><StackPanel><TextBlock Text="{DynamicResource Main_3Execucao}" FontWeight="SemiBold"/><TextBlock Text="{DynamicResource Main_ClaudeCodeCodexAcoes}" Style="{StaticResource Muted}"/></StackPanel></Border>
+                            <Border Margin="0"><StackPanel><TextBlock Text="{DynamicResource Main_4Verificacao}" FontWeight="SemiBold"/><TextBlock Text="{DynamicResource Main_OutroAgenteRevisaO}" Style="{StaticResource Muted}"/></StackPanel></Border>
+                        </UniformGrid>
+
+                        <TextBlock Text="{DynamicResource Main_CriteriosDeAceite}" Style="{StaticResource SectionHeader}"/>
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Main_TodaAcaoDeAgente}" Margin="0,2"/>
+                                <TextBlock Text="{DynamicResource Main_AcaoDeRiscoMedio}" Margin="0,2"/>
+                                <TextBlock Text="{DynamicResource Main_ClassificadorRodaSemGpu}" Margin="0,2"/>
+                                <TextBlock Text="{DynamicResource Main_FaseSoFechaCom}" Margin="0,2"/>
+                            </StackPanel>
+                        </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Fases: lista + plano por arquivo da fase selecionada -->
+            <TabItem Header="{DynamicResource Main_Fases}">
+                <Grid Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ListBox x:Name="PhaseList" ItemsSource="{Binding Phases}" SelectedItem="{Binding SelectedPhase}" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             HorizontalContentAlignment="Stretch">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="4,8">
+                                    <DockPanel>
+                                        <Border DockPanel.Dock="Right" Style="{StaticResource Badge}" Background="{Binding Status, Converter={StaticResource Semantic}}">
+                                            <TextBlock Text="{Binding StatusLabel}" FontSize="11" Foreground="{Binding Status, Converter={StaticResource Semantic}, ConverterParameter=fg}"/>
+                                        </Border>
+                                        <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,6,0"><Run Text="{DynamicResource Main_Fase}"/><Run Text="{Binding Number, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding Title, Mode=OneWay}"/></TextBlock>
+                                    </DockPanel>
+                                    <TextBlock Text="{Binding Agent}" Style="{StaticResource Muted}" Margin="0,2,0,4"/>
+                                    <ProgressBar Value="{Binding Progress, Mode=OneWay}" Maximum="1" Height="4" Foreground="{StaticResource AccentBrush}" BorderThickness="0" Background="#E6E6E6"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Border x:Name="PhaseFiles" Grid.Column="1" Style="{StaticResource Card}" Margin="12,0,0,0">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10">
+                                <Run Text="{DynamicResource Main_PlanoPorArquivoFase}"/><Run Text="{Binding SelectedPhase.Number, Mode=OneWay}"/>
+                            </TextBlock>
+                            <ItemsControl ItemsSource="{Binding SelectedPhase.Files}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,0,0,12">
+                                            <Border DockPanel.Dock="Left" Style="{StaticResource Badge}" Background="{StaticResource PrimarySoftBrush}" Width="62" Margin="0,0,10,0" VerticalAlignment="Top">
+                                                <TextBlock Text="{Binding Kind}" FontSize="11" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Path}" FontFamily="{StaticResource MonoFont}"/>
+                                                <TextBlock Text="{Binding Description}" Style="{StaticResource Muted}"/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource Main_Diff}">
+                <Border x:Name="DiffView" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="0">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding DiffLines}" Margin="0,6">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{Binding Kind, Converter={StaticResource Semantic}}" Padding="12,1">
+                                        <TextBlock Text="{Binding Text}" FontFamily="{StaticResource MonoFont}" FontSize="12.5"
+                                                   Foreground="{Binding Kind, Converter={StaticResource Semantic}, ConverterParameter=fg}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource Main_Terminal}">
+                <Border x:Name="TerminalView" Background="{StaticResource TerminalBrush}" CornerRadius="6" Margin="0,12,0,0" Padding="14">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                        <TextBlock Text="{Binding TerminalText}" FontFamily="{StaticResource MonoFont}" FontSize="12.5" Foreground="#D4D4D4"/>
+                    </ScrollViewer>
+                </Border>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock><Run Text="{DynamicResource Main_LogDeEventos}"/><Run Text="{Binding LogCount, Mode=OneWay}"/><Run Text=")"/></TextBlock>
+                </TabItem.Header>
+                <DataGrid x:Name="LogView" ItemsSource="{Binding Log}" Margin="0,12,0,0">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{DynamicResource Main_Hora}" Binding="{Binding TimeText}" Width="80"/>
+                        <DataGridTextColumn Header="{DynamicResource Main_Origem}" Binding="{Binding Source}" Width="120"/>
+                        <DataGridTextColumn Header="{DynamicResource Main_Tipo}" Binding="{Binding Kind}" Width="110"/>
+                        <DataGridTextColumn Header="{DynamicResource Main_Evento}" Binding="{Binding Message}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <!-- Laboratório IA: onde o gate roda + comparação ONNX × LLaMA -->
+            <TabItem Header="{DynamicResource Main_LaboratorioIa}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" DataContext="{Binding Lab}">
+                    <StackPanel Margin="0,12,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border x:Name="LabOnnxCard" Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Main_ClassificadorOnnxEncoder}" FontWeight="SemiBold" FontSize="14"/>
+                                    <TextBlock Text="{Binding OnnxInfo}" Style="{StaticResource Muted}" Margin="0,4,0,0"/>
+                                    <TextBlock Text="{Binding OnnxFolder}" FontFamily="{StaticResource MonoFont}" FontSize="12" Margin="0,2,0,8"/>
+                                    <Button Content="{DynamicResource Main_BaixarModeloOnnx90}" Command="{Binding DownloadOnnxCommand}" Style="{StaticResource PrimaryButton}"
+                                            HorizontalAlignment="Left" Visibility="{Binding OnnxInstalled, Converter={StaticResource BoolToVis}, ConverterParameter=not}"/>
+
+                                    <TextBlock Text="{DynamicResource Main_ProcessamentoDoGate}" Style="{StaticResource SectionHeader}" Margin="0,8,0,6"/>
+                                    <RadioButton Content="{DynamicResource Main_CpuPadraoFuncionaEm}" IsChecked="{Binding UseGpu, Converter={StaticResource InverseBool}}" Margin="0,2"/>
+                                    <RadioButton Content="{DynamicResource Main_GpuDirectmlOpcionalQualquer}" IsChecked="{Binding UseGpu}" Margin="0,2"/>
+                                    <TextBlock Text="{DynamicResource Main_GpuIndisponivelNestaMaquina}" Foreground="{StaticResource DangerBrush}" FontSize="12"
+                                               Visibility="{Binding GpuUnavailable, Converter={StaticResource BoolToVis}}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border x:Name="LabLlamaCard" Grid.Column="2" Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="{DynamicResource Main_TrocarProvedor}" Click="OnProviderClick"
+                                                Style="{StaticResource SubtleButton}" Padding="10,3" VerticalAlignment="Top"/>
+                                        <TextBlock Text="{DynamicResource Main_LlmDaDuvida3o}" FontWeight="SemiBold" FontSize="14"/>
+                                    </DockPanel>
+                                    <TextBlock Text="{Binding ProviderName}" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBrush}" Margin="0,4,0,0"/>
+                                    <TextBlock Text="{Binding ProviderInfo}" Style="{StaticResource Muted}" Margin="0,2,0,8"/>
+                                    <TextBlock Text="{DynamicResource Main_IaLocalLlamaGithub}" Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{DynamicResource Main_CascataPadraoDoGate}" Style="{StaticResource SectionHeader}" Margin="0,8,0,6"/>
+                                    <CheckBox Content="{DynamicResource Main_ChamarOLlmSo}" IsChecked="{Binding UseCascade}"
+                                              IsEnabled="{Binding CanCascade}"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <TextBlock Text="{DynamicResource Main_CompararMotores}" Style="{StaticResource SectionHeader}"/>
+                        <Border x:Name="LabCompare" Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Left" Content="{DynamicResource Main_RodarComparacao}" Command="{Binding RunBenchmarkCommand}" Style="{StaticResource PrimaryButton}"/>
+                                    <CheckBox Content="{DynamicResource Main_IncluirGpu}" IsChecked="{Binding BenchGpu}" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                                    <CheckBox Content="{DynamicResource Main_IncluirLlama1Min}" IsChecked="{Binding BenchLlama}" IsEnabled="{Binding LlamaInstalled}" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                                    <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="16,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+
+                                <DataGrid ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult}" Margin="0,12,0,0" MinHeight="60">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Motor}" Binding="{Binding Engine}" Width="2*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Carga}" Binding="{Binding Load}" Width="80"/>
+                                        <DataGridTemplateColumn Header="{DynamicResource Main_MediaPorAcaoEscala}" Width="2.4*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Rectangle Width="{Binding BarWidth}" Height="10" Fill="{StaticResource PrimaryBrush}" RadiusX="2" RadiusY="2"/>
+                                                        <TextBlock Text="{Binding Average}" Margin="8,0,0,0"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="p95" Binding="{Binding P95}" Width="80"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Acertos}" Binding="{Binding Accuracy}" Width="70"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_AltoPerdido}" Binding="{Binding MissedHigh}" Width="100"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Erro}" Binding="{Binding Error}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <Border Background="{StaticResource PrimarySoftBrush}" CornerRadius="4" Padding="10" Margin="0,10,0,0"
+                                        Visibility="{Binding Insight, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding Insight}" TextWrapping="Wrap" Foreground="{StaticResource PrimaryBrush}"/>
+                                </Border>
+
+                                <TextBlock Style="{StaticResource SectionHeader}" Margin="0,12,0,6"
+                                           Visibility="{Binding SelectedResult, Converter={StaticResource NullToVis}}">
+                                    <Run Text="{DynamicResource Main_AcoesDoMotorSelecionado}"/><Run Text="{Binding SelectedResult.Engine, Mode=OneWay}"/>
+                                </TextBlock>
+                                <DataGrid ItemsSource="{Binding SelectedResult.Cases}" MaxHeight="300"
+                                          Visibility="{Binding SelectedResult, Converter={StaticResource NullToVis}}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="✓" Binding="{Binding Correct, Converter={StaticResource CheckMark}}" Width="30"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Acao}" Binding="{Binding Expected.Action}" Width="3*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Esperado}" Binding="{Binding Expected.Level, Converter={StaticResource RiskWord}}" Width="80"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Obtido}" Binding="{Binding Actual.Level, Converter={StaticResource RiskWord}}" Width="80"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Conf}" Binding="{Binding Actual.Confidence, StringFormat=P0}" Width="60"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Motivo}" Binding="{Binding Actual.Reason}" Width="3*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="{DynamicResource Main_TestarEEnsinar}" Style="{StaticResource SectionHeader}"/>
+                        <Border x:Name="LabTry" Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Content="{DynamicResource Main_Classificar}" Command="{Binding TryClassifyCommand}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"/>
+                                    <TextBox Text="{Binding TryText, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Padding="6,5" VerticalContentAlignment="Center"/>
+                                </DockPanel>
+                                <DataGrid ItemsSource="{Binding TryResults}" Margin="0,10,0,0" MinHeight="40">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Motor}" Binding="{Binding Engine}" Width="2*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Risco}" Binding="{Binding Level, Converter={StaticResource RiskWord}}" Width="70"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Conf}" Binding="{Binding Confidence}" Width="60"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Tempo}" Binding="{Binding Time}" Width="80"/>
+                                        <DataGridTextColumn Header="{DynamicResource Main_Motivo}" Binding="{Binding Reason}" Width="3*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel x:Name="LabTeach" Orientation="Horizontal" Margin="0,10,0,0">
+                                    <TextBlock Text="{DynamicResource Main_ErrouEnsineOOnnx}" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
+                                    <Button Content="{DynamicResource Main_EBaixo}" Command="{Binding TeachCommand}" CommandParameter="Baixo" Style="{StaticResource SubtleButton}" Margin="10,0,0,0"/>
+                                    <Button Content="{DynamicResource Main_EMedio}" Command="{Binding TeachCommand}" CommandParameter="Medio" Style="{StaticResource SubtleButton}" Margin="6,0,0,0"/>
+                                    <Button Content="{DynamicResource Main_EAlto}" Command="{Binding TeachCommand}" CommandParameter="Alto" Style="{StaticResource DangerButton}" Margin="6,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Canais: número-robô do WhatsApp (opcional, somente leitura) -->
+            <TabItem Header="{DynamicResource Main_Canais}">
+                <Grid Margin="0,12,0,0" DataContext="{Binding Channels}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="360"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ScrollViewer x:Name="ChannelSetup" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Border Background="#EEF2F8" CornerRadius="6" Padding="12,10" Margin="0,0,0,12">
+                                <TextBlock TextWrapping="Wrap" Foreground="{StaticResource PrimaryBrush}" FontSize="12">
+                                    <Run FontWeight="SemiBold" Text="{DynamicResource Main_SomenteLeitura}"/>
+                                    <Run Text="{DynamicResource Main_ONxpilotRecebeTria}"/>
+                                </TextBlock>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Main_Fonte}" FontWeight="SemiBold" FontSize="14"/>
+                                    <RadioButton Content="{DynamicResource Main_SimuladorTestarSemConta}" IsChecked="{Binding IsSimulator, Mode=OneWay}"
+                                                 Checked="OnSimulatorChecked" Margin="0,8,0,2" IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBool}}"/>
+                                    <RadioButton Content="{DynamicResource Main_NumeroRoboWhatsappCloud}" IsChecked="{Binding UseOfficialApi}"
+                                                 Margin="0,2" IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBool}}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="0,12,0,0" Visibility="{Binding UseOfficialApi, Converter={StaticResource BoolToVis}}">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Main_NumeroRoboMeta}" FontWeight="SemiBold" FontSize="14"/>
+                                    <TextBlock Text="{DynamicResource Main_PhoneNumberId}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                                    <TextBox Text="{Binding PhoneNumberId, UpdateSourceTrigger=PropertyChanged}" Padding="4,3"/>
+                                    <TextBlock Text="{DynamicResource Main_AccessTokenPermanenteDe}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                                    <PasswordBox x:Name="AccessTokenBox" Padding="4,3" PasswordChanged="OnSecretChanged"/>
+                                    <TextBlock Text="{DynamicResource Main_AppSecretValidaA}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                                    <PasswordBox x:Name="AppSecretBox" Padding="4,3" PasswordChanged="OnSecretChanged"/>
+                                    <TextBlock Text="{Binding SecretsState}" Style="{StaticResource Muted}" FontSize="11" Margin="0,4,0,0"/>
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="10"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{DynamicResource Main_VersaoDaGraphApi}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                                            <TextBox Text="{Binding ApiVersion, UpdateSourceTrigger=PropertyChanged}" Padding="4,3"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="{DynamicResource Main_PortaLocal}" Style="{StaticResource Muted}" Margin="0,0,0,2"/>
+                                            <TextBox Text="{Binding ListenPort, UpdateSourceTrigger=PropertyChanged}" Padding="4,3"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Text="{DynamicResource Main_VerifyTokenColeNo}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="Copiar" Command="{Binding CopyVerifyTokenCommand}" Style="{StaticResource SubtleButton}" Padding="8,3" Margin="6,0,0,0"/>
+                                        <TextBox Text="{Binding VerifyToken, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="4,3"/>
+                                    </DockPanel>
+                                    <TextBlock Text="{DynamicResource Main_AMetaSoEntrega}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                                    <TextBox Text="{Binding TunnelCommand, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="4,3"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Main_TriagemDegrau1Da}" FontWeight="SemiBold" FontSize="14"/>
+                                    <TextBlock Text="{DynamicResource Main_RemetentesPrioritariosExDiretor}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                                    <TextBox Text="{Binding PrioritySenders, UpdateSourceTrigger=PropertyChanged}" Padding="4,3" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{DynamicResource Main_AssuntosMonitoradosPalavrasChave}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
+                                    <TextBox Text="{Binding Keywords, UpdateSourceTrigger=PropertyChanged}" Padding="4,3" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <WrapPanel Margin="0,12,0,0">
+                                <Button Content="{DynamicResource Main_LigarCanal}" Command="{Binding StartCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}, ConverterParameter=not}"/>
+                                <Button Content="{DynamicResource Main_Desligar}" Command="{Binding StopCommand}" Style="{StaticResource DangerButton}" Margin="0,0,8,8"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}"/>
+                                <Button Content="{DynamicResource Main_Salvar}" Command="{Binding SaveCommand}" Style="{StaticResource SubtleButton}" Margin="0,0,8,8"/>
+                            </WrapPanel>
+                            <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <Border x:Name="ChannelInbox" Grid.Column="2" Style="{StaticResource Card}">
+                        <DockPanel>
+                            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                                <Button DockPanel.Dock="Right" Content="{DynamicResource Main_ReceberMensagemDeTeste}" Command="{Binding EmitTestCommand}" Style="{StaticResource SubtleButton}"
+                                        Visibility="{Binding IsSimulator, Converter={StaticResource BoolToVis}}"/>
+                                <TextBlock Text="{DynamicResource Main_MensagensRecebidas}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <WrapPanel>
+                                    <Border Style="{StaticResource Badge}" Background="#FDECEA" Margin="0,0,6,0">
+                                        <TextBlock FontSize="11" Foreground="#B3261E"><Run Text="{Binding PriorityCount, Mode=OneWay}"/><Run Text="{DynamicResource Main_Prioritarias}"/></TextBlock>
+                                    </Border>
+                                    <Border Style="{StaticResource Badge}" Background="#EEF2F8" Margin="0,0,6,0">
+                                        <TextBlock FontSize="11" Foreground="#2B579A"><Run Text="{Binding RelevantCount, Mode=OneWay}"/><Run Text="{DynamicResource Main_Relevantes}"/></TextBlock>
+                                    </Border>
+                                    <Border Style="{StaticResource Badge}" Background="#F0F0F0">
+                                        <TextBlock FontSize="11" Foreground="#666666"><Run Text="{Binding IgnoredCount, Mode=OneWay}"/><Run Text="{DynamicResource Main_Ignoradas}"/></TextBlock>
+                                    </Border>
+                                </WrapPanel>
+                            </DockPanel>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Messages}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="0,8">
+                                                <DockPanel>
+                                                    <Rectangle DockPanel.Dock="Left" Width="4" Margin="0,0,10,0" RadiusX="2" RadiusY="2"
+                                                               Fill="{Binding Relevance, Converter={StaticResource Semantic}, ConverterParameter=fg}"/>
+                                                    <StackPanel>
+                                                        <DockPanel>
+                                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Time}" Style="{StaticResource Muted}"/>
+                                                            <TextBlock Text="{Binding From}" FontWeight="SemiBold"/>
+                                                            <Border Style="{StaticResource Badge}" Margin="8,0,0,0" Padding="6,0"
+                                                                    Background="{Binding Relevance, Converter={StaticResource Semantic}}">
+                                                                <TextBlock Text="{Binding RelevanceLabel}" FontSize="10.5" FontWeight="Bold"
+                                                                           Foreground="{Binding Relevance, Converter={StaticResource Semantic}, ConverterParameter=fg}"/>
+                                                            </Border>
+                                                        </DockPanel>
+                                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                                        <TextBlock Text="{Binding Detail}" Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,0"/>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- ============================== Decisões + Verificação ============================== -->
+        <Border x:Name="DecisionsPanel" Grid.Row="1" Grid.Column="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0">
+            <Grid Margin="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <DockPanel Margin="0,4,0,8">
+                    <Border DockPanel.Dock="Right" Style="{StaticResource Badge}" Background="#FDECEA">
+                        <TextBlock Foreground="{StaticResource DangerBrush}" FontWeight="SemiBold" FontSize="12">
+                            <Run Text="{Binding PendingCount, Mode=OneWay}"/><Run Text="{DynamicResource Main_Pendentes}"/>
+                        </TextBlock>
+                    </Border>
+                    <TextBlock Text="{DynamicResource Main_Decisoes}" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding PendingDecisions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="10"
+                                            BorderBrush="{Binding Level, Converter={StaticResource Semantic}, ConverterParameter=fg}">
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding TimeText}" Style="{StaticResource Muted}"/>
+                                                <TextBlock Text="{Binding Agent}" FontWeight="SemiBold"/>
+                                            </DockPanel>
+                                            <Border Background="{StaticResource BackgroundBrush}" CornerRadius="3" Padding="6,4" Margin="0,6,0,0">
+                                                <TextBlock Text="{Binding Action}" FontFamily="{StaticResource MonoFont}" FontSize="12" TextWrapping="Wrap"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Context}" Style="{StaticResource Muted}" Margin="0,6,0,0"/>
+                                            <Border Style="{StaticResource Badge}" Margin="0,8,0,0" Background="{Binding Level, Converter={StaticResource Semantic}}">
+                                                <TextBlock Text="{Binding Level, Converter={StaticResource RiskLabel}}" FontSize="11" FontWeight="Bold"
+                                                           Foreground="{Binding Level, Converter={StaticResource Semantic}, ConverterParameter=fg}"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding RiskDetail}" Style="{StaticResource Muted}" FontSize="11" Margin="0,4,0,0"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                <Button Content="{DynamicResource Main_Aprovar}" Style="{StaticResource PrimaryButton}" Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}"
+                                                        Command="{Binding DataContext.ApproveCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                                <Button Content="{DynamicResource Main_Negar}" Style="{StaticResource DangerButton}" Margin="8,0,0,0"
+                                                        Command="{Binding DataContext.DenyCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Style="{StaticResource Muted}" Margin="2,0,0,0">
+                            <Run Text="✔ "/><Run Text="{Binding AutoApprovedCount, Mode=OneWay}"/><Run Text="{DynamicResource Main_AcoesDeRiscoBaixo}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <TextBlock Grid.Row="2" Text="{Binding VerificationTitle}" Visibility="{Binding ShowVerification, Converter={StaticResource BoolToVis}}" FontWeight="SemiBold" Margin="0,14,0,8"/>
+                <StackPanel x:Name="VerificationPanel" Grid.Row="3" Visibility="{Binding ShowVerification, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding VerificationSummary}" Style="{StaticResource Muted}" Margin="0,0,0,8"
+                               Visibility="{Binding VerificationSummary, Converter={StaticResource BoolToVis}}"/>
+                    <UniformGrid Rows="1" Margin="0,0,0,8">
+                        <Border Style="{StaticResource Badge}" Background="#FDECEA" Margin="0,0,6,0" HorizontalAlignment="Stretch">
+                            <TextBlock HorizontalAlignment="Center" Foreground="#B3261E" FontWeight="SemiBold"><Run Text="✖ "/><Run Text="{Binding CriticalCount, Mode=OneWay}"/><Run Text="{DynamicResource Main_Critico}"/></TextBlock>
+                        </Border>
+                        <Border Style="{StaticResource Badge}" Background="#FFF4E5" Margin="0,0,6,0" HorizontalAlignment="Stretch">
+                            <TextBlock HorizontalAlignment="Center" Foreground="#9A5B00" FontWeight="SemiBold"><Run Text="▲ "/><Run Text="{Binding MajorCount, Mode=OneWay}"/><Run Text="{DynamicResource Main_Maior}"/></TextBlock>
+                        </Border>
+                        <Border Style="{StaticResource Badge}" Background="#EEF2F8" HorizontalAlignment="Stretch">
+                            <TextBlock HorizontalAlignment="Center" Foreground="#2B579A" FontWeight="SemiBold"><Run Text="• "/><Run Text="{Binding MinorCount, Mode=OneWay}"/><Run Text="{DynamicResource Main_Menor}"/></TextBlock>
+                        </Border>
+                    </UniformGrid>
+                    <ItemsControl ItemsSource="{Binding Verification}" MaxHeight="190">
+                        <ItemsControl.Template>
+                            <ControlTemplate TargetType="ItemsControl">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsPresenter/></ScrollViewer>
+                            </ControlTemplate>
+                        </ItemsControl.Template>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Rectangle DockPanel.Dock="Left" Width="3" Fill="{Binding Severity, Converter={StaticResource Semantic}, ConverterParameter=fg}" Margin="0,0,8,0"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding File}" FontFamily="{StaticResource MonoFont}" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding Message}" Style="{StaticResource Muted}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============================== Rodapé ============================== -->
+        <Border x:Name="StatusBar" Grid.Row="2" Grid.ColumnSpan="3" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" Margin="16,0" VerticalAlignment="Center">
+                <StackPanel.Resources>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+                        <Setter Property="Margin" Value="0,0,22,0"/>
+                    </Style>
+                </StackPanel.Resources>
+                <TextBlock Text="{DynamicResource Main_Worktrees2Ativos}" Visibility="{Binding HasTask, Converter={StaticResource BoolToVis}, ConverterParameter=not}"/>
+                <TextBlock Text="{DynamicResource Main_TokensHoje182Mil}" Visibility="{Binding HasTask, Converter={StaticResource BoolToVis}, ConverterParameter=not}"/>
+                <TextBlock><Run Text="{DynamicResource Main_Log}"/><Run Text="{Binding LogCount, Mode=OneWay}"/><Run Text="{DynamicResource Main_Eventos}"/></TextBlock>
+                <TextBlock Text="{DynamicResource Main_AzureDevopsStory4521}" Visibility="{Binding HasTask, Converter={StaticResource BoolToVis}, ConverterParameter=not}"/>
+                <TextBlock Text="{Binding GateStatus}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Tour guiado: camada por cima de tudo; só aparece durante uma lição. -->
+        <tut:TourOverlay x:Name="Tour" Grid.RowSpan="3" Grid.ColumnSpan="3" Visibility="Collapsed"/>
+    </Grid>
+</Window>

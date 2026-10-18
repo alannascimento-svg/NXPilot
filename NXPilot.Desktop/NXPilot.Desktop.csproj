@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyTitle>NXPilot</AssemblyTitle>
+    <!-- O projeto continua NXPilot; só o executável se chama NxPilot.exe. -->
+    <AssemblyName>NxPilot</AssemblyName>
+    <RootNamespace>NXPilot.Desktop</RootNamespace>
+    <!-- Main próprio (Program.cs): desvia para o modo hook do agente antes de iniciar o WPF. -->
+    <StartupObject>NXPilot.Desktop.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <!-- FlaUI (MIT): abrir o .pbip no Power BI Desktop e capturar a janela para conferência. -->
+    <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NXPilot.Core\NXPilot.Core.csproj" />
+  </ItemGroup>
+
+</Project>

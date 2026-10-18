@@ -1,0 +1,117 @@
+<Window x:Class="NXPilot.Setup.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Setup_NexusXdataInstallNxpilot}"
+        Width="1000" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="White" FontFamily="Segoe UI">
+    <StackPanel Margin="24,18,24,18">
+        <Grid Margin="0,0,0,2">
+            <TextBlock FontSize="18" FontWeight="SemiBold" Foreground="#2B579A" VerticalAlignment="Center">
+                <Run Text="{DynamicResource Setup_NexusXdataInstallNxpilot}"/>
+                <Run x:Name="VersionRun" FontSize="12" FontWeight="Normal" Foreground="#999"/>
+            </TextBlock>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button x:Name="OpenAppButton" Content="{DynamicResource Setup_AbrirNxpilot}" Height="28" Padding="16,0" Margin="0,0,8,0" Cursor="Hand"
+                        Visibility="Collapsed" Click="OnOpenAppClick" Background="#2B579A" Foreground="White" BorderThickness="0"/>
+                <ComboBox x:Name="LanguageBox" Width="60" Margin="0,0,8,0" Padding="6,3" SelectionChanged="OnLanguageChanged" ToolTip="Idioma / Language">
+                    <ComboBoxItem Content="PT" Tag="pt-BR"/>
+                    <ComboBoxItem Content="EN" Tag="en-US"/>
+                </ComboBox>
+                <Button Content="{DynamicResource Setup_Fechar}" Height="28" Padding="16,0" Cursor="Hand" Click="OnCloseClick"/>
+            </StackPanel>
+        </Grid>
+        <TextBlock Text="{DynamicResource Setup_InteligenciaArtificialAutomaticaE}"
+                   FontSize="13" FontStyle="Italic" Foreground="#2B579A" Margin="0,2,0,6"/>
+        <TextBlock Text="{DynamicResource Setup_OrquestradorDeAgentesDe}"
+                   FontSize="12" Foreground="#777" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <!-- Passo 1: o app (vem dentro do Setup, sem download) -->
+                <Border Style="{StaticResource StepCard}">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Setup_1InstalarONxpilot}" Style="{StaticResource StepTitle}"/>
+                        <TextBlock x:Name="Step1StatusText" FontSize="12" Foreground="#555" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="10.5" Foreground="#999" TextWrapping="Wrap" Margin="0,0,0,10">
+                            <Run x:Name="AppPathRun"/>
+                            <Hyperlink Click="OnOpenAppFolder"><Run Text="{DynamicResource Setup_AbrirPasta}"/></Hyperlink>
+                        </TextBlock>
+                        <Button x:Name="Step1Button" Content="{DynamicResource Setup_Instalar}" Width="220" Style="{StaticResource StepButton}" Click="OnStep1Click"/>
+                        <ProgressBar x:Name="Step1Progress" Height="18" Minimum="0" Maximum="100" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Passo 2: modelo ONNX do DecisionGate -->
+                <Border Style="{StaticResource StepCard}">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Setup_2ClassificadorDeRisco}" Style="{StaticResource StepTitle}"/>
+                        <TextBlock Text="{DynamicResource Setup_ModeloAllMinilmL6}"
+                                   Style="{StaticResource Note}" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="Step2StatusText" FontSize="12" Foreground="#555" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <TextBlock FontSize="10.5" Foreground="#999" TextWrapping="Wrap" Margin="0,0,0,10">
+                            <Run x:Name="OnnxPathRun"/>
+                            <Hyperlink Click="OnOpenOnnxFolder"><Run Text="{DynamicResource Setup_AbrirPasta}"/></Hyperlink>
+                        </TextBlock>
+                        <Button x:Name="Step2Button" Content="{DynamicResource Setup_BaixarModelo}" Width="220" Style="{StaticResource StepButton}" Click="OnStep2Click"/>
+                        <TextBlock x:Name="Step2ProgressText" FontSize="11" Foreground="#555" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <!-- Passo 3: agentes — o NXPilot coordena, não substitui -->
+                <Border Style="{StaticResource StepCard}">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Setup_3AgentesDeCodigo}" Style="{StaticResource StepTitle}"/>
+                        <TextBlock Text="{DynamicResource Setup_ONxpilotCoordenaOs}"
+                                   Style="{StaticResource Note}" Margin="0,0,0,10"/>
+
+                        <DockPanel Margin="0,0,0,4">
+                            <TextBlock x:Name="ClaudeStatus" DockPanel.Dock="Right" FontSize="11" VerticalAlignment="Center"/>
+                            <TextBlock Text="Claude Code" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,12">
+                            <Button DockPanel.Dock="Right" Content="{DynamicResource Setup_Copiar}" Padding="10,2" Margin="6,0,0,0" Tag="claude" Click="OnCopyCommand"/>
+                            <TextBox x:Name="ClaudeCommand" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas" FontSize="11" Padding="4,3" BorderBrush="#DDE1E6"/>
+                        </DockPanel>
+
+                        <DockPanel Margin="0,0,0,4">
+                            <TextBlock x:Name="CodexStatus" DockPanel.Dock="Right" FontSize="11" VerticalAlignment="Center"/>
+                            <TextBlock Text="Codex" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <DockPanel Margin="0,0,0,8">
+                            <Button DockPanel.Dock="Right" Content="{DynamicResource Setup_Copiar}" Padding="10,2" Margin="6,0,0,0" Tag="codex" Click="OnCopyCommand"/>
+                            <TextBox x:Name="CodexCommand" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas" FontSize="11" Padding="4,3" BorderBrush="#DDE1E6"/>
+                        </DockPanel>
+                        <TextBlock Text="{DynamicResource Setup_RodeOComandoNum}"
+                                   Style="{StaticResource Note}" Margin="0,0,0,8"/>
+                        <Button Content="{DynamicResource Setup_VerificarDeNovo}" Style="{StaticResource StepButton}" Click="OnRecheckClick"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Passo 4: IA Local compartilhada com o NXProject -->
+                <Border Style="{StaticResource StepCard}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock x:Name="LlamaStatus" DockPanel.Dock="Right" FontSize="11" VerticalAlignment="Center"/>
+                            <TextBlock Text="{DynamicResource Setup_4IaLocalLlama}" Style="{StaticResource StepTitle}" Margin="0"/>
+                        </DockPanel>
+                        <TextBlock Text="{DynamicResource Setup_UsadaSoNasAcoes}"
+                                   Style="{StaticResource Note}"/>
+                        <TextBlock x:Name="LlamaPathText" FontSize="10.5" Foreground="#999" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <TextBlock x:Name="ErrorText" Foreground="#C0392B" FontSize="11" TextWrapping="Wrap" Visibility="Collapsed"/>
+    </StackPanel>
+</Window>

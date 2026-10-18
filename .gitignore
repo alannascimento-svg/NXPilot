@@ -1,0 +1,10 @@
+bin/
+obj/
+dist/
+*.user
+*_wpftmp.csproj
+.vs/
+out/
+*.pfx
+*.snk
+settings.json

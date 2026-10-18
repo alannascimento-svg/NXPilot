@@ -1,0 +1,186 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+    <!-- Textos da interface em português. Mesmas chaves em Strings.en-US.xaml. -->
+    <sys:String x:Key="Main_NxpilotPrototipo">NXPilot — protótipo</sys:String>
+    <sys:String x:Key="Main_CommunityPrototipo">Community · protótipo</sys:String>
+    <sys:String x:Key="Main_SimularAcaoDoAgente">▶  Simular ação do agente</sys:String>
+    <sys:String x:Key="Main_UmAgentePedeUma">Um agente pede uma ação; o gate classifica e decide se precisa de você.</sys:String>
+    <sys:String x:Key="Main_Ajuda">?  Ajuda</sys:String>
+    <sys:String x:Key="Main_LicoesGuiadasSobreO">Lições guiadas sobre o NXPilot (F1)</sys:String>
+    <sys:String x:Key="Main_NovaTarefa">+  Nova tarefa</sys:String>
+    <sys:String x:Key="Main_Historico">🕘  Histórico</sys:String>
+    <sys:String x:Key="Main_Notificacoes">🔔  Notificações</sys:String>
+    <sys:String x:Key="Main_WorkItemsAzureDevops">⧉  Work items (Azure DevOps)</sys:String>
+    <sys:String x:Key="Main_Agentes">AGENTES</sys:String>
+    <sys:String x:Key="Main_Artefatos">ARTEFATOS</sys:String>
+    <sys:String x:Key="Main_Plano">Plano</sys:String>
+    <sys:String x:Key="Main_Intencao">Intenção</sys:String>
+    <sys:String x:Key="Main_CriarOOrquestradorDo">Criar o orquestrador do NXPilot: Claude Code e Codex trabalham em fases, cada ação sensível passa pelo DecisionGate, tudo fica registrado em log de auditoria e cada fase é verificada contra o plano por outro agente.</sys:String>
+    <sys:String x:Key="Main_Fluxo">FLUXO</sys:String>
+    <sys:String x:Key="Main_1Spec">1 · Spec</sys:String>
+    <sys:String x:Key="Main_IntencaoRestricoesECriterios">intenção, restrições e critérios de aceite</sys:String>
+    <sys:String x:Key="Main_2Fases">2 · Fases</sys:String>
+    <sys:String x:Key="Main_PlanoPorArquivoUma">plano por arquivo; uma fase = um worktree</sys:String>
+    <sys:String x:Key="Main_3Execucao">3 · Execução</sys:String>
+    <sys:String x:Key="Main_ClaudeCodeCodexAcoes">Claude Code / Codex; ações passam pelo DecisionGate</sys:String>
+    <sys:String x:Key="Main_4Verificacao">4 · Verificação</sys:String>
+    <sys:String x:Key="Main_OutroAgenteRevisaO">outro agente revisa o diff contra o plano</sys:String>
+    <sys:String x:Key="Main_CriteriosDeAceite">CRITÉRIOS DE ACEITE</sys:String>
+    <sys:String x:Key="Main_TodaAcaoDeAgente">☑  Toda ação de agente é registrada (quem, o quê, quando, decisão).</sys:String>
+    <sys:String x:Key="Main_AcaoDeRiscoMedio">☑  Ação de risco MÉDIO/ALTO nunca executa sem aprovação.</sys:String>
+    <sys:String x:Key="Main_ClassificadorRodaSemGpu">☐  Classificador roda sem GPU em menos de 10 ms por ação.</sys:String>
+    <sys:String x:Key="Main_FaseSoFechaCom">☐  Fase só fecha com verificação sem itens críticos.</sys:String>
+    <sys:String x:Key="Main_Fases">Fases</sys:String>
+    <sys:String x:Key="Main_Fase" xml:space="preserve">Fase </sys:String>
+    <sys:String x:Key="Main_PlanoPorArquivoFase" xml:space="preserve">Plano por arquivo · Fase </sys:String>
+    <sys:String x:Key="Main_Diff">Diff</sys:String>
+    <sys:String x:Key="Main_Terminal">Terminal</sys:String>
+    <sys:String x:Key="Main_LogDeEventos">Log de eventos (</sys:String>
+    <sys:String x:Key="Main_Hora">Hora</sys:String>
+    <sys:String x:Key="Main_Origem">Origem</sys:String>
+    <sys:String x:Key="Main_Tipo">Tipo</sys:String>
+    <sys:String x:Key="Main_Evento">Evento</sys:String>
+    <sys:String x:Key="Main_LaboratorioIa">Laboratório IA</sys:String>
+    <sys:String x:Key="Main_ClassificadorOnnxEncoder">Classificador ONNX (encoder)</sys:String>
+    <sys:String x:Key="Main_BaixarModeloOnnx90">⬇  Baixar modelo ONNX (~90 MB)</sys:String>
+    <sys:String x:Key="Main_ProcessamentoDoGate">PROCESSAMENTO DO GATE</sys:String>
+    <sys:String x:Key="Main_CpuPadraoFuncionaEm">CPU — padrão, funciona em qualquer máquina</sys:String>
+    <sys:String x:Key="Main_GpuDirectmlOpcionalQualquer">GPU (DirectML) — opcional, qualquer placa DX12</sys:String>
+    <sys:String x:Key="Main_GpuIndisponivelNestaMaquina">⚠ GPU indisponível nesta máquina — o gate voltou para CPU.</sys:String>
+    <sys:String x:Key="Main_TrocarProvedor">Trocar provedor…</sys:String>
+    <sys:String x:Key="Main_LlmDaDuvida3o">LLM da dúvida (3º degrau)</sys:String>
+    <sys:String x:Key="Main_IaLocalLlamaGithub">IA Local (LLaMA), GitHub Copilot, Azure OpenAI, Microsoft 365 ou OpenRouter — os mesmos provedores do NXProject.</sys:String>
+    <sys:String x:Key="Main_CascataPadraoDoGate">CASCATA · PADRÃO DO GATE</sys:String>
+    <sys:String x:Key="Main_ChamarOLlmSo">Chamar o LLM só quando o ONNX tiver dúvida (&lt; 60%)</sys:String>
+    <sys:String x:Key="Main_CompararMotores">COMPARAR MOTORES</sys:String>
+    <sys:String x:Key="Main_RodarComparacao">▶  Rodar comparação</sys:String>
+    <sys:String x:Key="Main_IncluirGpu">incluir GPU</sys:String>
+    <sys:String x:Key="Main_IncluirLlama1Min">incluir LLaMA (~1 min na CPU)</sys:String>
+    <sys:String x:Key="Main_Motor">Motor</sys:String>
+    <sys:String x:Key="Main_Carga">Carga</sys:String>
+    <sys:String x:Key="Main_MediaPorAcaoEscala">Média por ação (escala log)</sys:String>
+    <sys:String x:Key="Main_Acertos">Acertos</sys:String>
+    <sys:String x:Key="Main_AltoPerdido">ALTO perdido</sys:String>
+    <sys:String x:Key="Main_Erro">Erro</sys:String>
+    <sys:String x:Key="Main_AcoesDoMotorSelecionado" xml:space="preserve">AÇÕES DO MOTOR SELECIONADO · </sys:String>
+    <sys:String x:Key="Main_Acao">Ação</sys:String>
+    <sys:String x:Key="Main_Esperado">Esperado</sys:String>
+    <sys:String x:Key="Main_Obtido">Obtido</sys:String>
+    <sys:String x:Key="Main_Conf">Conf.</sys:String>
+    <sys:String x:Key="Main_Motivo">Motivo</sys:String>
+    <sys:String x:Key="Main_TestarEEnsinar">TESTAR E ENSINAR</sys:String>
+    <sys:String x:Key="Main_Classificar">Classificar</sys:String>
+    <sys:String x:Key="Main_Risco">Risco</sys:String>
+    <sys:String x:Key="Main_Tempo">Tempo</sys:String>
+    <sys:String x:Key="Main_ErrouEnsineOOnnx">Errou? Ensine o ONNX — vira exemplo na hora, sem re-treino:</sys:String>
+    <sys:String x:Key="Main_EBaixo">é BAIXO</sys:String>
+    <sys:String x:Key="Main_EMedio">é MÉDIO</sys:String>
+    <sys:String x:Key="Main_EAlto">é ALTO</sys:String>
+    <sys:String x:Key="Main_Canais">Canais</sys:String>
+    <sys:String x:Key="Main_SomenteLeitura">Somente leitura.</sys:String>
+    <sys:String x:Key="Main_ONxpilotRecebeTria">O NXPilot recebe, tria e registra — não envia nada por este canal. Usa só a API oficial da Meta (número-robô em chip dedicado).</sys:String>
+    <sys:String x:Key="Main_Fonte">Fonte</sys:String>
+    <sys:String x:Key="Main_SimuladorTestarSemConta">Simulador — testar sem conta na Meta</sys:String>
+    <sys:String x:Key="Main_NumeroRoboWhatsappCloud">Número-robô — WhatsApp Cloud API oficial</sys:String>
+    <sys:String x:Key="Main_NumeroRoboMeta">Número-robô (Meta)</sys:String>
+    <sys:String x:Key="Main_PhoneNumberId">Phone Number ID</sys:String>
+    <sys:String x:Key="Main_AccessTokenPermanenteDe">Access Token (permanente, de usuário do sistema)</sys:String>
+    <sys:String x:Key="Main_AppSecretValidaA">App Secret (valida a assinatura do webhook)</sys:String>
+    <sys:String x:Key="Main_VersaoDaGraphApi">Versão da Graph API</sys:String>
+    <sys:String x:Key="Main_PortaLocal">Porta local</sys:String>
+    <sys:String x:Key="Main_VerifyTokenColeNo">Verify token (cole no painel de Webhooks da Meta)</sys:String>
+    <sys:String x:Key="Main_AMetaSoEntrega">A Meta só entrega em HTTPS público. Publique a porta com um túnel e cadastre a URL + /whatsapp/:</sys:String>
+    <sys:String x:Key="Main_TriagemDegrau1Da">Triagem (degrau 1 da cascata)</sys:String>
+    <sys:String x:Key="Main_RemetentesPrioritariosExDiretor">Remetentes prioritários (ex.: Diretor) — 55 + DDD + número, separados por vírgula</sys:String>
+    <sys:String x:Key="Main_AssuntosMonitoradosPalavrasChave">Assuntos monitorados (palavras-chave)</sys:String>
+    <sys:String x:Key="Main_LigarCanal">▶  Ligar canal</sys:String>
+    <sys:String x:Key="Main_Desligar">■  Desligar</sys:String>
+    <sys:String x:Key="Main_Salvar">Salvar</sys:String>
+    <sys:String x:Key="Main_ReceberMensagemDeTeste">Receber mensagem de teste</sys:String>
+    <sys:String x:Key="Main_MensagensRecebidas">Mensagens recebidas</sys:String>
+    <sys:String x:Key="Main_Prioritarias" xml:space="preserve"> prioritárias</sys:String>
+    <sys:String x:Key="Main_Relevantes" xml:space="preserve"> relevantes</sys:String>
+    <sys:String x:Key="Main_Ignoradas" xml:space="preserve"> ignoradas</sys:String>
+    <sys:String x:Key="Main_Pendentes" xml:space="preserve"> pendentes</sys:String>
+    <sys:String x:Key="Main_Decisoes">DECISÕES</sys:String>
+    <sys:String x:Key="Main_Aprovar">Aprovar</sys:String>
+    <sys:String x:Key="Main_Negar">Negar</sys:String>
+    <sys:String x:Key="Main_AcoesDeRiscoBaixo" xml:space="preserve"> ações de risco BAIXO aprovadas automaticamente (ver Log).</sys:String>
+    <sys:String x:Key="Main_VerificacaoFase1">VERIFICAÇÃO · FASE 1</sys:String>
+    <sys:String x:Key="Main_Critico" xml:space="preserve"> crítico</sys:String>
+    <sys:String x:Key="Main_Maior" xml:space="preserve"> maior</sys:String>
+    <sys:String x:Key="Main_Menor" xml:space="preserve"> menor</sys:String>
+    <sys:String x:Key="Main_Worktrees2Ativos">Worktrees: 2 ativos</sys:String>
+    <sys:String x:Key="Main_TokensHoje182Mil">Tokens hoje: 182 mil</sys:String>
+    <sys:String x:Key="Main_Log" xml:space="preserve">Log: </sys:String>
+    <sys:String x:Key="Main_Eventos" xml:space="preserve"> eventos</sys:String>
+    <sys:String x:Key="Main_AzureDevopsStory4521">Azure DevOps: Story #4521</sys:String>
+    <sys:String x:Key="Help_AjudaLicoesDoNxpilot">Ajuda — lições do NXPilot</sys:String>
+    <sys:String x:Key="Help_LicoesBasicas">LIÇÕES BÁSICAS</sys:String>
+    <sys:String x:Key="Help_MostrarEsteGuiaAo">Mostrar este guia ao abrir o NXPilot</sys:String>
+    <sys:String x:Key="Help_RecomecarProgresso">Recomeçar progresso</sys:String>
+    <sys:String x:Key="Help_Fechar">Fechar</sys:String>
+    <sys:String x:Key="Help_DicaF1AbreEsta">Dica: F1 abre esta janela de qualquer lugar. Durante a lição, use ← → e Esc.</sys:String>
+    <sys:String x:Key="Tour_FeitoVejaOResultado">✓ Feito — veja o resultado na área destacada.</sys:String>
+    <sys:String x:Key="Tour_SairDaLicao">Sair da lição</sys:String>
+    <sys:String x:Key="Tour_Voltar">← Voltar</sys:String>
+    <sys:String x:Key="Tour_Proximo">Próximo →</sys:String>
+    <sys:String x:Key="Prov_ProvedorDeIaDa">Provedor de IA da cascata</sys:String>
+    <sys:String x:Key="Prov_3oDegrauDaCascata">3º degrau da cascata — o LLM da dúvida</sys:String>
+    <sys:String x:Key="Prov_SoEChamadoQuando">Só é chamado quando as regras e o ONNX não têm certeza (cerca de 1 em cada 10 ações no benchmark).</sys:String>
+    <sys:String x:Key="Prov_Provedor">Provedor</sys:String>
+    <sys:String x:Key="Prov_ComProvedorRemotoO">Com provedor remoto, o texto das ações em dúvida (comando ou nome de arquivo) é enviado a ele. As regras e o ONNX continuam 100% locais.</sys:String>
+    <sys:String x:Key="Prov_EndpointChatCompletions">Endpoint (chat/completions)</sys:String>
+    <sys:String x:Key="Prov_Modelo">Modelo</sys:String>
+    <sys:String x:Key="Prov_TenantId">Tenant ID</sys:String>
+    <sys:String x:Key="Prov_ClientIdRegistroDe">Client ID (registro de aplicativo)</sys:String>
+    <sys:String x:Key="Prov_Escopo">Escopo</sys:String>
+    <sys:String x:Key="Prov_EntrarComAConta">Entrar com a conta da empresa</sys:String>
+    <sys:String x:Key="Prov_Sair">Sair</sys:String>
+    <sys:String x:Key="Prov_PorQueNaoDa">Por que não dá para usar o Copilot do Teams/Word?</sys:String>
+    <sys:String x:Key="Prov_OMicrosoft365Copilot">O Microsoft 365 Copilot (o do Teams, Word e Outlook) não expõe uma API pública de “manda o texto, recebe a resposta” para aplicativos de terceiros — ele roda dentro dos apps da Microsoft. O caminho suportado para usar a IA que a empresa já paga é o Azure OpenAI: com chave (opção Azure OpenAI) ou com o login corporativo (opção Microsoft 365), ambos habilitados pela TI. O GitHub Copilot entra pelo token do GitHub.</sys:String>
+    <sys:String x:Key="Prov_TestarConexao">Testar conexão</sys:String>
+    <sys:String x:Key="Prov_Cancelar">Cancelar</sys:String>
+    <sys:String x:Key="Prov_Salvar">Salvar</sys:String>
+    <sys:String x:Key="NewTask_Titulo">Nova tarefa</sys:String>
+    <sys:String x:Key="NewTask_Subtitulo">O agente (Claude Code ou Codex) primeiro só LÊ o repositório e propõe um plano. Nada é escrito antes da sua aprovação, e tudo acontece num worktree isolado — a sua pasta de trabalho não é tocada.</sys:String>
+    <sys:String x:Key="NewTask_Repositorio">Repositório git (pasta)</sys:String>
+    <sys:String x:Key="NewTask_Escolher">Escolher…</sys:String>
+    <sys:String x:Key="NewTask_NomeTarefa">Título da tarefa</sys:String>
+    <sys:String x:Key="NewTask_Intencao">Intenção — o que você quer que seja feito</sys:String>
+    <sys:String x:Key="NewTask_Criterios">Critérios de aceite — como saber que ficou pronto</sys:String>
+    <sys:String x:Key="NewTask_Modelo">Modelo do Claude</sys:String>
+    <sys:String x:Key="NewTask_ModeloPadrao">padrão da sua conta</sys:String>
+    <sys:String x:Key="NewTask_Agente">Agente</sys:String>
+    <sys:String x:Key="NewTask_GerarPlano">▶  Gerar plano</sys:String>
+    <sys:String x:Key="NewTask_Cancelar">Cancelar</sys:String>
+    <sys:String x:Key="Task_TarefaReal">TAREFA</sys:String>
+    <sys:String x:Key="Task_Worktree">Worktree isolado</sys:String>
+    <sys:String x:Key="Task_PlanoDoAgente">PLANO PROPOSTO PELO AGENTE</sys:String>
+    <sys:String x:Key="Task_AprovarExecutar">✓  Aprovar plano e executar</sys:String>
+    <sys:String x:Key="Task_Descartar">Descartar</sys:String>
+    <sys:String x:Key="Task_Interromper">■  Interromper</sys:String>
+    <sys:String x:Key="Task_AbrirWorktree">Abrir worktree</sys:String>
+    <sys:String x:Key="Task_CriteriosLabel">Critérios de aceite</sys:String>
+    <sys:String x:Key="NewTask_Revisor">Revisor (verificação cruzada)</sys:String>
+    <sys:String x:Key="NewTask_RevisorCodex">Codex — somente leitura (recomendado)</sys:String>
+    <sys:String x:Key="NewTask_RevisorClaude">Claude — numa sessão nova</sys:String>
+    <sys:String x:Key="NewTask_RevisorNenhum">Sem verificação</sys:String>
+    <sys:String x:Key="NewTask_ModeloCodex">Modelo do Codex (o da sua conta)</sys:String>
+    <sys:String x:Key="Hist_Titulo">Histórico de tarefas</sys:String>
+    <sys:String x:Key="Hist_Subtitulo">Cada tarefa fica guardada com plano, fases, verificação, custo e o log de auditoria. Abrir mostra a tarefa na tela (somente leitura).</sys:String>
+    <sys:String x:Key="Hist_Data">Data</sys:String>
+    <sys:String x:Key="Hist_Tarefa">Tarefa</sys:String>
+    <sys:String x:Key="Hist_Estado">Estado</sys:String>
+    <sys:String x:Key="Hist_Achados">Achados</sys:String>
+    <sys:String x:Key="Hist_Custo">Custo</sys:String>
+    <sys:String x:Key="Hist_Repositorio">Repositório</sys:String>
+    <sys:String x:Key="Hist_Abrir">Abrir na tela</sys:String>
+    <sys:String x:Key="Hist_AbrirWorktree">Abrir worktree</sys:String>
+    <sys:String x:Key="Hist_Remover">Remover worktree e registro…</sys:String>
+    <sys:String x:Key="Hist_Fechar">Fechar</sys:String>
+    <sys:String x:Key="Hist_Vazio">Nenhuma tarefa ainda. Use + Nova tarefa.</sys:String>
+    <sys:String x:Key="Main_Slogan">Inteligência Artificial Automática, e não autônoma — porque você está no controle.</sys:String>
+    <sys:String x:Key="Task_CapturarPowerBi">📸  Abrir no Power BI e capturar</sys:String>
+</ResourceDictionary>

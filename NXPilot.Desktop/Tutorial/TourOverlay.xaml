@@ -1,0 +1,54 @@
+<UserControl x:Class="NXPilot.Desktop.Tutorial.TourOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True" FocusVisualStyle="{x:Null}">
+    <!-- Sem fundo no Grid: só o escurecimento e o cartão recebem clique; o "buraco" do
+         destaque deixa o clique passar para a tela de verdade. -->
+    <Grid x:Name="Root">
+        <Path x:Name="Dim" Fill="#990F1E33"/>
+        <Border x:Name="Highlight" BorderBrush="#FFC000" BorderThickness="3" CornerRadius="8"
+                HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False"/>
+        <Canvas>
+            <Border x:Name="Card" Width="400" Background="White" CornerRadius="8" Padding="20,16">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.35"/>
+                </Border.Effect>
+                <StackPanel>
+                    <DockPanel>
+                        <TextBlock x:Name="StepCounter" DockPanel.Dock="Right" FontSize="11" Foreground="{StaticResource SecondaryTextBrush}"/>
+                        <TextBlock x:Name="LessonTitle" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBrush}"/>
+                    </DockPanel>
+                    <TextBlock x:Name="StepTitle" FontSize="17" FontWeight="SemiBold" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="StepBody" FontSize="13" Margin="0,8,0,0" TextWrapping="Wrap" LineHeight="19"/>
+
+                    <Button x:Name="TryButton" Style="{StaticResource PrimaryButton}" Margin="0,14,0,0"
+                            HorizontalAlignment="Left" Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}"
+                            Click="OnTryClick"/>
+                    <TextBlock x:Name="TryDone" Text="{DynamicResource Tour_FeitoVejaOResultado}" FontSize="12"
+                               Foreground="{StaticResource AccentBrush}" Margin="0,8,0,0" Visibility="Collapsed"/>
+
+                    <!-- Pontos de progresso: um por passo, o atual em destaque. -->
+                    <ItemsControl x:Name="Dots" Margin="0,16,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Ellipse Width="8" Height="8" Margin="0,0,6,0" Fill="{Binding}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <DockPanel Margin="0,14,0,0">
+                        <Button x:Name="SkipButton" DockPanel.Dock="Left" Content="{DynamicResource Tour_SairDaLicao}" Style="{StaticResource NavButton}"
+                                Foreground="{StaticResource SecondaryTextBrush}" Click="OnSkipClick"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button x:Name="BackButton" Content="{DynamicResource Tour_Voltar}" Style="{StaticResource SubtleButton}" Click="OnBackClick"/>
+                            <Button x:Name="NextButton" Content="{DynamicResource Tour_Proximo}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" Click="OnNextClick"/>
+                        </StackPanel>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+        </Canvas>
+    </Grid>
+</UserControl>

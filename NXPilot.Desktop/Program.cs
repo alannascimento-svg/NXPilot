@@ -1,0 +1,33 @@
+// Copyright (c) Nexus XData Tecnologia Ltda — Todos os direitos reservados.
+// NXPilot — licenciado sob a NXPilot License 2.0 (Open Core / licenciamento dual).
+// Licença: LICENSE.txt (oficial, em português) | LICENSE.en.txt (English version).
+// Distribuição comercial somente mediante contrato: comercial.nexus.xdata@gmail.com
+
+using System.Text;
+using NXPilot.Agents;
+
+namespace NXPilot.Desktop;
+
+/// <summary>
+/// Ponto de entrada. `NxPilot.exe --hook` é o hook PreToolUse que o Claude Code chama antes
+/// de cada ferramenta: responde pelo stdout SEM abrir janela nem carregar o WPF (precisa ser
+/// rápido — roda a cada ação do agente). Sem esse argumento, abre o app normalmente.
+/// </summary>
+public static class Program
+{
+    [STAThread]
+    public static int Main(string[] args)
+    {
+        if (args.Length > 0 && args[0] == "--hook")
+        {
+            Console.InputEncoding = new UTF8Encoding(false);
+            Console.OutputEncoding = new UTF8Encoding(false);
+            return GatePipe.RunHookAsync(Console.In, Console.Out, Environment.GetEnvironmentVariable(GatePipe.PipeEnvVar))
+                .GetAwaiter().GetResult();
+        }
+
+        var app = new App();
+        app.InitializeComponent();
+        return app.Run();
+    }
+}

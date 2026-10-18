@@ -1,0 +1,56 @@
+NXPilot — Avisos de terceiros / Third-party notices
+(o NXPilot em si é licenciado sob a NXPilot License 2.0 — ver LICENSE.txt)
+=====================================================
+
+O NXPilot distribui ou usa os componentes abaixo. Todos permitem uso comercial nas
+condições indicadas; os textos completos das licenças estão nos links.
+
+COMPONENTES DISTRIBUÍDOS JUNTO COM O APP
+----------------------------------------
+ONNX Runtime (Microsoft.ML.OnnxRuntime.DirectML 1.24.4)
+  Licença: MIT — Copyright (c) Microsoft Corporation
+  https://github.com/microsoft/onnxruntime/blob/main/LICENSE
+
+DirectML (Microsoft.AI.DirectML 1.15.4)
+  Licença: Microsoft Software License Terms — redistribuição permitida em aplicativos
+  para Windows; ver LICENSE.txt do pacote NuGet.
+  https://www.nuget.org/packages/Microsoft.AI.DirectML
+
+Microsoft.ML.Tokenizers 2.0.1
+  Licença: MIT — Copyright (c) .NET Foundation and Contributors
+  https://github.com/dotnet/machinelearning/blob/main/LICENSE
+
+System.Security.Cryptography.ProtectedData 10.0.13
+  Licença: MIT — Copyright (c) .NET Foundation and Contributors
+  https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
+
+LLamaSharp 0.27.0 (somente o wrapper gerenciado)
+  Licença: MIT — Copyright (c) LLamaSharp contributors
+  https://github.com/SciSharp/LLamaSharp/blob/master/LICENSE
+
+FlaUI.Core / FlaUI.UIA3 5.0.0 (abrir o .pbip no Power BI Desktop e capturar a janela)
+  Licença: MIT — Copyright (c) 2016-2024 (texto da licença no pacote)
+  https://github.com/FlaUI/FlaUI/blob/master/LICENSE.txt
+
+CommunityToolkit.Mvvm 8.2.2
+  Licença: MIT — Copyright (c) .NET Foundation and Contributors
+  https://github.com/CommunityToolkit/dotnet/blob/main/License.md
+
+.NET Runtime / Windows Desktop Runtime (self-contained)
+  Licença: MIT — Copyright (c) .NET Foundation and Contributors
+  https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
+
+MODELOS BAIXADOS PELO USUÁRIO (não vêm dentro do instalador)
+------------------------------------------------------------
+sentence-transformers/all-MiniLM-L6-v2 (classificador ONNX)
+  Licença: Apache-2.0
+  https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+
+IA Local (LLaMA) — modelo de linguagem do 3º degrau da cascata
+  O NXPilot NÃO distribui modelo de linguagem; ele é baixado pelo usuário.
+  Padrão do NXPilot: Qwen3-4B-Instruct-2507 (GGUF unsloth) — Licença Apache-2.0
+    https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF
+    Fica em C:\IA_LOCAL\modelos\ (subpasta própria; não altera a IA Local do NXProject).
+  ATENÇÃO: Qwen2.5-3B-Instruct (o modelo da IA Local do NXProject) usa a "Qwen Research
+  License" — somente uso não comercial. O NXPilot só o usa se o modelo Apache-2.0 não
+  estiver instalado, e a tela mostra a licença do modelo em uso.

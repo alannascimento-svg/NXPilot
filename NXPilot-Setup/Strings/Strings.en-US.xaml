@@ -1,0 +1,23 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+    <!-- Installer UI strings in English. Mesmas chaves nos dois arquivos. -->
+    <sys:String x:Key="Setup_NexusXdataInstallNxpilot">Nexus Xdata Install — NXPilot</sys:String>
+    <sys:String x:Key="Setup_AbrirNxpilot">Open NXPilot</sys:String>
+    <sys:String x:Key="Setup_Fechar">Close</sys:String>
+    <sys:String x:Key="Setup_InteligenciaArtificialAutomaticaE">Automatic, not autonomous AI — because you are in control.</sys:String>
+    <sys:String x:Key="Setup_OrquestradorDeAgentesDe">Coding agent orchestrator (Claude Code, Codex) with audit log and decisions. Installs in your user profile — no administrator or .NET installation needed.</sys:String>
+    <sys:String x:Key="Setup_1InstalarONxpilot">1 · Install NXPilot</sys:String>
+    <sys:String x:Key="Setup_Instalar">Install</sys:String>
+    <sys:String x:Key="Setup_2ClassificadorDeRisco">2 · ONNX risk classifier (recommended)</sys:String>
+    <sys:String x:Key="Setup_ModeloAllMinilmL6">all-MiniLM-L6-v2 model (~90 MB) that classifies each agent action in milliseconds, on the CPU — no GPU needed. Without it NXPilot uses rules only.</sys:String>
+    <sys:String x:Key="Setup_BaixarModelo">Download model</sys:String>
+    <sys:String x:Key="Setup_3AgentesDeCodigo">3 · Coding agents</sys:String>
+    <sys:String x:Key="Setup_ONxpilotCoordenaOs">NXPilot coordinates the agents you already use, with your own subscription. Install at least one.</sys:String>
+    <sys:String x:Key="Setup_Copiar">Copy</sys:String>
+    <sys:String x:Key="Setup_RodeOComandoNum">Run the command in PowerShell and then click Check again. Installations inside WSL are recognized too.</sys:String>
+    <sys:String x:Key="Setup_VerificarDeNovo">Check again</sys:String>
+    <sys:String x:Key="Setup_4IaLocalLlama">4 · Local AI LLaMA (optional)</sys:String>
+    <sys:String x:Key="Setup_UsadaSoNasAcoes">Used only for actions where ONNX is unsure (cascade). It is the same Local AI as NXProject — if it is already installed, nothing to do. To install: NXProject → AI → Manage Local AI.</sys:String>
+    <sys:String x:Key="Setup_AbrirPasta">open folder</sys:String>
+</ResourceDictionary>

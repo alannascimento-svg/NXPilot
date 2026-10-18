@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- DirectML: GPU opcional (qualquer placa DX12); o mesmo pacote traz o executor de CPU. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
+    <PackageReference Include="Microsoft.ML.Tokenizers" Version="2.0.1" />
+    <!-- DPAPI: token e App Secret do WhatsApp cifrados no perfil do usuario (como o PAT do NXProject). -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.13" />
+    <!-- Só o wrapper: as DLLs nativas do llama.cpp vêm da pasta da IA Local (C:\IA_LOCAL). -->
+    <PackageReference Include="LLamaSharp" Version="0.27.0" />
+  </ItemGroup>
+
+</Project>

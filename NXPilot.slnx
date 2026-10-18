@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="NXPilot-Setup/NXPilot-Setup.csproj" />
+  <Project Path="NXPilot.Bench/NXPilot.Bench.csproj" />
+  <Project Path="NXPilot.Desktop/NXPilot.Desktop.csproj" />
+  <Project Path="NXPilot.Core/NXPilot.Core.csproj" />
+</Solution>

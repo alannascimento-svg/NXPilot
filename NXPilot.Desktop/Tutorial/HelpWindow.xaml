@@ -1,0 +1,61 @@
+<Window x:Class="NXPilot.Desktop.Tutorial.HelpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Help_AjudaLicoesDoNxpilot}" Width="640" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False"
+        Background="{StaticResource BackgroundBrush}" FontFamily="Segoe UI" FontSize="13">
+    <!-- Rolagem: com zoom de 125% e todos os campos visíveis, a janela passaria da tela. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="24,20">
+        <TextBlock x:Name="Heading" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource PrimaryBrush}"/>
+        <TextBlock x:Name="SubHeading" Style="{StaticResource Muted}" FontSize="13" Margin="0,4,0,0"/>
+
+        <!-- Lição recém-concluída: parabéns + atalho para a próxima. -->
+        <Border x:Name="DoneBanner" Background="#EAF4EC" CornerRadius="6" Padding="14,10" Margin="0,14,0,0" Visibility="Collapsed">
+            <DockPanel>
+                <Button x:Name="NextLessonButton" DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}"
+                        Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}" Click="OnStartClick"/>
+                <TextBlock x:Name="DoneText" Foreground="#1E6B34" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </DockPanel>
+        </Border>
+
+        <DockPanel Margin="0,16,0,6">
+            <TextBlock x:Name="ProgressText" DockPanel.Dock="Right" Style="{StaticResource Muted}"/>
+            <TextBlock Text="{DynamicResource Help_LicoesBasicas}" Style="{StaticResource SectionHeader}" Margin="0"/>
+        </DockPanel>
+        <ProgressBar x:Name="Progress" Height="6" Maximum="1" Foreground="{StaticResource AccentBrush}" Background="#E2E5E9" BorderThickness="0" Margin="0,0,0,12"/>
+
+        <ItemsControl x:Name="LessonList">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,8" Padding="14,10">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Left" Width="32" Height="32" CornerRadius="16" Margin="0,0,12,0" VerticalAlignment="Center"
+                                    Background="{Binding BadgeBrush}">
+                                <TextBlock Text="{Binding Badge}" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <Button DockPanel.Dock="Right" Content="{Binding ButtonText}" Tag="{Binding Lesson}" Click="OnStartClick"
+                                    Style="{StaticResource SubtleButton}" VerticalAlignment="Center" MinWidth="96"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Lesson.Title}" FontWeight="SemiBold"/>
+                                <TextBlock Style="{StaticResource Muted}">
+                                    <Run Text="{Binding Lesson.Summary, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding Meta, Mode=OneWay}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <DockPanel Margin="0,10,0,0">
+            <CheckBox x:Name="ShowOnStartupCheck" Content="{DynamicResource Help_MostrarEsteGuiaAo}" VerticalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="{DynamicResource Help_RecomecarProgresso}" Style="{StaticResource NavButton}" Foreground="{StaticResource SecondaryTextBrush}" Click="OnResetClick"/>
+                <Button Content="{DynamicResource Help_Fechar}" Style="{StaticResource SubtleButton}" Margin="8,0,0,0" IsCancel="True" Click="OnCloseClick"/>
+            </StackPanel>
+        </DockPanel>
+        <TextBlock Text="{DynamicResource Help_DicaF1AbreEsta}" Style="{StaticResource Muted}" Margin="0,10,0,0"/>
+    </StackPanel>
+    </ScrollViewer>
+</Window>

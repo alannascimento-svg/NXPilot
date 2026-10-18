@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>NXPilot-Setup</AssemblyName>
+    <RootNamespace>NXPilot.Setup</RootNamespace>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- Self-contained: o Setup roda sem .NET instalado. O runtime que ele carrega solto ao
+         lado do exe e o MESMO do app (mesmo SDK), por isso o NXPilot e instalado copiando
+         essa pasta inteira — sem duplicar o runtime, como no NXProject-Setup. -->
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- So o download do modelo: o Setup nao precisa do ONNX Runtime para baixar arquivos. -->
+    <!-- Idioma dos textos gerados em código (mesmo NxText do app). -->
+    <Compile Include="..\NXPilot.Core\NxText.cs">
+      <Link>Shared\NxText.cs</Link>
+    </Compile>
+    <Compile Include="..\NXPilot.Core\Onnx\OnnxModelStore.cs">
+      <Link>Shared\OnnxModelStore.cs</Link>
+    </Compile>
+  </ItemGroup>
+
+</Project>

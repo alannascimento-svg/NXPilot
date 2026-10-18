@@ -1,0 +1,308 @@
+NXPilot License 2.0 — Open Core / Licenciamento Dual
+
+Copyright (c) Nexus XData Tecnologia Ltda
+Contato comercial: comercial.nexus.xdata@gmail.com
+
+O NXPilot é distribuído sob um modelo "Open Core" com licenciamento dual:
+
+  • Edição Community (esta licença): gratuita para qualquer pessoa física ou
+    empresa, conforme os termos abaixo.
+  • Edição Comercial / Enterprise (NXAgentic): licença paga, com suporte oficial
+    e recursos adicionais, oferecida separadamente pela Nexus XData Tecnologia
+    Ltda sob contrato próprio.
+
+A mesma base de código pode ser licenciada por uma destas duas vias. Quem não
+puder ou não quiser cumprir as condições da Edição Community pode contratar a
+licença comercial.
+
+Idioma: este texto em português é a licença oficial do NXPilot. Há uma
+tradução completa para o inglês em LICENSE.en.txt, com todas as cláusulas e os
+mesmos termos, direitos e obrigações. Eventual diferença entre os dois textos
+decorre de tradução ou interpretação, e não de diferença de termos; nesse caso,
+prevalece este texto em português, por ser o original.
+
+Agentes e serviços de terceiros (nota sobre o produto): o NXPilot coordena
+agentes de código e serviços de IA de terceiros (por exemplo, Claude Code, Codex,
+GitHub Copilot, Azure OpenAI, OpenRouter e a API do WhatsApp), que Você instala,
+contrata e usa com as suas próprias contas e assinaturas. Esses agentes e
+serviços não fazem parte do Software, seguem os termos dos respectivos
+fornecedores e não são licenciados por esta licença. Da mesma forma, modelos de
+IA obtidos pelo usuário (como o classificador ONNX e a IA Local) seguem as suas
+próprias licenças, listadas em THIRD-PARTY-NOTICES.txt.
+
+--------------------------------------------------------------------------------
+1. Definições
+--------------------------------------------------------------------------------
+
+"Licenciante" é a Nexus XData Tecnologia Ltda.
+"Software" é o NXPilot Edição Community, incluindo seu código-fonte, binários,
+recursos e documentação distribuídos sob esta licença.
+"Você" é a pessoa física ou jurídica que usa o Software.
+"Uso interno" é o uso do Software para operar as próprias atividades de Você,
+inclusive atividades comerciais (por exemplo, coordenar agentes de código nos
+projetos da sua empresa).
+
+--------------------------------------------------------------------------------
+2. Concessão da Licença Community (gratuita)
+--------------------------------------------------------------------------------
+
+O Licenciante concede a Você uma licença mundial, perpétua, gratuita e isenta de
+royalties para, respeitadas as condições e restrições desta licença:
+
+  a) usar e executar o Software, para fins pessoais ou comerciais (uso interno),
+     seja Você pessoa física ou empresa, sem limite de número de usuários;
+  b) estudar e modificar o Software para uso interno;
+  c) copiar e redistribuir o Software, de forma gratuita, mantendo esta licença
+     e a atribuição exigida.
+
+Esta concessão vale igualmente para indivíduos e empresas. A Edição Community não
+exige pagamento para uso.
+
+Fica expressamente permitido baixar o código-fonte da Edição Community, compilá-lo
+e usar o produto resultante, inclusive em ambiente empresarial, desde que o
+Software continue sendo apresentado e utilizado como NXPilot Community, sem
+descaracterização do produto, sem remoção da atribuição e mantendo a Nexus XData
+Tecnologia Ltda como proprietária e criadora original. Essa liberdade faz parte
+do modelo Open Core adotado pelo Licenciante.
+
+Uso educacional e acadêmico. É expressamente permitido usar, estudar, ensinar e
+pesquisar o Software em escolas, universidades, cursos, treinamentos, trabalhos
+acadêmicos, artigos, palestras e materiais didáticos, inclusive analisando e
+citando trechos do código-fonte, desde que a autoria seja citada — indicando a
+Nexus XData Tecnologia Ltda como criadora do NXPilot e, quando houver, a
+origem (repositório oficial do projeto). Esta permissão abrange o uso do
+Software como ferramenta e objeto de estudo; ela NÃO autoriza vender,
+sublicenciar ou distribuir o Software como produto, nem oferecê-lo como serviço
+pago, atos que continuam sujeitos à cláusula 4.
+
+Distinção importante — USO x DISTRIBUIÇÃO COMERCIAL:
+
+  • USO: livre e gratuito, inclusive por empresas e em atividades lucrativas.
+    Rodar o Software para operar as próprias atividades ("uso interno",
+    cláusula 2(a)) não exige contrato, pagamento nem autorização prévia,
+    qualquer que seja o número de usuários.
+  • DISTRIBUIÇÃO COMERCIAL: exige contrato específico com a Nexus XData
+    Tecnologia Ltda. Entram aqui vender, revender, alugar, sublicenciar, cobrar
+    pelo Software, distribuí-lo como produto ou parte de produto pago,
+    oferecê-lo como serviço (SaaS/hospedagem) ou vender suporte sobre ele —
+    conforme a cláusula 4. A redistribuição gratuita, com atribuição, continua
+    permitida pela cláusula 2(c).
+
+--------------------------------------------------------------------------------
+3. Condições (atribuição)
+--------------------------------------------------------------------------------
+
+Toda cópia, redistribuição, publicação, fork ou versão modificada do Software deve
+manter, de forma visível e legível:
+
+  • o nome da empresa criadora: Nexus XData Tecnologia Ltda;
+  • a informação de que o software original foi criado pela Nexus XData
+    Tecnologia Ltda;
+  • este aviso de licença, sem alterações nos avisos de copyright e atribuição.
+
+--------------------------------------------------------------------------------
+4. Restrições (direitos reservados ao Licenciante)
+--------------------------------------------------------------------------------
+
+A Licença Community NÃO autoriza, e o Licenciante reserva para si com
+exclusividade, os seguintes atos. Sem uma licença comercial por escrito do
+Licenciante, Você NÃO pode:
+
+  a) vender, alugar, sublicenciar, cobrar por, ou de qualquer outra forma
+     comercializar o Software ou um trabalho derivado como produto;
+  b) oferecer o Software (ou derivado substancialmente similar) a terceiros como
+     serviço pago, incluindo hospedagem/SaaS, ou como serviço pago de suporte,
+     manutenção ou consultoria sobre o próprio Software;
+  c) remover, ocultar ou alterar a atribuição, os avisos de copyright, a marca
+     ou esta licença;
+  d) relicenciar o Software, no todo ou em parte, sob outros termos — criar
+     licença paralela, substituir esta licença por outra (por exemplo MIT,
+     Apache, BSD ou GPL), publicar o Software ou um derivado sob licença
+     própria, ou apresentá-lo a terceiros como se estivesse sujeito a termos
+     diferentes destes. Somente o Licenciante, como titular, pode licenciar o
+     Software sob outros termos.
+
+Qualquer exploração comercial do Software depende de CONTRATO ESPECÍFICO,
+celebrado por escrito com a Nexus XData Tecnologia Ltda, com escopo, prazo e
+condições definidos caso a caso. Não há licença comercial tácita, presumida ou
+adquirida por uso continuado, por contribuição ao projeto, por parceria
+informal ou por qualquer autorização verbal.
+
+A redistribuição permitida na cláusula 2(c) é apenas gratuita: Você não pode
+cobrar pelo Software nem embutí-lo em um produto ou serviço pago.
+
+O direito de explorar comercialmente o Software — vendê-lo, oferecê-lo como
+serviço e prestar suporte pago sobre ele — é exclusivo do Licenciante.
+
+O uso do código-fonte do Software para criar, oferecer, vender, sublicenciar,
+hospedar ou incorporar produto ou serviço comercial derivado, próprio ou de
+terceiros, é proibido sem licença comercial expressa do Licenciante. Exceções
+poderão ser concedidas, a critério exclusivo do Licenciante, a empresas parceiras
+formalmente autorizadas ou entidades sem fins lucrativos, mediante autorização
+prévia por escrito pelo e-mail comercial.nexus.xdata@gmail.com.
+
+--------------------------------------------------------------------------------
+5. Edição Comercial, Suporte e Licença Comercial (via paga)
+--------------------------------------------------------------------------------
+
+O Licenciante oferece, mediante contratação e remuneração separadas:
+
+  • licença comercial do NXPilot, sem as restrições da cláusula 4, para empresas
+    que desejem termos próprios;
+  • a Edição Comercial / Enterprise, que pode incluir módulos e recursos
+    exclusivos (por exemplo, suporte oficial, SLA, registro de decisões em
+    equipe, políticas e permissões, login corporativo, relatórios de auditoria,
+    entre outros), conforme disponibilidade, comercializada sob o nome
+    NXAgentic;
+  • suporte técnico, manutenção, garantias e indenização contratuais.
+
+Os módulos e recursos da Edição Comercial / Enterprise (NXAgentic) não fazem
+parte do Software, não são distribuídos com ele e não são licenciados por esta
+licença: seguem exclusivamente o contrato comercial próprio. O Software funciona
+de forma completa sem eles; quando instalados, eles se conectam ao Software por
+meio das interfaces públicas do Software.
+
+A contratação da via comercial é opcional para quem usa a Edição Community em
+conformidade com esta licença. Interessados devem contatar:
+comercial.nexus.xdata@gmail.com.
+
+--------------------------------------------------------------------------------
+6. Contribuições
+--------------------------------------------------------------------------------
+
+6.1. Aceitação. Considera-se "Contribuição" qualquer código, correção, melhoria,
+documentação, tradução, script, teste ou outro material que Você envie ao
+Licenciante ou ao projeto por qualquer meio — inclusive pull request, patch,
+issue, e-mail ou mensagem. O envio da Contribuição, por si só, implica aceitação
+integral desta cláusula 6, dispensada assinatura adicional.
+
+6.2. Licença de direitos autorais. Você concede ao Licenciante licença perpétua,
+irrevogável, mundial, não exclusiva, isenta de royalties e sublicenciável (em
+múltiplos níveis) para usar, reproduzir, modificar, adaptar, criar obras
+derivadas, publicar, distribuir e comercializar a Contribuição, no todo ou em
+parte, isoladamente ou combinada ao Software, em QUALQUER edição, versão ou
+produto do Licenciante — incluindo, sem limitação, a Edição Comercial /
+Enterprise, versões pagas, ofertas em nuvem/SaaS e produtos futuros — e sob
+QUAISQUER termos de licenciamento, inclusive licenças comerciais fechadas e não
+gratuitas. Essa concessão é o que viabiliza o licenciamento dual do Software.
+
+6.3. Licença de patentes. Você concede ao Licenciante e aos destinatários do
+Software licença perpétua, irrevogável, mundial, não exclusiva, isenta de
+royalties e sublicenciável sobre as reivindicações de patente que Você detenha
+ou venha a deter e que sejam necessariamente infringidas pela Contribuição ou
+pela combinação dela com o Software.
+
+6.4. Ausência de contrapartida. A Contribuição é oferecida em caráter voluntário
+e gratuito. Você não terá direito a remuneração, participação em receitas,
+royalties, coautoria da obra, cotitularidade do Software, exclusividade ou
+qualquer outra contrapartida em razão da Contribuição ou de sua exploração
+comercial pelo Licenciante. O Licenciante poderá creditar contribuintes a seu
+critério, sem que isso altere a titularidade do Software.
+
+6.5. Declarações de quem contribui. Ao enviar uma Contribuição, Você declara e
+garante que:
+
+  a) é o autor da Contribuição ou detém todos os direitos necessários para
+     concedê-la nos termos desta cláusula;
+  b) se Você contribui no curso de vínculo empregatício, estatutário ou
+     contratual, ou usando recursos de um empregador ou contratante, obteve
+     dessa organização a autorização necessária para conceder estes direitos,
+     ou está autorizado a representá-la para tanto;
+  c) a Contribuição não contém código, documentação ou material de terceiros sob
+     termos incompatíveis com esta licença nem sujeito a obrigações que
+     impeçam sua exploração comercial pelo Licenciante (por exemplo, licenças
+     recíprocas fortes do tipo copyleft), salvo se identificado de forma clara
+     e expressamente aceito por escrito pelo Licenciante;
+  d) a Contribuição não contém segredos de negócio, dados pessoais, credenciais
+     ou informações confidenciais de terceiros.
+
+6.6. Direitos morais. Na máxima extensão permitida pela lei aplicável, Você
+concorda em não exercer direitos morais sobre a Contribuição de modo a impedir
+ou restringir o uso, a modificação, a distribuição ou a exploração comercial
+previstos nesta cláusula. Onde a lei tornar tais direitos irrenunciáveis, Você
+concorda em exercê-los apenas de forma compatível com esta licença.
+
+6.7. Sem obrigação de incorporar. O Licenciante não tem obrigação de aceitar,
+incorporar, manter, publicar ou dar suporte a qualquer Contribuição, e pode
+removê-la ou substituí-la a qualquer tempo. As Contribuições são fornecidas "no
+estado em que se encontram", sem garantias, aplicando-se a elas as cláusulas 8
+e 9.
+
+6.8. Titularidade preservada. Nada nesta cláusula transfere a Você qualquer
+direito sobre o Software, sobre as marcas do Licenciante ou sobre obras
+derivadas dele. Você mantém a titularidade da sua Contribuição e permanece livre
+para usá-la em outros contextos, respeitados os direitos aqui concedidos ao
+Licenciante.
+
+6.9. Sem licença paralela. Contribuir NÃO dá a Você direito de licenciar o
+Software sob outros termos, nem de publicar o projeto (ou um derivado dele) sob
+licença própria, nem de explorá-lo comercialmente — nem sequer a parte
+correspondente à sua própria Contribuição, uma vez incorporada ao Software. A
+Contribuição também não gera direito de uso das marcas do Licenciante nem
+autorização comercial de qualquer espécie: a exploração comercial permanece
+sujeita à cláusula 4 e a contrato específico com a Nexus XData Tecnologia Ltda.
+
+--------------------------------------------------------------------------------
+7. Marcas
+--------------------------------------------------------------------------------
+
+"NXPilot", "NXAgentic", "NXProject" e "Nexus XData" são marcas do Licenciante. Esta licença não concede
+direito de uso das marcas, exceto para a atribuição exigida na cláusula 3.
+
+--------------------------------------------------------------------------------
+8. Ausência de garantia
+--------------------------------------------------------------------------------
+
+ESTE SOFTWARE É FORNECIDO "NO ESTADO EM QUE SE ENCONTRA", SEM GARANTIAS DE
+QUALQUER TIPO, EXPRESSAS OU IMPLÍCITAS, INCLUINDO, SEM LIMITAÇÃO, GARANTIAS DE
+COMERCIALIZAÇÃO, ADEQUAÇÃO A UMA FINALIDADE ESPECÍFICA E NÃO VIOLAÇÃO. A Edição
+Community não inclui obrigação de suporte, manutenção, correção ou evolução.
+
+--------------------------------------------------------------------------------
+9. Limitação de responsabilidade
+--------------------------------------------------------------------------------
+
+EM NENHUMA HIPÓTESE A NEXUS XDATA TECNOLOGIA LTDA SERÁ RESPONSÁVEL POR QUAISQUER
+DANOS, PREJUÍZOS, PERDAS, LUCROS CESSANTES, FALHAS, INTERRUPÇÕES OU CONSEQUÊNCIAS
+DECORRENTES DO USO, DA IMPOSSIBILIDADE DE USO, DA MODIFICAÇÃO OU DA DISTRIBUIÇÃO
+DESTE SOFTWARE.
+
+--------------------------------------------------------------------------------
+10. Descontinuação
+--------------------------------------------------------------------------------
+
+A Nexus XData Tecnologia Ltda poderá, a qualquer tempo e a seu exclusivo critério,
+alterar a estratégia do produto, interromper seu desenvolvimento, suspender sua
+distribuição ou descontinuá-lo, sem obrigação de continuidade, atualização ou
+aviso prévio. Direitos já concedidos sobre versões da Edição Community
+permanecem válidos nos termos desta licença.
+
+--------------------------------------------------------------------------------
+11. Alteração desta licença (sem efeito retroativo)
+--------------------------------------------------------------------------------
+
+O Licenciante poderá alterar os termos desta licença a qualquer tempo, publicando
+uma nova versão no repositório oficial do projeto. A versão vigente é sempre a
+publicada em https://github.com/nexusxdata/NXPilot e a que acompanha cada
+distribuição do Software.
+
+A alteração NÃO tem efeito retroativo:
+
+  a) cada versão do Software permanece regida pela licença que a acompanhava
+     quando Você a obteve, e os direitos já concedidos sobre ela são
+     irrevogáveis, ainda que a licença mude depois;
+  b) Você pode continuar usando, indefinidamente, a versão já obtida ou
+     instalada, nos termos que a acompanhavam, sem obrigação de migrar;
+  c) versões novas do Software, obtidas após a alteração, ficam sujeitas à
+     licença vigente na data em que forem obtidas — cabe a Você aceitá-la ou
+     permanecer na versão anterior;
+  d) alterações não criam obrigação de pagamento retroativo nem revogam a
+     gratuidade do uso já concedido.
+
+--------------------------------------------------------------------------------
+12. Aceitação
+--------------------------------------------------------------------------------
+
+Ao usar, copiar, modificar ou distribuir este software, Você declara estar de
+acordo com os termos desta licença. Caso não concorde, não use o Software sob a
+Edição Community; entre em contato para a licença comercial.
