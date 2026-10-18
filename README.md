@@ -19,6 +19,20 @@ Também: histórico de tarefas, notificações, work items do Azure DevOps (some
 editados como código, leitura de mensagens pela API oficial do WhatsApp (somente leitura), IA local (LLaMA) ou
 provedores (GitHub Copilot/Models, Azure OpenAI, Microsoft 365, OpenRouter), interface em português e inglês.
 
+### 🧩 Extensões (prévia)
+
+Conectores opcionais, que ficam na barra lateral em **Extensões**. Cada um é um pacote à parte, sem dependências.
+Os tokens ficam cifrados (DPAPI) só no seu usuário do Windows, e o que muda algo fora da máquina passa pelo DecisionGate.
+
+| Extensão | Pacote | O que faz | Controle |
+|---|---|---|---|
+| **Databricks SQL** | [`NXPilot.Databricks`](NXPilot.Databricks/README.md) | Consultas no SQL Warehouse (Statement Execution API) | Leitura passa sozinha; escrita, DDL e `GRANT` pedem aprovação |
+| **Git** | [`NXPilot.GitRepos`](NXPilot.GitRepos/README.md) | Clone, commit, push e pull request no GitHub e no Azure DevOps; Git folder do Databricks | Push, PR e deploy pedem aprovação; push na principal é ALTO; nunca `--force` |
+| **E-mail** | [`NXPilot.Mail`](NXPilot.Mail/README.md) | Leitura do Outlook (Graph `Mail.Read`) e do Gmail (`gmail.readonly`) | Somente leitura; o conteúdo vai ao agente como dado, nunca como instrução |
+
+Os pré-requisitos de cada extensão (token, PAT com escopo Code, app no Entra ID ou no Google Cloud) estão no README de cada pacote.
+As extensões foram testadas com servidores simulados, mas ainda não com contas reais.
+
 ## Edições (Open Core)
 
 O **Open Core abrange somente o NXPilot**. O **NXAgentic-Provider** é a versão comercial (Enterprise),

@@ -17,6 +17,7 @@ Ordem (cada passo so roda se o anterior passou):
   6. com remoto 'origin': push do branch e da tag e GitHub Release com o NXPilot-Setup.zip.
      A tag so e publicada se o commit ja estiver no remoto (o "Source code" da release tem
      que casar com os binarios — mesma regra do NXProject).
+     Notas da release: release-notes.md (se existir; "{versao}" vira a versao nova).
 #>
 param(
     [ValidateSet("Release", "Debug")]
@@ -33,6 +34,7 @@ $SetupZip = Join-Path $SolutionDir "dist\setup\NXPilot-Setup.zip"
 $GitHubRepo = "nexusxdata/NXPilot"
 $RequiredInZip = @(
     "NXPilot-Setup.exe", "NxPilot.exe", "NxPilot.dll", "NXPilot.Core.dll", "NxPilot.runtimeconfig.json",
+    "NXPilot.Databricks.dll", "NXPilot.GitRepos.dll", "NXPilot.Mail.dll",
     "hostfxr.dll", "hostpolicy.dll", "coreclr.dll", "PresentationFramework.dll", "onnxruntime.dll",
     "LICENSE.txt", "LICENSE.en.txt", "THIRD-PARTY-NOTICES.txt"
 )
@@ -195,8 +197,12 @@ Write-Step "Publicando GitHub Release $Tag..."
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
     Fail "gh CLI nao encontrado. Instale (https://cli.github.com), faca 'gh auth login' e rode: gh release create $Tag '$SetupZip' --verify-tag --repo $GitHubRepo"
 }
-gh release create $Tag $SetupZip --verify-tag --title "NXPilot Community $Tag" `
-    --notes "NXPilot Community $Tag — Inteligencia Artificial Automatica, e nao autonoma: voce no controle." --repo $GitHubRepo
+$NotesSource = Join-Path $SolutionDir "release-notes.md"
+$Notes = if (Test-Path $NotesSource) { (Get-Content $NotesSource -Raw -Encoding UTF8).Replace("{versao}", $Tag) }
+         else { "NXPilot Community $Tag — Inteligencia Artificial Automatica, e nao autonoma: voce no controle." }
+$NotesFile = Join-Path ([System.IO.Path]::GetTempPath()) "nxpilot-notes-$Tag.md"
+[System.IO.File]::WriteAllText($NotesFile, $Notes, (New-Object System.Text.UTF8Encoding $false))
+gh release create $Tag $SetupZip --verify-tag --title "NXPilot Community $Tag" --notes-file $NotesFile --repo $GitHubRepo
 if ($LASTEXITCODE -ne 0) { Fail "Falha ao criar a release. Verifique: gh auth status" }
 
 Write-Host ""
