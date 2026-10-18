@@ -62,6 +62,13 @@ if (args.Length > 0 && args[0] == "--git-setup" && OperatingSystem.IsWindows())
 if (args.Length > 1 && args[0] == "--git-repos" && OperatingSystem.IsWindows())
     return await GitReposTestAsync(args[1]);
 
+// E-mail (somente leitura): --mail-setup (apps OAuth), --mail-login outlook|gmail (navegador) e
+// --mail outlook|gmail [busca] (lista os 10 mais recentes e abre o primeiro como o agente veria).
+if (args.Length > 0 && args[0] == "--mail-setup" && OperatingSystem.IsWindows())
+    return MailSetup();
+if (args.Length > 1 && args[0] is "--mail-login" or "--mail" && OperatingSystem.IsWindows())
+    return await MailTestAsync(args[0] == "--mail-login", args[1], args.Length > 2 ? args[2] : null);
+
 // Teste de ponta a ponta com o Claude Code real: NXPilot.Bench.exe --agent-test [modelo]
 if (args.Length > 0 && args[0] == "--agent-test")
     return await AgentTestAsync(args.Length > 1 ? args[1] : "haiku");
@@ -334,6 +341,46 @@ static string ReadSecret(string label)
         if (k.Key == ConsoleKey.Backspace) { if (token.Length > 0) token.Length--; } else if (!char.IsControl(k.KeyChar)) token.Append(k.KeyChar);
     Console.WriteLine();
     return token.ToString();
+}
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+static int MailSetup()
+{
+    var s = NXPilot.Integrations.MailSettings.Load();
+    string Ask(string label, string current) { Console.Write($"{label} [{(current.Length > 0 ? current : "vazio")}]: "); var v = Console.ReadLine()?.Trim() ?? ""; return v.Length > 0 ? v : current; }
+    Console.WriteLine("Enter em branco mantém o valor atual.");
+    s.OutlookClientId = Ask("Outlook — Client ID do app no Entra ID", s.OutlookClientId);
+    s.OutlookTenant = Ask("Outlook — Tenant (ID, domínio ou 'common')", s.OutlookTenant);
+    s.GmailClientId = Ask("Gmail — Client ID (Desktop app no Google Cloud)", s.GmailClientId);
+    var secret = ReadSecret($"Gmail — Client secret ({(s.GmailClientSecret.Length > 0 ? "definido" : "vazio")}): ");
+    if (secret.Length > 0) s.GmailClientSecret = secret;
+    s.Save();
+    Console.WriteLine("Salvo em %LOCALAPPDATA%\\NXPilot\\mail.json. Próximo: --mail-login outlook | gmail");
+    return 0;
+}
+
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
+static async Task<int> MailTestAsync(bool login, string which, string? search)
+{
+    var provider = which.StartsWith("g", StringComparison.OrdinalIgnoreCase) ? NXPilot.Mail.MailProvider.Gmail : NXPilot.Mail.MailProvider.Outlook;
+    var tokens = NXPilot.Integrations.MailSettings.Load().Tokens(provider);
+    if (tokens == null) { Console.WriteLine($"{provider} não configurado: rode --mail-setup."); return 1; }
+    try
+    {
+        if (login)
+        {
+            Console.WriteLine($"Abrindo o navegador para o login no {provider} (só leitura)…");
+            await tokens.LoginAsync();
+            Console.WriteLine("Login concluído; token salvo com DPAPI. Teste: --mail " + which);
+            return 0;
+        }
+        using var mail = NXPilot.Mail.MailService.Create(provider, tokens);
+        var list = await mail.ListInboxAsync(new NXPilot.Mail.MailQuery { Max = 10, Search = search });
+        foreach (var m in list) Console.WriteLine($"{(m.IsRead ? " " : "*")} {m.ReceivedAt.LocalDateTime:dd/MM HH:mm}  {m.From,-35}  {m.Subject}{(m.HasAttachments ? "  📎" : "")}");
+        if (list.Count > 0) { Console.WriteLine(); Console.WriteLine(await mail.GetForAgentAsync(list[0].Id, 1500)); }
+        return 0;
+    }
+    catch (NXPilot.Mail.MailException e) { Console.WriteLine("ERRO: " + e.Message); return 1; }
 }
 
 [System.Runtime.Versioning.SupportedOSPlatform("windows")]

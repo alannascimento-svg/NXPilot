@@ -22,6 +22,8 @@
     <ProjectReference Include="..\NXPilot.Databricks\NXPilot.Databricks.csproj" />
     <!-- Pacote à parte (sem dependências): GitHub e Azure DevOps Repos; o gate entra por GateGitApprover. -->
     <ProjectReference Include="..\NXPilot.GitRepos\NXPilot.GitRepos.csproj" />
+    <!-- Pacote à parte (sem dependências): leitura de e-mail Outlook/Gmail, somente leitura. -->
+    <ProjectReference Include="..\NXPilot.Mail\NXPilot.Mail.csproj" />
   </ItemGroup>
 
 </Project>

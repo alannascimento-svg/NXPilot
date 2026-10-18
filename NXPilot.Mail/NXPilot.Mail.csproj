@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pacote à parte: leitura de e-mail do Outlook / Microsoft 365 (Microsoft Graph) e do Gmail
+    (Gmail API), com login OAuth + PKCE pelo navegador. SOMENTE LEITURA por construção: não há
+    método para enviar, apagar ou mover. Sem dependências e sem referência ao NXPilot.Core —
+    quem guarda o token (DPAPI no NXPilot) implementa IOAuthTokenStore.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <PackageId>NXPilot.Mail</PackageId>
+    <Authors>Nexus XData Tecnologia Ltda</Authors>
+    <PackageDescription>Leitura de e-mail (Outlook/Microsoft 365 e Gmail) com OAuth PKCE e camada de serviço somente leitura.</PackageDescription>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
