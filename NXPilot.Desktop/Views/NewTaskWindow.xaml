@@ -35,6 +35,7 @@
                 <ComboBox x:Name="AgentBox" SelectedIndex="0" Padding="6,4" SelectionChanged="OnAgentChanged">
                     <ComboBoxItem x:Name="AgentClaudeItem" Content="Claude Code" Tag="Claude"/>
                     <ComboBoxItem x:Name="AgentCodexItem" Content="Codex" Tag="Codex"/>
+                    <ComboBoxItem x:Name="AgentNXAgenticItem" Content="NXAgentic" Tag="NXAgentic"/>
                 </ComboBox>
                 <TextBlock x:Name="AgentHint" Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,3,0,0"/>
             </StackPanel>

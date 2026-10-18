@@ -47,6 +47,7 @@ public partial class NewTaskWindow : Window
         var notInstalled = T(" — não instalado", " — not installed");
         AgentClaudeItem.Content = "Claude Code" + (_claudeInstalled ? "" : notInstalled);
         AgentCodexItem.Content = "Codex" + (_codexInstalled ? "" : notInstalled);
+        AgentNXAgenticItem.Content = "NXAgentic" + T(" — em construção", " — under construction");
         Select(AgentBox, s.Executor ?? (!_claudeInstalled && _codexInstalled ? nameof(ExecutorKind.Codex) : nameof(ExecutorKind.Claude)));
         UpdateAgentHint();
 
@@ -78,8 +79,15 @@ public partial class NewTaskWindow : Window
 
     private readonly bool _claudeInstalled, _codexInstalled;
 
+    /// <summary>Edição comercial (repositório privado): já aparece na lista, mas ainda não executa tarefas.</summary>
+    private bool NXAgenticSelected => AgentBox.SelectedItem == AgentNXAgenticItem;
+
+    private static string NXAgenticUnderConstruction => T(
+        "O NXAgentic (edição comercial da Nexus XData) está em construção e ainda não executa tarefas. Por enquanto, escolha o Claude Code ou o Codex.",
+        "NXAgentic (Nexus XData's commercial edition) is under construction and cannot run tasks yet. For now, choose Claude Code or Codex.");
+
     private ExecutorKind SelectedExecutor =>
-        Enum.Parse<ExecutorKind>((AgentBox.SelectedItem as ComboBoxItem)?.Tag as string ?? nameof(ExecutorKind.Claude));
+        Enum.TryParse<ExecutorKind>((AgentBox.SelectedItem as ComboBoxItem)?.Tag as string, out var kind) ? kind : ExecutorKind.Claude;
 
     private void OnAgentChanged(object sender, SelectionChangedEventArgs e) => UpdateAgentHint();
 
@@ -87,6 +95,7 @@ public partial class NewTaskWindow : Window
     private void UpdateAgentHint()
     {
         if (AgentHint == null) return; // SelectionChanged dispara durante o InitializeComponent
+        if (NXAgenticSelected) { AgentHint.Text = NXAgenticUnderConstruction; return; }
         var codex = SelectedExecutor == ExecutorKind.Codex;
         var name = codex ? "Codex" : "Claude Code";
         var hint = T($"O {name} executa sob o mesmo gate: cada comando e arquivo passa pela cascata e pelas suas decisões.",
@@ -116,7 +125,8 @@ public partial class NewTaskWindow : Window
         var reviewer = Enum.Parse<ReviewerKind>((ReviewerBox.SelectedItem as ComboBoxItem)?.Tag as string ?? nameof(ReviewerKind.Codex));
         var executor = SelectedExecutor;
         string? error = null;
-        if (executor == ExecutorKind.Codex ? !_codexInstalled : !_claudeInstalled)
+        if (NXAgenticSelected) error = NXAgenticUnderConstruction;
+        else if (executor == ExecutorKind.Codex ? !_codexInstalled : !_claudeInstalled)
             error = executor == ExecutorKind.Codex
                 ? T("O Codex não foi encontrado nesta máquina (PATH, NXProject ou extensão do VS Code). Instale e faça login, ou escolha o Claude Code.",
                     "Codex was not found on this machine (PATH, NXProject or VS Code extension). Install it and sign in, or choose Claude Code.")

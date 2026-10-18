@@ -48,9 +48,10 @@ public static class PowerBiDesktop
         {
             ct.ThrowIfCancellationRequested();
             // A versão da Store abre por outro processo: procura pela janela no desktop, não pelo PID.
+            // O título é só o nome do projeto (sem "Power BI"); o processo é que identifica o Power BI.
             window = automation.GetDesktop().FindAllChildren()
                 .FirstOrDefault(w => (w.Properties.Name.ValueOrDefault ?? "").Contains(name, StringComparison.OrdinalIgnoreCase)
-                                     && (w.Properties.Name.ValueOrDefault ?? "").Contains("Power BI", StringComparison.OrdinalIgnoreCase));
+                                     && IsPowerBiProcess(w.Properties.ProcessId.ValueOrDefault));
             if (window == null) await Task.Delay(2000, ct);
         }
         if (window == null)
@@ -60,5 +61,11 @@ public static class PowerBiDesktop
         Directory.CreateDirectory(Path.GetDirectoryName(png)!);
         Capture.Element(window).ToFile(png);
         return png;
+    }
+
+    private static bool IsPowerBiProcess(int pid)
+    {
+        try { return Process.GetProcessById(pid).ProcessName.StartsWith("PBIDesktop", StringComparison.OrdinalIgnoreCase); }
+        catch (ArgumentException) { return false; } // processo já saiu
     }
 }
