@@ -66,21 +66,27 @@ gate local e por você.
 
 ## Instalação
 
-**Primeira instalação?** Baixe o Setup, extraia e rode o `NXPilot-Setup.exe` — ele já traz o runtime .NET,
-cria o atalho e busca sozinho a versão mais nova do NXPilot:
+O NXPilot é publicado em duas partes separadas, como o NXProject:
+
+| Pacote | O que tem | Onde fica | Muda |
+|---|---|---|---|
+| `NXPilot-Setup.zip` | o instalador + a **base**: runtime .NET e bibliotecas de terceiros — **sem** os arquivos do app | release fixa [`nxpilot-setup-latest`](../../releases/tag/nxpilot-setup-latest) | só quando a base ou o instalador mudam |
+| `NXPilot-Release.zip` | o **app**: `NxPilot.exe` e as DLLs do NXPilot (menos de 1 MB) | release de cada versão (`vX.Y.Z.WW`) | a cada versão |
+
+**Primeira instalação?** Baixe o Setup, extraia e rode o `NXPilot-Setup.exe`. Ele baixa do GitHub o
+`NXPilot-Release.zip` mais novo (com SHA-256 conferido), instala a base e o app no seu perfil e cria o atalho na
+área de trabalho — por isso precisa de internet:
 
 - [Baixar NXPilot-Setup.zip](../../releases/download/nxpilot-setup-latest/NXPilot-Setup.zip)
 
-  O Setup fica numa *release* fixa, [`nxpilot-setup-latest`](../../releases/tag/nxpilot-setup-latest), e só é
-  republicado quando a base do instalador muda — não a cada versão do NXPilot.
-
-**Já tem instalado?** Basta o pacote de atualização, extraído por cima da instalação atual:
+**Já tem instalado?** No NXPilot, abra **⚙ Configurar → Verificar atualização**: ele baixa só o
+`NXPilot-Release.zip` novo, troca os arquivos e reabre o NXPilot. Ou baixe à mão e extraia por cima da instalação:
 
 - [Baixar NXPilot-Release.zip (atualização)](../../releases/latest/download/NXPilot-Release.zip)
 - [Ver notas da versão e o código-fonte](../../releases/latest)
 
-> O `NXPilot-Release.zip` sozinho **não** traz o runtime .NET: ele tem só os arquivos do app que mudam a cada
-> versão. Numa máquina nova, use sempre o `NXPilot-Setup.zip`.
+> O `NXPilot-Release.zip` sozinho **não** roda numa máquina nova: ele não tem o runtime .NET. Instale sempre
+> primeiro com o `NXPilot-Setup.zip`.
 
 ## Desenvolvimento
 

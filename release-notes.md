@@ -4,11 +4,21 @@
 
 ### Como instalar e atualizar
 
-- **Primeira instalação:** baixe o **NXPilot-Setup.zip** na release [Setup (instalador)](https://github.com/nexusxdata/NXPilot/releases/tag/nxpilot-setup-latest), extraia e rode `NXPilot-Setup.exe`. O Setup instala a base e já baixa a versão mais nova do app.
-- **Já tem o NXPilot:** abra **⚙ Configurar** e use **Verificar atualização**. O app baixa só o `NXPilot-Release.zip` desta página, que tem poucos MB, confere o SHA-256 e reinicia. Nenhum script é executado.
+O NXPilot agora é publicado em duas partes separadas, como o NXProject:
+
+- **NXPilot-Setup.zip** (release fixa [Setup (instalador)](https://github.com/nexusxdata/NXPilot/releases/tag/nxpilot-setup-latest)): o instalador e a **base** (runtime .NET e bibliotecas de terceiros), **sem** os arquivos do app. Só é republicado quando a base ou o instalador mudam.
+- **NXPilot-Release.zip** (esta página): o **app** (`NxPilot.exe` e as DLLs do NXPilot), com menos de 1 MB.
+
+- **Primeira instalação:** baixe o NXPilot-Setup.zip, extraia e rode `NXPilot-Setup.exe`. Ele baixa o NXPilot-Release.zip mais novo do GitHub (com SHA-256 conferido), instala e cria o atalho. Precisa de internet.
+- **Já tem o NXPilot:** abra **⚙ Configurar** e use **Verificar atualização**. O app baixa só o NXPilot-Release.zip, troca os arquivos e reabre. Nenhum script é executado.
 - **Voltar versão:** em **⚙ Configurar**, escolha uma versão anterior e clique em **Instalar esta versão**.
 
 ### Novidades
+
+**📦 Setup no modelo do NXProject**
+
+- O Setup não leva mais o app junto: traz só a base, e o app vem da release de cada versão. Quando muda só o NXPilot, o Setup não precisa ser publicado de novo.
+- Novo **passo 1 · .NET 10 Desktop Runtime**, como no NXProject-Setup: confere se o .NET está instalado e oferece **Instalar .NET 10** (instalador oficial da Microsoft, pede administrador) ou **Baixar no navegador**.
 
 **🟠 Ícone e atalho**
 

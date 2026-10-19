@@ -15,9 +15,9 @@ using static NXPilot.NxText;
 namespace NXPilot.Setup;
 
 /// <summary>
-/// Instalador do NXPilot no modelo do NXProject-Setup: traz a BASE (runtime self-contained e
-/// bibliotecas) e um app embutido; o Passo 1 copia tudo e, se o GitHub tiver uma versão mais
-/// nova do app (NXPilot-Release.zip), aplica por cima. Sem internet, fica a versão embutida.
+/// Instalador do NXPilot no modelo do NXProject-Setup: traz só a BASE (runtime self-contained e
+/// bibliotecas de terceiros) — o NxPilot.exe e as DLLs do NXPilot NÃO vêm nele. O Passo 2 baixa
+/// o app (NXPilot-Release.zip da última versão) do GitHub, copia a base e aplica o app por cima.
 /// O Setup vive na release fixa nxpilot-setup-latest e só muda quando a base muda.
 /// </summary>
 public partial class MainWindow : Window
@@ -33,7 +33,7 @@ public partial class MainWindow : Window
 
     private readonly OnnxModelStore _onnx = new();
 
-    /// <summary>Pasta com os arquivos do app: a do próprio Setup, ou --payload &lt;pasta&gt; (desenvolvimento).</summary>
+    /// <summary>Pasta com a base: a do próprio Setup, ou --payload &lt;pasta&gt; (desenvolvimento).</summary>
     private readonly string _payloadDir;
 
     public MainWindow()
@@ -81,7 +81,7 @@ public partial class MainWindow : Window
         VersionTestedItem.Content = T($"Testada com o NXPilot (Claude {_agentOptions.TestedClaudeVersion} · Codex {_agentOptions.TestedCodexVersion})",
                                       $"Tested with NXPilot (Claude {_agentOptions.TestedClaudeVersion} · Codex {_agentOptions.TestedCodexVersion})",
                                       $"Probada con NXPilot (Claude {_agentOptions.TestedClaudeVersion} · Codex {_agentOptions.TestedCodexVersion})");
-        RefreshStep1(); RefreshStep2(); RefreshAgents(); RefreshLlama(); UpdateAgentCommands();
+        RefreshDotNet(); RefreshStep1(); RefreshStep2(); RefreshAgents(); RefreshLlama(); UpdateAgentCommands();
     }
 
     private void OnLanguageChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -98,31 +98,120 @@ public partial class MainWindow : Window
         return i >= 0 && i + 1 < args.Length ? Path.GetFullPath(args[i + 1]) : AppContext.BaseDirectory;
     }
 
-    private bool PayloadPresent => File.Exists(Path.Combine(_payloadDir, AppExeName));
+    /// <summary>A base do app está ao lado do Setup? (onnxruntime.dll é do app; o Setup sozinho não tem.)</summary>
+    private bool BasePresent => File.Exists(Path.Combine(_payloadDir, "onnxruntime.dll"));
+
+    /// <summary>Só em desenvolvimento: --payload com o app publicado inteiro instala esse app, sem baixar.</summary>
+    private bool LocalAppPresent => File.Exists(Path.Combine(_payloadDir, AppExeName));
     private string InstalledExe => Path.Combine(_installDir, AppExeName);
 
-    // ------------------------------------------------------------------ Passo 1: app
+    // ------------------------------------------------------------------ Passo 1: .NET 10 Desktop Runtime
+
+    // Mesmo instalador oficial do NXProject-Setup (Microsoft, sempre o 10.x mais novo).
+    private const string DotNetRuntimeInstallerUrl = "https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe";
+    private const string DotNetDownloadPage = "https://dotnet.microsoft.com/download/dotnet/10.0";
+
+    /// <summary>.NET Desktop Runtime 10+ instalado na máquina (Program Files\dotnet), como o NXProject confere.</summary>
+    private static bool IsDesktopRuntimeInstalled(int minMajor = 10)
+    {
+        var shared = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet", "shared", "Microsoft.WindowsDesktop.App");
+        return Directory.Exists(shared) && Directory.GetDirectories(shared)
+            .Any(d => int.TryParse(Path.GetFileName(d).Split('.')[0], out var major) && major >= minMajor);
+    }
+
+    private void RefreshDotNet()
+    {
+        var installed = IsDesktopRuntimeInstalled();
+        DotNetStatusText.Text = installed
+            ? T("✓ O .NET 10 Desktop Runtime já está instalado nesta máquina.", "✓ .NET 10 Desktop Runtime is already installed on this machine.", "✓ .NET 10 Desktop Runtime ya está instalado en esta máquina.")
+            : T("O .NET 10 Desktop Runtime não foi encontrado nesta máquina.", ".NET 10 Desktop Runtime was not found on this machine.", "No se encontró .NET 10 Desktop Runtime en esta máquina.");
+        DotNetButton.IsEnabled = !installed;
+        DotNetManualButton.IsEnabled = !installed; // alternativa à instalação automática
+    }
+
+    /// <summary>Baixa o instalador oficial e instala em silêncio (pede administrador pelo UAC).</summary>
+    private async void OnDotNetClick(object sender, RoutedEventArgs e)
+    {
+        var tempExe = Path.Combine(Path.GetTempPath(), $"windowsdesktop-runtime-{Guid.NewGuid():N}.exe");
+        try
+        {
+            DotNetButton.IsEnabled = false;
+            DotNetStatusText.Text = T("Baixando o instalador do .NET 10 Desktop Runtime…", "Downloading the .NET 10 Desktop Runtime installer…", "Descargando el instalador de .NET 10 Desktop Runtime…");
+            DotNetProgress.Value = 0;
+            DotNetProgress.Visibility = Visibility.Visible;
+            using (var client = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMinutes(5) })
+            using (var response = await client.GetAsync(DotNetRuntimeInstallerUrl, System.Net.Http.HttpCompletionOption.ResponseHeadersRead))
+            {
+                response.EnsureSuccessStatusCode();
+                var total = response.Content.Headers.ContentLength ?? 0L;
+                await using var stream = await response.Content.ReadAsStreamAsync();
+                await using var file = File.Create(tempExe);
+                var buffer = new byte[81920];
+                long read = 0; int n;
+                while ((n = await stream.ReadAsync(buffer)) > 0)
+                {
+                    await file.WriteAsync(buffer.AsMemory(0, n));
+                    read += n;
+                    DotNetProgress.Value = total > 0 ? Math.Min(90, read * 90.0 / total) : 45;
+                }
+            }
+
+            // Instalação silenciosa (UAC): não dá para medir; barra indeterminada.
+            DotNetStatusText.Text = T("Instalando o .NET 10 Desktop Runtime (pode pedir permissão de administrador)…", "Installing .NET 10 Desktop Runtime (may ask for administrator permission)…", "Instalando .NET 10 Desktop Runtime (puede pedir permiso de administrador)…");
+            DotNetProgress.IsIndeterminate = true;
+            using (var proc = Process.Start(new ProcessStartInfo(tempExe, "/install /quiet /norestart") { UseShellExecute = true, Verb = "runas" }))
+                if (proc != null) await proc.WaitForExitAsync();
+
+            RefreshDotNet();
+            if (IsDesktopRuntimeInstalled())
+                DotNetStatusText.Text = T("✓ .NET 10 Desktop Runtime instalado.", "✓ .NET 10 Desktop Runtime installed.", "✓ .NET 10 Desktop Runtime instalado.");
+        }
+        catch (Exception ex)
+        {
+            // Inclui o "não" no UAC (Win32Exception): o usuário pode tentar de novo ou baixar no navegador.
+            DotNetStatusText.Text = T($"Não deu para instalar o .NET: {ex.Message}. Use Baixar no navegador ou {DotNetDownloadPage}.",
+                                      $"Could not install .NET: {ex.Message}. Use Download in browser or {DotNetDownloadPage}.",
+                                      $"No se pudo instalar .NET: {ex.Message}. Use Descargar en el navegador o {DotNetDownloadPage}.");
+            DotNetButton.IsEnabled = true;
+        }
+        finally
+        {
+            try { File.Delete(tempExe); } catch { /* temporário */ }
+            DotNetProgress.IsIndeterminate = false;
+            DotNetProgress.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    /// <summary>Abre o instalador oficial no navegador, para baixar e instalar manualmente.</summary>
+    private void OnDotNetManualClick(object sender, RoutedEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo(DotNetRuntimeInstallerUrl) { UseShellExecute = true }); }
+        catch (Exception ex) { DotNetStatusText.Text = ex.Message + " — " + DotNetDownloadPage; }
+    }
+
+    // ------------------------------------------------------------------ Passo 2: app
 
     private void RefreshStep1()
     {
-        if (!PayloadPresent)
+        if (!BasePresent)
         {
-            Step1StatusText.Text = T($"Pacote do app não encontrado em {_payloadDir}. Gere o Setup com release-nxpilot-setup.ps1.", $"App package not found in {_payloadDir}. Build the Setup with release-nxpilot-setup.ps1.", $"No se encontró el paquete de la aplicación en {_payloadDir}. Genere el Setup con release-nxpilot-setup.ps1.");
+            Step1StatusText.Text = T($"Base do NXPilot não encontrada em {_payloadDir}. Gere o Setup com release-nxpilot-setup.ps1.", $"NXPilot base not found in {_payloadDir}. Build the Setup with release-nxpilot-setup.ps1.", $"No se encontró la base de NXPilot en {_payloadDir}. Genere el Setup con release-nxpilot-setup.ps1.");
             Step1Button.IsEnabled = false;
         }
         else if (File.Exists(InstalledExe))
         {
             var installed = FileVersionInfo.GetVersionInfo(InstalledExe).FileVersion;
-            var bundled = FileVersionInfo.GetVersionInfo(Path.Combine(_payloadDir, AppExeName)).FileVersion;
-            Step1StatusText.Text = installed == bundled
-                ? T($"NXPilot {installed} já está instalado.", $"NXPilot {installed} is already installed.", $"NXPilot {installed} ya está instalado.")
-                : T($"Instalado: {installed} · este Setup traz: {bundled}.", $"Installed: {installed} · this Setup has: {bundled}.", $"Instalado: {installed} · este Setup incluye: {bundled}.");
-            Step1Button.Content = installed == bundled ? T("Reinstalar", "Reinstall", "Reinstalar") : T("Atualizar", "Update", "Actualizar");
+            Step1StatusText.Text = T($"NXPilot {installed} instalado. Reinstalar baixa a versão mais nova do GitHub.",
+                                     $"NXPilot {installed} installed. Reinstalling downloads the latest version from GitHub.",
+                                     $"NXPilot {installed} instalado. Reinstalar descarga la versión más reciente de GitHub.");
+            Step1Button.Content = T("Reinstalar", "Reinstall", "Reinstalar");
             OpenAppButton.Visibility = Visibility.Visible;
         }
         else
         {
-            Step1StatusText.Text = T("Copia o NXPilot (com o runtime .NET embutido) para o seu perfil e cria um atalho na área de trabalho.", "Copies NXPilot (with the .NET runtime built in) to your profile and creates a desktop shortcut.", "Copia NXPilot (con el runtime de .NET incluido) a su perfil y crea un acceso directo en el escritorio.");
+            Step1StatusText.Text = T("Baixa a versão mais nova do NXPilot do GitHub, instala no seu perfil (com o runtime .NET que vem no Setup) e cria um atalho na área de trabalho.",
+                                     "Downloads the latest NXPilot from GitHub, installs it in your profile (with the .NET runtime that comes in the Setup) and creates a desktop shortcut.",
+                                     "Descarga la versión más reciente de NXPilot de GitHub, la instala en su perfil (con el runtime de .NET que trae el Setup) y crea un acceso directo en el escritorio.");
             Step1Button.Content = T("Instalar", "Install", "Instalar");
         }
     }
@@ -132,13 +221,24 @@ public partial class MainWindow : Window
         Step1Button.IsEnabled = false;
         ErrorText.Visibility = Visibility.Collapsed;
         Step1Progress.Value = 0;
+        string? package = null;
         try
         {
+            // 1. O app vem do GitHub ANTES de mexer na pasta: sem internet, nada fica pela metade.
+            var versionNote = "";
+            if (!LocalAppPresent)
+            {
+                var latest = await DownloadLatestAppAsync();
+                package = latest.Package;
+                versionNote = T($" Versão {latest.Tag}.", $" Version {latest.Tag}.", $" Versión {latest.Tag}.");
+            }
+
             Step1StatusText.Text = T("Encerrando o NXPilot, se estiver aberto…", "Closing NXPilot, if it is open…", "Cerrando NXPilot, si está abierto…");
             await Task.Run(StopRunningApp);
 
+            // 2. A base (runtime + bibliotecas) que vem ao lado do Setup.
             Step1StatusText.Text = T("Copiando arquivos…", "Copying files…", "Copiando archivos…");
-            var progress = new Progress<double>(p => Step1Progress.Value = p * 90);
+            var progress = new Progress<double>(p => Step1Progress.Value = 20 + p * 60);
             await Task.Run(() => CopyPayload(_payloadDir, _installDir, progress));
             // Exe de versões antigas (antes de se chamar NxPilot.exe). ATENÇÃO: o Windows ignora
             // maiúsculas — nunca pôr aqui "NXPilot.exe", que apagaria o NxPilot.exe recém-copiado.
@@ -146,11 +246,14 @@ public partial class MainWindow : Window
                 try { File.Delete(Path.Combine(_installDir, legacy)); } catch { /* em uso: some na próxima atualização */ }
             RemoveLegacyInstall();
 
-            // Modelo do NXProject: o Setup traz a base (runtime + bibliotecas) e um app embutido;
-            // se o GitHub tiver uma versão mais nova do app (NXPilot-Release.zip), aplica por cima.
-            // Sem internet, fica a versão embutida — a instalação nunca depende da rede.
-            Step1StatusText.Text = T("Procurando a versão mais nova…", "Looking for the latest version…", "Buscando la versión más reciente…");
-            var updateNote = await UpdateToLatestAsync();
+            // 3. O app por cima da base.
+            if (package != null)
+            {
+                Step1StatusText.Text = T("Instalando o NXPilot…", "Installing NXPilot…", "Instalando NXPilot…");
+                await Task.Run(() => NXPilot.Updates.UpdateService.Apply(package, _installDir));
+                NXPilot.Updates.UpdateService.CleanupOldFiles(_installDir); // o app está fechado: dá para apagar já
+            }
+            Step1Progress.Value = 90;
 
             // Sem o runtime ao lado do exe, o Windows mostra o diálogo genérico "instale o
             // .NET" — erro confuso. Falha aqui, apontando o que faltou.
@@ -161,37 +264,45 @@ public partial class MainWindow : Window
             var shortcut = DesktopShortcut.Create(InstalledExe, "NXPilot");
             Step1Progress.Value = 100;
             RefreshStep1();
-            Step1StatusText.Text += (shortcut != null
+            Step1StatusText.Text += versionNote + (shortcut != null
                 ? T(" Atalho criado na área de trabalho.", " Desktop shortcut created.", " Acceso directo creado en el escritorio.")
                 : T(" Não deu para criar o atalho na área de trabalho: abra pelo botão Abrir NXPilot ou pela pasta do app.",
                     " Could not create the desktop shortcut: use the Open NXPilot button or the app folder.",
-                    " No se pudo crear el acceso directo en el escritorio: use el botón Abrir NXPilot o la carpeta de la aplicación.")) + updateNote;
+                    " No se pudo crear el acceso directo en el escritorio: use el botón Abrir NXPilot o la carpeta de la aplicación."));
         }
         catch (Exception ex)
         {
             ShowError(T("Falha ao instalar: ", "Installation failed: ", "Error al instalar: ") + ex.Message);
             Step1StatusText.Text = T("Instalação interrompida.", "Installation interrupted.", "Instalación interrumpida.");
         }
-        finally { Step1Button.IsEnabled = PayloadPresent; }
+        finally
+        {
+            if (package != null) try { Directory.Delete(Path.GetDirectoryName(package)!, true); } catch { /* temporário */ }
+            Step1Button.IsEnabled = BasePresent;
+        }
     }
 
-    /// <summary>Aplica o NXPilot-Release.zip mais novo do GitHub, se for mais novo que o embutido. Devolve a nota para o status.</summary>
-    private async Task<string> UpdateToLatestAsync()
+    /// <summary>Baixa e confere (SHA-256) o NXPilot-Release.zip da última versão; devolve a pasta extraída.</summary>
+    private async Task<(string Tag, string Package)> DownloadLatestAppAsync()
     {
         try
         {
-            var bundled = Version.TryParse(FileVersionInfo.GetVersionInfo(Path.Combine(_payloadDir, AppExeName)).FileVersion, out var b) ? b : new Version(0, 0);
+            Step1StatusText.Text = T("Procurando a versão mais nova…", "Looking for the latest version…", "Buscando la versión más reciente…");
             var updates = new NXPilot.Updates.UpdateService();
-            if (await updates.CheckForUpdateAsync(bundled) is not { } latest) return "";
-            var package = await updates.DownloadAsync(latest, new Progress<string>(m => Step1StatusText.Text = m));
-            await Task.Run(() => NXPilot.Updates.UpdateService.Apply(package, _installDir));
-            NXPilot.Updates.UpdateService.CleanupOldFiles(_installDir); // o app está fechado: dá para apagar já
-            try { Directory.Delete(Path.GetDirectoryName(package)!, true); } catch { }
-            return T($" Atualizado para a {latest.Tag}.", $" Updated to {latest.Tag}.", $" Actualizado a la {latest.Tag}.");
+            var latest = (await updates.ListVersionsAsync(1)).FirstOrDefault()
+                         ?? throw new NXPilot.Updates.UpdateException(T("nenhuma versão publicada.", "no version published.", "ninguna versión publicada."));
+            Step1StatusText.Text = T($"Baixando o NXPilot {latest.Tag}…", $"Downloading NXPilot {latest.Tag}…", $"Descargando NXPilot {latest.Tag}…");
+            Step1Progress.Value = 5;
+            var package = await updates.DownloadAsync(latest);
+            Step1Progress.Value = 20;
+            return (latest.Tag, package);
         }
         catch (Exception ex) when (ex is NXPilot.Updates.UpdateException or System.Net.Http.HttpRequestException or TaskCanceledException)
         {
-            return T(" (Sem acesso ao GitHub: instalada a versão que vem no Setup.)", " (No access to GitHub: installed the version bundled in the Setup.)", " (Sin acceso a GitHub: se instaló la versión incluida en el Setup.)");
+            throw new InvalidOperationException(T(
+                "não deu para baixar o NXPilot do GitHub. O Setup traz só a base (runtime e bibliotecas); o app vem da internet. Confira a conexão e tente de novo. Detalhe: ",
+                "could not download NXPilot from GitHub. The Setup only carries the base (runtime and libraries); the app comes from the internet. Check your connection and try again. Detail: ",
+                "no se pudo descargar NXPilot de GitHub. El Setup solo trae la base (runtime y bibliotecas); la aplicación viene de internet. Revise la conexión e intente de nuevo. Detalle: ") + ex.Message, ex);
         }
     }
 
@@ -250,7 +361,7 @@ public partial class MainWindow : Window
         catch { /* sem atalho antigo */ }
     }
 
-    // ------------------------------------------------------------------ Passo 2: ONNX
+    // ------------------------------------------------------------------ Passo 3: ONNX
 
     private void RefreshStep2()
     {
@@ -276,7 +387,7 @@ public partial class MainWindow : Window
         finally { RefreshStep2(); }
     }
 
-    // ------------------------------------------------------------------ Passo 3: agentes
+    // ------------------------------------------------------------------ Passo 4: agentes
 
     private enum Where { None, Windows, Wsl }
 
@@ -391,7 +502,7 @@ public partial class MainWindow : Window
         try { Clipboard.SetText(text); } catch { /* área de transferência ocupada por outro app */ }
     }
 
-    // ------------------------------------------------------------------ Passo 4: LLaMA
+    // ------------------------------------------------------------------ Passo 5: LLaMA
 
     /// <summary>Mesma checagem leve do NXProject-Setup: pasta do local-ai.json com um .gguf.</summary>
     private void RefreshLlama()

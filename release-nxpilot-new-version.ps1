@@ -134,7 +134,7 @@ Write-Host ">> Versao: $CurrentVersion -> $NewVersion" -ForegroundColor Yellow
 Set-Version $NewVersion
 
 # ── 3. Pacotes ──
-# O script do Setup publica o app (dist\app) e monta o Setup local (base + app embutido).
+# O script do Setup publica o app (dist\app, de onde sai o NXPilot-Release.zip) e monta o Setup local (so a base).
 # O Setup so SOBE para o GitHub se a base mudou (ou -WithSetup) — passo 6.
 Write-Step "Publicando o app e montando o Setup local $Tag..."
 $setupArgs = @{ Configuration = $Configuration; SkipTests = $true }
@@ -236,11 +236,11 @@ Write-Host "  https://github.com/$GitHubRepo/releases/tag/$Tag" -ForegroundColor
 # ── 7. Setup (base) na release fixa — so quando mudou ──
 if ($NeedSetup) {
     Write-Step "Republicando o Setup na release fixa $SetupTag..."
-    # Sobe o Setup ja montado neste release (mesma base e app embutido desta versao).
+    # Sobe o Setup ja montado neste release (so a base; o app vem do NXPilot-Release.zip desta versao).
     gh release view $SetupTag --repo $GitHubRepo --json tagName 2>$null | Out-Null
     if ($LASTEXITCODE -ne 0) {
         gh release create $SetupTag --repo $GitHubRepo --prerelease --latest=false --title "NXPilot Setup (instalador)" `
-            --notes "Instalador do NXPilot (base: runtime .NET e bibliotecas). Esta release e fixa e sempre traz o NXPilot-Setup.zip mais recente; ao instalar, ele baixa a versao mais nova do app. As versoes do app tem tags proprias (vX.Y.Z.WW)."
+            --notes "Instalador do NXPilot (so a base: runtime .NET e bibliotecas). Esta release e fixa e sempre traz o NXPilot-Setup.zip mais recente; ao instalar, ele baixa a versao mais nova do app. As versoes do app tem tags proprias (vX.Y.Z.WW)."
         if ($LASTEXITCODE -ne 0) { Fail "Falha ao criar a release $SetupTag (a versao $Tag ja foi publicada)." }
     }
     gh release upload $SetupTag $SetupZip (Join-Path $SolutionDir "dist\setup\NXPilot-Setup.timestamp.txt") --repo $GitHubRepo --clobber
