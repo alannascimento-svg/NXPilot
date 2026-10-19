@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pacote compartilhado (NXPilot e NXProject): instala e localiza os agentes de IA no Windows
+    (Claude Code e Codex CLI). Dois modos: INTERNO (o próprio .NET baixa, confere o SHA-256 e
+    instala — sem script, para antivírus que bloqueiam PowerShell) e SCRIPT (instalador oficial
+    numa janela visível). Versão: a última ou a testada, com queda para a última se a testada
+    sumir. Sem dependências.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <PackageId>NXData.AgentInstaller</PackageId>
+    <!-- Versão própria do pacote (não a do app); o workflow nuget.yml usa a da tag nxdata-agentinstaller-vX.Y.Z. -->
+    <Version>1.0.0</Version>
+    <Authors>Nexus XData Tecnologia Ltda</Authors>
+    <Company>Nexus XData Tecnologia Ltda</Company>
+    <Product>NXData.AgentInstaller</Product>
+    <PackageDescription>Instala e localiza Claude Code e Codex CLI no Windows, na área do usuário e sem administrador: modo automático (baixa do site oficial, confere o SHA-256, sem rodar script) ou instalador oficial; última versão ou a versão testada (com queda para a última se ela sair do ar).</PackageDescription>
+    <PackageTags>claude-code;codex;ai-agents;installer;windows;nexus-xdata</PackageTags>
+    <PackageProjectUrl>https://github.com/nexusxdata/NXPilot/tree/main/NXData.AgentInstaller</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nexusxdata/NXPilot</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

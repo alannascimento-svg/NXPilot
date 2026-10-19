@@ -24,9 +24,9 @@ public partial class MainWindow : Window
 {
     private const string AppExeName = "NxPilot.exe";
 
-    /// <summary>Instalação dos agentes (pacote NX.AgentInstaller, compartilhado com o NXProject).</summary>
-    private readonly NX.AgentInstaller.AgentInstallOptions _agentOptions = new();
-    private readonly NX.AgentInstaller.AgentInstaller _agents;
+    /// <summary>Instalação dos agentes (pacote NXData.AgentInstaller, compartilhado com o NXProject).</summary>
+    private readonly NXData.AgentInstaller.AgentInstallOptions _agentOptions = new();
+    private readonly NXData.AgentInstaller.AgentInstaller _agents;
 
     private readonly string _installDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Apps", "NXPilot");
@@ -39,7 +39,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        _agents = new NX.AgentInstaller.AgentInstaller(_agentOptions);
+        _agents = new NXData.AgentInstaller.AgentInstaller(_agentOptions);
         _payloadDir = ResolvePayloadDir();
         VersionRun.Text = "v" + (typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "?");
         AppPathRun.Text = T("Pasta: ", "Folder: ") + $"{_installDir}  ";
@@ -305,14 +305,14 @@ public partial class MainWindow : Window
     private enum Where { None, Windows, Wsl }
 
     /// <summary>
-    /// NX.AgentInstaller.AgentLocator: PATH, pastas dos instaladores oficiais, pasta do NXProject
+    /// NXData.AgentInstaller.AgentLocator: PATH, pastas dos instaladores oficiais, pasta do NXProject
     /// e extensões do VS Code — quem já tem o agente (de qualquer forma) não reinstala.
     /// </summary>
     private void RefreshAgents()
     {
-        foreach (var (cli, status, name) in new[] { (NX.AgentInstaller.AgentCli.ClaudeCode, ClaudeStatus, "claude"), (NX.AgentInstaller.AgentCli.Codex, CodexStatus, "codex") })
+        foreach (var (cli, status, name) in new[] { (NXData.AgentInstaller.AgentCli.ClaudeCode, ClaudeStatus, "claude"), (NXData.AgentInstaller.AgentCli.Codex, CodexStatus, "codex") })
         {
-            if (NX.AgentInstaller.AgentLocator.Find(cli, _agentOptions) is { } found)
+            if (NXData.AgentInstaller.AgentLocator.Find(cli, _agentOptions) is { } found)
             {
                 status.Text = T($"✓ {found.Version ?? "instalado"} ({found.Source})", $"✓ {found.Version ?? "installed"} ({SourceEn(found.Source)})");
                 status.Foreground = Brushes.Green;
@@ -330,8 +330,8 @@ public partial class MainWindow : Window
 
     private void OnRecheckClick(object sender, RoutedEventArgs e) => RefreshAgents();
 
-    private NX.AgentInstaller.InstallMode SelectedMode => ModeScript.IsChecked == true ? NX.AgentInstaller.InstallMode.Script : NX.AgentInstaller.InstallMode.Internal;
-    private NX.AgentInstaller.VersionChoice SelectedVersion => VersionBox.SelectedItem == VersionTestedItem ? NX.AgentInstaller.VersionChoice.Tested : NX.AgentInstaller.VersionChoice.Latest;
+    private NXData.AgentInstaller.InstallMode SelectedMode => ModeScript.IsChecked == true ? NXData.AgentInstaller.InstallMode.Script : NXData.AgentInstaller.InstallMode.Internal;
+    private NXData.AgentInstaller.VersionChoice SelectedVersion => VersionBox.SelectedItem == VersionTestedItem ? NXData.AgentInstaller.VersionChoice.Tested : NXData.AgentInstaller.VersionChoice.Latest;
 
     private void OnInstallOptionChanged(object sender, RoutedEventArgs e) => UpdateAgentCommands();
 
@@ -339,14 +339,14 @@ public partial class MainWindow : Window
     private void UpdateAgentCommands()
     {
         if (ClaudeCommand == null || VersionBox == null) return; // eventos durante o InitializeComponent
-        var tested = SelectedVersion == NX.AgentInstaller.VersionChoice.Tested;
-        ClaudeCommand.Text = _agents.ScriptCommand(NX.AgentInstaller.AgentCli.ClaudeCode, tested ? _agentOptions.TestedClaudeVersion : null);
-        CodexCommand.Text = _agents.ScriptCommand(NX.AgentInstaller.AgentCli.Codex, tested ? _agentOptions.TestedCodexVersion : null);
+        var tested = SelectedVersion == NXData.AgentInstaller.VersionChoice.Tested;
+        ClaudeCommand.Text = _agents.ScriptCommand(NXData.AgentInstaller.AgentCli.ClaudeCode, tested ? _agentOptions.TestedClaudeVersion : null);
+        CodexCommand.Text = _agents.ScriptCommand(NXData.AgentInstaller.AgentCli.Codex, tested ? _agentOptions.TestedCodexVersion : null);
     }
 
     private async void OnInstallAgentClick(object sender, RoutedEventArgs e)
     {
-        var cli = (sender as Button)?.Tag as string == "claude" ? NX.AgentInstaller.AgentCli.ClaudeCode : NX.AgentInstaller.AgentCli.Codex;
+        var cli = (sender as Button)?.Tag as string == "claude" ? NXData.AgentInstaller.AgentCli.ClaudeCode : NXData.AgentInstaller.AgentCli.Codex;
         ClaudeInstallButton.IsEnabled = CodexInstallButton.IsEnabled = false;
         ErrorText.Visibility = Visibility.Collapsed;
         try
@@ -357,8 +357,8 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             AgentProgress.Text = "";
-            ShowError((cli == NX.AgentInstaller.AgentCli.ClaudeCode ? "Claude Code: " : "Codex: ") + ex.Message +
-                      (SelectedMode == NX.AgentInstaller.InstallMode.Script ? T(" Tente a instalação Interna.", " Try the Built-in install.") : ""));
+            ShowError((cli == NXData.AgentInstaller.AgentCli.ClaudeCode ? "Claude Code: " : "Codex: ") + ex.Message +
+                      (SelectedMode == NXData.AgentInstaller.InstallMode.Script ? T(" Tente a instalação Interna.", " Try the Built-in install.") : ""));
         }
         finally
         {

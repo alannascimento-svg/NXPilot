@@ -1,7 +1,11 @@
-# NX.AgentInstaller
+# NXData.AgentInstaller
 
 Biblioteca compartilhada pelo **NXPilot** e pelo **NXProject** para instalar e localizar os agentes de IA no Windows: **Claude Code** e **Codex CLI**.
 Não tem dependências.
+
+```
+dotnet add package NXData.AgentInstaller
+```
 
 ## Modos
 

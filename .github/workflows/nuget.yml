@@ -1,0 +1,50 @@
+# Publica as bibliotecas da Nexus XData no nuget.org por Trusted Publishing (sem chave guardada):
+# o GitHub emite um token de curta duração, o nuget.org confere a política "NXPilot GitHub"
+# (dono nexusxdata, este repositório, este arquivo) e devolve uma chave válida por 1 hora.
+#
+# Disparo: tag "nxdata-agentinstaller-vX.Y.Z" → publica NXData.AgentInstaller na versão X.Y.Z.
+#   git tag nxdata-agentinstaller-v1.0.0 && git push origin nxdata-agentinstaller-v1.0.0
+name: nuget
+
+on:
+  push:
+    tags:
+      - "nxdata-agentinstaller-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # token OIDC do GitHub para o nuget.org (Trusted Publishing)
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Versão a partir da tag
+        id: ver
+        run: echo "version=${GITHUB_REF_NAME#nxdata-agentinstaller-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Gerar o pacote
+        run: dotnet pack NXData.AgentInstaller/NXData.AgentInstaller.csproj -c Release -o artifacts -p:Version=${{ steps.ver.outputs.version }}
+
+      - name: Conferir o conteúdo do pacote
+        run: |
+          ls -la artifacts
+          unzip -l artifacts/NXData.AgentInstaller.${{ steps.ver.outputs.version }}.nupkg | grep -E "NXData.AgentInstaller.dll|README.md|LICENSE.txt|icon.png"
+
+      # Chave temporária (1 h) só para esta publicação.
+      - name: NuGet login (OIDC → chave temporária)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: nexusxdata   # nome de usuário do nuget.org (não é e-mail)
+
+      - name: Publicar no nuget.org
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

@@ -127,7 +127,7 @@ Set-Content -Path $StampFile -Value $stamp -Encoding ascii -NoNewline
 
 # Lista da base (tudo que NAO e o nucleo do app, com tamanho): o release de versao compara com
 # a ultima base publicada para saber se precisa republicar o Setup.
-$CorePattern = '^(NxPilot|NXPilot\.(Core|Databricks|GitRepos|Mail|WindowsUi)|NX\.AgentInstaller)\.(exe|dll|pdb|deps\.json|runtimeconfig\.json)$'
+$CorePattern = '^(NxPilot|NXPilot\.(Core|Databricks|GitRepos|Mail|WindowsUi)|NXData\.AgentInstaller)\.(exe|dll|pdb|deps\.json|runtimeconfig\.json)$'
 $BaseList = Join-Path $SolutionDir "dist\setup\base-files.txt"
 Get-ChildItem -Path $AppPublishDir -Recurse -File |
     Where-Object { $_.Name -notmatch $CorePattern } |

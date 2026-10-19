@@ -11,7 +11,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace NX.AgentInstaller;
+namespace NXData.AgentInstaller;
 
 public interface IAgentInstaller
 {
@@ -45,7 +45,7 @@ public sealed class AgentInstaller(AgentInstallOptions? options = null, HttpMess
     {
         var c = handler == null ? new HttpClient() : new HttpClient(handler, disposeHandler: false);
         c.Timeout = TimeSpan.FromMinutes(15); // o pacote do Codex passa de 150 MB
-        c.DefaultRequestHeaders.UserAgent.ParseAdd("NX.AgentInstaller/1.0"); // o GitHub exige
+        c.DefaultRequestHeaders.UserAgent.ParseAdd("NXData.AgentInstaller/1.0"); // o GitHub exige
         return c;
     }
 

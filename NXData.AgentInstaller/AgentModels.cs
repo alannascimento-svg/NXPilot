@@ -3,7 +3,7 @@
 // Licença: LICENSE.txt (oficial, em português) | LICENSE.en.txt (English version).
 // Distribuição comercial somente mediante contrato: comercial.nexus.xdata@gmail.com
 
-namespace NX.AgentInstaller;
+namespace NXData.AgentInstaller;
 
 public enum AgentCli { ClaudeCode, Codex }
 

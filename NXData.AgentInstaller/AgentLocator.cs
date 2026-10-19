@@ -5,7 +5,7 @@
 
 using System.Diagnostics;
 
-namespace NX.AgentInstaller;
+namespace NXData.AgentInstaller;
 
 /// <summary>
 /// Acha o agente instalado, na ordem: PATH (usuário e máquina), pastas dos instaladores oficiais

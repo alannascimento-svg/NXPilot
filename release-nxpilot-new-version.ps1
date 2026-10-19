@@ -47,10 +47,10 @@ $GitHubRepo = "nexusxdata/NXPilot"
 $SetupTag = "nxpilot-setup-latest"
 # Nucleo do app (vai em cada versao). O resto (runtime, ONNX, LLamaSharp, FlaUI...) e a BASE,
 # que vem no Setup — mesma regra do release-nxpilot-setup.ps1.
-$CorePattern = '^(NxPilot|NXPilot\.(Core|Databricks|GitRepos|Mail|WindowsUi)|NX\.AgentInstaller)\.(exe|dll|deps\.json|runtimeconfig\.json)$'
+$CorePattern = '^(NxPilot|NXPilot\.(Core|Databricks|GitRepos|Mail|WindowsUi)|NXData\.AgentInstaller)\.(exe|dll|deps\.json|runtimeconfig\.json)$'
 $RequiredInRelease = @(
     "NxPilot.exe", "NxPilot.dll", "NxPilot.deps.json", "NxPilot.runtimeconfig.json", "NXPilot.Core.dll",
-    "NXPilot.Databricks.dll", "NXPilot.GitRepos.dll", "NXPilot.Mail.dll", "NX.AgentInstaller.dll", "NXPilot.WindowsUi.dll",
+    "NXPilot.Databricks.dll", "NXPilot.GitRepos.dll", "NXPilot.Mail.dll", "NXData.AgentInstaller.dll", "NXPilot.WindowsUi.dll",
     "LICENSE.txt", "LICENSE.en.txt", "THIRD-PARTY-NOTICES.txt"
 )
 

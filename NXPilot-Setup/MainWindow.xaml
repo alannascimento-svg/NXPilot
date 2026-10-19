@@ -74,7 +74,7 @@
                         <TextBlock Text="{DynamicResource Setup_ONxpilotCoordenaOs}"
                                    Style="{StaticResource Note}" Margin="0,0,0,10"/>
 
-                        <!-- Como instalar (NX.AgentInstaller): interna = sem script (antivírus); script = instalador oficial. -->
+                        <!-- Como instalar (NXData.AgentInstaller): interna = sem script (antivírus); script = instalador oficial. -->
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>

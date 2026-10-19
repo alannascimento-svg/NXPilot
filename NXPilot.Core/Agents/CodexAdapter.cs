@@ -27,7 +27,7 @@ public sealed class CodexAdapter(string? model = null, string? executablePath = 
     /// <summary>JSON Schema da resposta final (--output-schema); nulo = texto livre.</summary>
     public string? OutputSchema { get; init; }
 
-    /// <summary>PATH → instalador oficial (…\Programs\OpenAI\Codex\bin, usado também pelo NX.AgentInstaller) → pasta do NXProject-Setup → codex.exe da extensão do VS Code (a mais nova).</summary>
+    /// <summary>PATH → instalador oficial (…\Programs\OpenAI\Codex\bin, usado também pelo NXData.AgentInstaller) → pasta do NXProject-Setup → codex.exe da extensão do VS Code (a mais nova).</summary>
     public static string? Locate()
     {
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);

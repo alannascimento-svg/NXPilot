@@ -798,16 +798,16 @@ public static class CriticalTests
                 }, http);
 
                 var selfInstall = new List<string>();
-                var options = new NX.AgentInstaller.AgentInstallOptions
+                var options = new NXData.AgentInstaller.AgentInstallOptions
                 {
                     UserProfile = Path.Combine(root, "home"), LocalAppData = Path.Combine(root, "local"), CodexHome = Path.Combine(root, "home", ".codex"),
                     ClaudeDownloadBase = "https://claude.test", CodexReleasesBase = "https://codex.test", CodexGitHubApi = "https://gh.test/releases",
                     UpdateUserPath = false,
                     ClaudeSelfInstall = (path, t, _) => { selfInstall.Add(t); AssertTrue(File.Exists(path), "Binário conferido antes de rodar."); return Task.FromResult((0, "ok")); },
                 };
-                var installer = new NX.AgentInstaller.AgentInstaller(options, bin);
+                var installer = new NXData.AgentInstaller.AgentInstaller(options, bin);
 
-                var claude = await installer.InstallAsync(NX.AgentInstaller.AgentCli.ClaudeCode, NX.AgentInstaller.InstallMode.Internal, NX.AgentInstaller.VersionChoice.Tested);
+                var claude = await installer.InstallAsync(NXData.AgentInstaller.AgentCli.ClaudeCode, NXData.AgentInstaller.InstallMode.Internal, NXData.AgentInstaller.VersionChoice.Tested);
                 AssertTrue(claude.FellBackToLatest, "Testada (2.1.301) sumiu: cai para a última.");
                 AssertEqual("9.9.9", claude.Version, "Instalou a última.");
                 AssertContains("não está mais disponível", claude.Message, "Avisa a queda.");
@@ -815,20 +815,20 @@ public static class CriticalTests
                 AssertFalse(Directory.EnumerateFiles(Path.Combine(options.UserProfile, ".claude", "downloads")).Any(), "Download temporário apagado.");
 
                 corrupt = true;
-                await AssertThrowsAsync<NX.AgentInstaller.AgentInstallException>(() => installer.InstallAsync(NX.AgentInstaller.AgentCli.ClaudeCode,
-                    NX.AgentInstaller.InstallMode.Internal, NX.AgentInstaller.VersionChoice.Latest), "Checksum errado: não instala.");
+                await AssertThrowsAsync<NXData.AgentInstaller.AgentInstallException>(() => installer.InstallAsync(NXData.AgentInstaller.AgentCli.ClaudeCode,
+                    NXData.AgentInstaller.InstallMode.Internal, NXData.AgentInstaller.VersionChoice.Latest), "Checksum errado: não instala.");
                 AssertEqual(1, selfInstall.Count, "O binário adulterado nunca foi executado.");
 
-                var codex = await installer.InstallAsync(NX.AgentInstaller.AgentCli.Codex, NX.AgentInstaller.InstallMode.Internal, NX.AgentInstaller.VersionChoice.Latest);
+                var codex = await installer.InstallAsync(NXData.AgentInstaller.AgentCli.Codex, NXData.AgentInstaller.InstallMode.Internal, NXData.AgentInstaller.VersionChoice.Latest);
                 AssertEqual("1.2.3", codex.Version, "Versão do rust-v1.2.3.");
                 AssertTrue(File.Exists(Path.Combine(options.CodexVisibleBin, "codex.exe")), "codex.exe visível pela junção …\\OpenAI\\Codex\\bin.");
                 AssertTrue(File.Exists(Path.Combine(options.CodexStandaloneRoot, "current", "codex-resources", "codex-windows-sandbox-setup.exe")), "Sandbox do Windows junto (pacote completo).");
                 AssertEqual($"1.2.3-{target}", File.ReadAllText(Path.Combine(options.CodexStandaloneRoot, "auto-update-version")), "Última: continua se atualizando.");
-                var again = await installer.InstallAsync(NX.AgentInstaller.AgentCli.Codex, NX.AgentInstaller.InstallMode.Internal, NX.AgentInstaller.VersionChoice.Latest);
+                var again = await installer.InstallAsync(NXData.AgentInstaller.AgentCli.Codex, NXData.AgentInstaller.InstallMode.Internal, NXData.AgentInstaller.VersionChoice.Latest);
                 AssertEqual(codex.ExecutablePath, again.ExecutablePath, "Reinstalar é idempotente (junção trocada, não duplicada).");
 
-                AssertContains("CODEX_RELEASE='0.162.0'", installer.ScriptCommand(NX.AgentInstaller.AgentCli.Codex, "0.162.0"), "Script oficial do Codex com versão.");
-                AssertEqual("irm https://claude.ai/install.ps1 | iex", installer.ScriptCommand(NX.AgentInstaller.AgentCli.ClaudeCode), "Script oficial do Claude.");
+                AssertContains("CODEX_RELEASE='0.162.0'", installer.ScriptCommand(NXData.AgentInstaller.AgentCli.Codex, "0.162.0"), "Script oficial do Codex com versão.");
+                AssertEqual("irm https://claude.ai/install.ps1 | iex", installer.ScriptCommand(NXData.AgentInstaller.AgentCli.ClaudeCode), "Script oficial do Claude.");
             }
             finally
             {
