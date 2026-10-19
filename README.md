@@ -1,86 +1,107 @@
+🌐 [Leia em Português](README.pt-BR.md) | **English**
+
+---
+
 # NXPilot
 
-> **Inteligência Artificial Automática, e não autônoma — porque você está no controle.**
-> *Automatic, not autonomous AI — because you are in control.*
+> **Automatic, not autonomous AI — because you are in control.**
 
-O NXPilot é um app desktop (Windows) que coordena agentes de código — **Claude Code** e **Codex** —
-registra tudo para auditoria e **pede a sua decisão** antes de qualquer ação arriscada.
+NXPilot is a Windows desktop app that coordinates coding agents — **Claude Code** and **Codex** —
+logs everything for auditing and **asks for your decision** before any risky action.
 
-## Como funciona
+## How it works
 
-1. **Nova tarefa** — você descreve a intenção e os critérios de aceite; o agente só LÊ o repositório e propõe um plano em fases.
-2. **Você aprova** — nada é escrito antes disso, e tudo roda num *git worktree* isolado (sua pasta de trabalho não é tocada).
-3. **Execução sob o gate** — cada comando ou arquivo que o agente quer usar passa pela **cascata de risco**:
-   **Regras → ONNX (local, ~2 ms) → LLM só na dúvida**. Só ações de risco BAIXO com confiança alta passam sozinhas;
-   MÉDIO e ALTO sempre vêm para você. Escrever fora do worktree é sempre ALTO.
-4. **Commit por fase** e **verificação cruzada**: o outro agente revisa o diff (somente leitura) contra o plano e os critérios.
+1. **New task** — you describe the intent and the acceptance criteria; the agent only READS the repository and proposes a phased plan.
+2. **You approve** — nothing is written before that, and everything runs in an isolated *git worktree* (your working folder is never touched).
+3. **Execution under the gate** — every command or file the agent wants to use goes through the **risk cascade**:
+   **Rules → ONNX (local, ~2 ms) → LLM only when in doubt**. Only LOW-risk actions with high confidence go through on their own;
+   MEDIUM and HIGH always come to you. Writing outside the worktree is always HIGH.
+4. **One commit per phase** and **cross-verification**: the other agent reviews the diff (read-only) against the plan and the criteria.
 
-Também: histórico de tarefas, notificações, work items do Azure DevOps (somente leitura), projetos Power BI (PBIP)
-editados como código, leitura de mensagens pela API oficial do WhatsApp (somente leitura), IA local (LLaMA) ou
-provedores (GitHub Copilot/Models, Azure OpenAI, Microsoft 365, OpenRouter), interface em português e inglês.
+Also: task history, notifications, Azure DevOps work items (read-only), Power BI projects (PBIP) edited as code,
+reading and monitoring app windows (clicks only through an approved process), local AI (LLaMA) or providers
+(GitHub Copilot/Models, Azure OpenAI, Microsoft 365, OpenRouter), user interface in Portuguese and English.
 
-### 🧩 Extensões (prévia)
+### 🧩 Extensions (preview)
 
-Conectores opcionais, que ficam na barra lateral em **Extensões**. Cada um é um pacote à parte, sem dependências.
-Os tokens ficam cifrados (DPAPI) só no seu usuário do Windows, e o que muda algo fora da máquina passa pelo DecisionGate.
+Optional connectors, shown in the sidebar under **Extensions**. Each one is a separate package, with no dependencies.
+Tokens are encrypted (DPAPI) for your Windows user only, and anything that changes something outside the machine goes through the DecisionGate.
 
-| Extensão | Pacote | O que faz | Controle |
+| Extension | Package | What it does | Control |
 |---|---|---|---|
-| **Databricks SQL** | [`NXPilot.Databricks`](NXPilot.Databricks/README.md) | Consultas no SQL Warehouse (Statement Execution API) | Leitura passa sozinha; escrita, DDL e `GRANT` pedem aprovação |
-| **Git** | [`NXPilot.GitRepos`](NXPilot.GitRepos/README.md) | Clone, commit, push e pull request no GitHub e no Azure DevOps; Git folder do Databricks | Push, PR e deploy pedem aprovação; push na principal é ALTO; nunca `--force` |
-| **E-mail** | [`NXPilot.Mail`](NXPilot.Mail/README.md) | Leitura do Outlook (Graph `Mail.Read`) e do Gmail (`gmail.readonly`) | Somente leitura; o conteúdo vai ao agente como dado, nunca como instrução |
+| **Databricks SQL** | [`NXPilot.Databricks`](NXPilot.Databricks/README.md) | Queries on the SQL Warehouse (Statement Execution API) | Reads go through on their own; writes, DDL and `GRANT` require approval |
+| **Git** | [`NXPilot.GitRepos`](NXPilot.GitRepos/README.md) | Clone, commit, push and pull request on GitHub and Azure DevOps; Databricks Git folder | Push, PR and deploy require approval; push to the main branch is HIGH; never `--force` |
+| **E-mail** | [`NXPilot.Mail`](NXPilot.Mail/README.md) | Reads Outlook (Graph `Mail.Read`) and Gmail (`gmail.readonly`) | Read-only; content goes to the agent as data, never as instructions |
 
-Os pré-requisitos de cada extensão (token, PAT com escopo Code, app no Entra ID ou no Google Cloud) estão no README de cada pacote.
-As extensões foram testadas com servidores simulados, mas ainda não com contas reais.
+The prerequisites of each extension (token, PAT with Code scope, app in Entra ID or Google Cloud) are in each package's README.
+The extensions were tested against simulated servers, but not yet with real accounts.
 
-## Edições (Open Core)
+## Editions (Open Core)
 
-O **Open Core abrange somente o NXPilot**. O **NXAgentic-Provider** é a versão comercial (Enterprise),
-para empresas que querem aproveitar melhor o uso de **skills corporativas** — não é Open Core e seu
-código não é publicado.
+**Open Core covers NXPilot only.** **NXAgentic-Provider** is the commercial (Enterprise) version,
+for companies that want to make better use of **corporate skills** — it is not Open Core and its
+code is not published.
 
-| | **NXPilot Community** (este repositório) | **NXAgentic-Provider** (comercial / Enterprise) |
+| | **NXPilot Community** (this repository) | **NXAgentic-Provider** (commercial / Enterprise) |
 |---|---|---|
-| Preço | gratuito, inclusive para empresas (uso interno) | licença paga |
-| Agentes, plano em fases, worktree, verificação cruzada | ✔ | ✔ |
-| **Gate, cascata de risco, log e auditoria local** | ✔ — segurança nunca é recurso pago | ✔ |
-| Planejador | Basic | avançado (roteamento de modelos, avaliação do plano) |
-| Skills corporativas, políticas, equipe, relatórios | — | ✔ |
+| Price | free, including for companies (internal use) | paid license |
+| Agents, phased plan, worktree, cross-verification | ✔ | ✔ |
+| **Gate, risk cascade, local log and audit** | ✔ — security is never a paid feature | ✔ |
+| Planner | Basic | advanced (model routing, plan evaluation) |
+| Corporate skills, policies, team, reports | — | ✔ |
 
-O NXPilot funciona completo sem o NXAgentic-Provider. A versão comercial se conecta pela fachada
-pública `IAgentPlanner` (`NXPilot.Core/Planning`); um módulo local só é carregado se estiver
-**assinado pela Nexus XData**, e qualquer falha faz o NXPilot seguir com o planejador Basic.
-Sem o NXAgentic-Provider, nenhum código, prompt ou contexto seu é enviado à Nexus XData, e não há
-telemetria. Mesmo com ele, o serviço só **sugere**: toda ação dos agentes continua passando pelo
-gate local e por você.
+NXPilot works fully without NXAgentic-Provider. The commercial version plugs in through the public
+`IAgentPlanner` facade (`NXPilot.Core/Planning`); a local module is only loaded if it is
+**signed by Nexus XData**, and any failure makes NXPilot fall back to the Basic planner.
+Without NXAgentic-Provider, none of your code, prompts or context is sent to Nexus XData, and there is
+no telemetry. Even with it, the service only **suggests**: every agent action still goes through the
+local gate and through you.
 
-## Requisitos
+## Requirements
 
-- Windows 10/11 x64 (o Setup já traz o runtime .NET).
-- Pelo menos um agente instalado e logado: [Claude Code](https://claude.com/claude-code) ou Codex.
-- `git` no PATH.
-- Opcional: modelo ONNX em `C:\IA_LOCAL\ONNX` (o app baixa) e IA local em `C:\IA_LOCAL`.
+- Windows 10/11 x64 (the Setup already includes the .NET runtime).
+- At least one agent installed and signed in: [Claude Code](https://claude.com/claude-code) or Codex.
+- `git` on the PATH.
+- Optional: ONNX model in `C:\IA_LOCAL\ONNX` (the app downloads it) and local AI in `C:\IA_LOCAL`.
 
-## Instalação
+## Download
 
-Baixe o `NXPilot-Setup.zip` da última *release*, extraia e rode o `NXPilot-Setup.exe`.
+**First time installing?** Download the Setup, extract it and run `NXPilot-Setup.exe` — it includes the .NET runtime,
+creates the shortcut and automatically fetches the latest NXPilot version:
 
-## Desenvolvimento
+- [Download NXPilot-Setup.zip](../../releases/download/nxpilot-setup-latest/NXPilot-Setup.zip)
+
+  The Setup lives in its own fixed release, [`nxpilot-setup-latest`](../../releases/tag/nxpilot-setup-latest), and is
+  republished only when the installer base itself changes — not on every NXPilot version.
+
+**Already installed?** Just grab the small update package and extract it over your existing installation:
+
+- [Download NXPilot-Release.zip (update)](../../releases/latest/download/NXPilot-Release.zip)
+- [View release notes and source code downloads](../../releases/latest)
+
+> `NXPilot-Release.zip` alone does **not** include the .NET runtime: it only contains the app files that change
+> every release. On a new machine, always use `NXPilot-Setup.zip`.
+
+## Development
 
 ```powershell
-.\build-nxpilot.ps1                 # compila + smoke test + testes críticos
-.\run-nxpilot.ps1                   # abre o app já compilado
-.\release-nxpilot-setup.ps1         # gera dist\setup\NXPilot-Setup.zip
-.\release-nxpilot-new-version.ps1   # nova versão: testes, versão, Setup, commit, tag, release
+.\build-nxpilot.ps1                 # build + smoke test + critical tests
+.\run-nxpilot.ps1                   # open the already-built app
+.\release-nxpilot-setup.ps1         # generate dist\setup\NXPilot-Setup.zip
+.\release-nxpilot-new-version.ps1   # new version: tests, version, Setup, commit, tag, release
 ```
 
-Testes críticos: `NXPilot.Bench.exe --test [filtro]`.
+Critical tests: `NXPilot.Bench.exe --test [filter]`.
 
-## Licença
+## License
 
-**NXPilot License 2.0** — Open Core / licenciamento dual, *source-available* (não é uma licença OSI).
-Uso gratuito, inclusive comercial interno; distribuição comercial somente com contrato.
-Texto oficial: [LICENSE.txt](LICENSE.txt) · English: [LICENSE.en.txt](LICENSE.en.txt) ·
-Terceiros: [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).
+**NXPilot License 2.0** — Open Core / dual licensing, *source-available* (not an OSI license).
+Free to use, including internal commercial use; commercial distribution only under contract.
+Official text (Portuguese): [LICENSE.txt](LICENSE.txt) · complete English translation: [LICENSE.en.txt](LICENSE.en.txt) ·
+Third parties: [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).
+
+> The official license is the Portuguese one. The English text is a complete translation that reproduces all of
+> its clauses, with the same terms, rights and obligations; any difference stems from translation or
+> interpretation, and in that case the Portuguese text prevails (clause 13).
 
 Copyright (c) Nexus XData Tecnologia Ltda · comercial.nexus.xdata@gmail.com

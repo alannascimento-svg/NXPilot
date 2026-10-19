@@ -1,0 +1,107 @@
+🌐 **Português** | [Read in English](README.md)
+
+---
+
+# NXPilot
+
+> **Inteligência Artificial Automática, e não autônoma — porque você está no controle.**
+
+O NXPilot é um app desktop (Windows) que coordena agentes de código — **Claude Code** e **Codex** —
+registra tudo para auditoria e **pede a sua decisão** antes de qualquer ação arriscada.
+
+## Como funciona
+
+1. **Nova tarefa** — você descreve a intenção e os critérios de aceite; o agente só LÊ o repositório e propõe um plano em fases.
+2. **Você aprova** — nada é escrito antes disso, e tudo roda num *git worktree* isolado (sua pasta de trabalho não é tocada).
+3. **Execução sob o gate** — cada comando ou arquivo que o agente quer usar passa pela **cascata de risco**:
+   **Regras → ONNX (local, ~2 ms) → LLM só na dúvida**. Só ações de risco BAIXO com confiança alta passam sozinhas;
+   MÉDIO e ALTO sempre vêm para você. Escrever fora do worktree é sempre ALTO.
+4. **Commit por fase** e **verificação cruzada**: o outro agente revisa o diff (somente leitura) contra o plano e os critérios.
+
+Também: histórico de tarefas, notificações, work items do Azure DevOps (somente leitura), projetos Power BI (PBIP)
+editados como código, leitura e monitoramento de janelas de apps (cliques só por processo aprovado), IA local (LLaMA) ou
+provedores (GitHub Copilot/Models, Azure OpenAI, Microsoft 365, OpenRouter), interface em português e inglês.
+
+### 🧩 Extensões (prévia)
+
+Conectores opcionais, que ficam na barra lateral em **Extensões**. Cada um é um pacote à parte, sem dependências.
+Os tokens ficam cifrados (DPAPI) só no seu usuário do Windows, e o que muda algo fora da máquina passa pelo DecisionGate.
+
+| Extensão | Pacote | O que faz | Controle |
+|---|---|---|---|
+| **Databricks SQL** | [`NXPilot.Databricks`](NXPilot.Databricks/README.md) | Consultas no SQL Warehouse (Statement Execution API) | Leitura passa sozinha; escrita, DDL e `GRANT` pedem aprovação |
+| **Git** | [`NXPilot.GitRepos`](NXPilot.GitRepos/README.md) | Clone, commit, push e pull request no GitHub e no Azure DevOps; Git folder do Databricks | Push, PR e deploy pedem aprovação; push na principal é ALTO; nunca `--force` |
+| **E-mail** | [`NXPilot.Mail`](NXPilot.Mail/README.md) | Leitura do Outlook (Graph `Mail.Read`) e do Gmail (`gmail.readonly`) | Somente leitura; o conteúdo vai ao agente como dado, nunca como instrução |
+
+Os pré-requisitos de cada extensão (token, PAT com escopo Code, app no Entra ID ou no Google Cloud) estão no README de cada pacote.
+As extensões foram testadas com servidores simulados, mas ainda não com contas reais.
+
+## Edições (Open Core)
+
+O **Open Core abrange somente o NXPilot**. O **NXAgentic-Provider** é a versão comercial (Enterprise),
+para empresas que querem aproveitar melhor o uso de **skills corporativas** — não é Open Core e seu
+código não é publicado.
+
+| | **NXPilot Community** (este repositório) | **NXAgentic-Provider** (comercial / Enterprise) |
+|---|---|---|
+| Preço | gratuito, inclusive para empresas (uso interno) | licença paga |
+| Agentes, plano em fases, worktree, verificação cruzada | ✔ | ✔ |
+| **Gate, cascata de risco, log e auditoria local** | ✔ — segurança nunca é recurso pago | ✔ |
+| Planejador | Basic | avançado (roteamento de modelos, avaliação do plano) |
+| Skills corporativas, políticas, equipe, relatórios | — | ✔ |
+
+O NXPilot funciona completo sem o NXAgentic-Provider. A versão comercial se conecta pela fachada
+pública `IAgentPlanner` (`NXPilot.Core/Planning`); um módulo local só é carregado se estiver
+**assinado pela Nexus XData**, e qualquer falha faz o NXPilot seguir com o planejador Basic.
+Sem o NXAgentic-Provider, nenhum código, prompt ou contexto seu é enviado à Nexus XData, e não há
+telemetria. Mesmo com ele, o serviço só **sugere**: toda ação dos agentes continua passando pelo
+gate local e por você.
+
+## Requisitos
+
+- Windows 10/11 x64 (o Setup já traz o runtime .NET).
+- Pelo menos um agente instalado e logado: [Claude Code](https://claude.com/claude-code) ou Codex.
+- `git` no PATH.
+- Opcional: modelo ONNX em `C:\IA_LOCAL\ONNX` (o app baixa) e IA local em `C:\IA_LOCAL`.
+
+## Instalação
+
+**Primeira instalação?** Baixe o Setup, extraia e rode o `NXPilot-Setup.exe` — ele já traz o runtime .NET,
+cria o atalho e busca sozinho a versão mais nova do NXPilot:
+
+- [Baixar NXPilot-Setup.zip](../../releases/download/nxpilot-setup-latest/NXPilot-Setup.zip)
+
+  O Setup fica numa *release* fixa, [`nxpilot-setup-latest`](../../releases/tag/nxpilot-setup-latest), e só é
+  republicado quando a base do instalador muda — não a cada versão do NXPilot.
+
+**Já tem instalado?** Basta o pacote de atualização, extraído por cima da instalação atual:
+
+- [Baixar NXPilot-Release.zip (atualização)](../../releases/latest/download/NXPilot-Release.zip)
+- [Ver notas da versão e o código-fonte](../../releases/latest)
+
+> O `NXPilot-Release.zip` sozinho **não** traz o runtime .NET: ele tem só os arquivos do app que mudam a cada
+> versão. Numa máquina nova, use sempre o `NXPilot-Setup.zip`.
+
+## Desenvolvimento
+
+```powershell
+.\build-nxpilot.ps1                 # compila + smoke test + testes críticos
+.\run-nxpilot.ps1                   # abre o app já compilado
+.\release-nxpilot-setup.ps1         # gera dist\setup\NXPilot-Setup.zip
+.\release-nxpilot-new-version.ps1   # nova versão: testes, versão, Setup, commit, tag, release
+```
+
+Testes críticos: `NXPilot.Bench.exe --test [filtro]`.
+
+## Licença
+
+**NXPilot License 2.0** — Open Core / licenciamento dual, *source-available* (não é uma licença OSI).
+Uso gratuito, inclusive comercial interno; distribuição comercial somente com contrato.
+Texto oficial (português): [LICENSE.txt](LICENSE.txt) · tradução completa para o inglês: [LICENSE.en.txt](LICENSE.en.txt) ·
+Terceiros: [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).
+
+> A licença oficial é a em português. O texto em inglês reproduz todas as cláusulas, com os mesmos termos,
+> direitos e obrigações; eventual diferença decorre de tradução ou interpretação, e nesse caso prevalece o
+> texto em português (cláusula 13).
+
+Copyright (c) Nexus XData Tecnologia Ltda · comercial.nexus.xdata@gmail.com
