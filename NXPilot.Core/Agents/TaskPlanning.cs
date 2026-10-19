@@ -51,6 +51,25 @@ public static class TaskPlanning
         $"Plan aprobado. Ejecute ahora SOLO la Fase {phase.Number} de {total}: {phase.Title}. " +
         "Trabaje solo dentro de este directorio y no avance a la siguiente fase. Al terminar, resuma lo que cambió.");
 
+    /// <summary>
+    /// "Analisar e corrigir achados": devolve ao executor o que o revisor apontou. Ele confere cada
+    /// achado, corrige o que procede e explica o que não procede — sem refazer o resto da tarefa.
+    /// </summary>
+    public static string FixFindingsPrompt(VerificationResult v)
+    {
+        var list = string.Join("\n", v.Findings.Select(f => $"- [{f.Severity}] {f.File}{(f.Line is { } l ? $":{l}" : "")} — {f.Message}"));
+        return NxText.T(
+            $"A verificação cruzada ({v.Reviewer}) NÃO aprovou o resultado. Resumo: {v.Summary}\nAchados:\n{list}\n\n" +
+            "Analise cada achado no código deste diretório. Corrija os que procedem, com a menor mudança possível, e confira que a correção funciona. " +
+            "Se algum não proceder, não mude nada por causa dele e explique por quê. Não refaça o resto da tarefa. Ao terminar, resuma achado por achado o que fez.",
+            $"Cross-verification ({v.Reviewer}) did NOT approve the result. Summary: {v.Summary}\nFindings:\n{list}\n\n" +
+            "Analyze each finding in the code in this directory. Fix the valid ones with the smallest possible change, and check that the fix works. " +
+            "If a finding is not valid, change nothing because of it and explain why. Do not redo the rest of the task. When done, summarize finding by finding what you did.",
+            $"La verificación cruzada ({v.Reviewer}) NO aprobó el resultado. Resumen: {v.Summary}\nHallazgos:\n{list}\n\n" +
+            "Analice cada hallazgo en el código de este directorio. Corrija los que proceden, con el menor cambio posible, y verifique que la corrección funciona. " +
+            "Si alguno no procede, no cambie nada por él y explique por qué. No rehaga el resto de la tarea. Al terminar, resuma hallazgo por hallazgo lo que hizo.");
+    }
+
     /// <summary>Fases do bloco ```json no fim do plano; sem bloco válido, uma fase única.</summary>
     public static IReadOnlyList<PlannedPhase> ParsePhases(string planText)
     {

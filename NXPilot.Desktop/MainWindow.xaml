@@ -148,8 +148,48 @@
                                     <Run Text="{DynamicResource Task_Worktree}"/><Run Text=": "/><Run Text="{Binding CurrentTask.Worktree, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/><Run Text="  ·  "/><Run Text="{Binding CurrentTask.Branch, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
                                 </TextBlock>
                                 <Border Background="{StaticResource PrimarySoftBrush}" CornerRadius="4" Padding="10,6" Margin="0,10,0,0">
-                                    <TextBlock Text="{Binding CurrentTask.StateLabel}" Foreground="{StaticResource PrimaryBrush}" FontWeight="SemiBold"/>
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Foreground="{StaticResource PrimaryBrush}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold"
+                                                       Visibility="{Binding CurrentTask.IsRunning, Converter={StaticResource BoolToVis}}">
+                                                <Run Text="⏱ "/><Run Text="{Binding CurrentTask.ElapsedText, Mode=OneWay}"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding CurrentTask.StateLabel}" Foreground="{StaticResource PrimaryBrush}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                        </DockPanel>
+                                        <!-- Em andamento: barra animada (o tempo de cada etapa do agente não é previsível). -->
+                                        <ProgressBar IsIndeterminate="True" Height="4" Margin="0,6,0,0" BorderThickness="0"
+                                                     Foreground="{StaticResource PrimaryBrush}" Background="Transparent"
+                                                     Visibility="{Binding CurrentTask.IsRunning, Converter={StaticResource BoolToVis}}"/>
+                                    </StackPanel>
                                 </Border>
+
+                                <!-- Onde está o resultado: entregáveis primeiro, com Abrir e Mostrar na pasta. -->
+                                <StackPanel Visibility="{Binding HasResultFiles, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{DynamicResource Task_ArquivosResultado}" Style="{StaticResource SectionHeader}"/>
+                                    <ItemsControl ItemsSource="{Binding ResultFiles}" MaxHeight="180">
+                                        <ItemsControl.Template>
+                                            <ControlTemplate TargetType="ItemsControl">
+                                                <ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsPresenter/></ScrollViewer>
+                                            </ControlTemplate>
+                                        </ItemsControl.Template>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="0,0,0,4">
+                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                        <Button Content="{DynamicResource Task_AbrirArquivo}" Style="{StaticResource SubtleButton}" Padding="8,2" FontSize="12" Margin="6,0,0,0"
+                                                                Visibility="{Binding CanOpen, Converter={StaticResource BoolToVis}}"
+                                                                Command="{Binding DataContext.OpenResultCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                                        <Button Content="{DynamicResource Task_MostrarNaPasta}" Style="{StaticResource SubtleButton}" Padding="8,2" FontSize="12" Margin="6,0,0,0"
+                                                                Command="{Binding DataContext.ShowResultInFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                                    </StackPanel>
+                                                    <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding FullPath}">
+                                                        <Run Text="{Binding Glyph, Mode=OneWay}"/><Run Text="  "/><Run Text="{Binding RelativePath, Mode=OneWay}" FontFamily="{StaticResource MonoFont}" FontSize="12"/>
+                                                    </TextBlock>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
 
                                 <TextBlock Text="{DynamicResource Task_PlanoDoAgente}" Style="{StaticResource SectionHeader}"/>
                                 <TextBox Text="{Binding CurrentTask.PlanText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" MaxHeight="320"
@@ -163,6 +203,11 @@
                                             Visibility="{Binding CurrentTask.CanDiscard, Converter={StaticResource BoolToVis}}"/>
                                     <Button Content="{DynamicResource Task_Interromper}" Command="{Binding StopTaskCommand}" Style="{StaticResource DangerButton}" Margin="0,0,8,6"
                                             Visibility="{Binding CurrentTask.IsRunning, Converter={StaticResource BoolToVis}}"/>
+                                    <Button Content="{DynamicResource Task_Retomar}" Command="{Binding ResumeTaskCommand}" Margin="0,0,8,6"
+                                            Style="{StaticResource PrimaryButton}" Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}"
+                                            Visibility="{Binding CurrentTask.CanResume, Converter={StaticResource BoolToVis}}"/>
+                                    <Button Content="{DynamicResource Task_AplicarNaPasta}" Command="{Binding ApplyToFolderCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,6"
+                                            Visibility="{Binding CurrentTask.CanApplyToFolder, Converter={StaticResource BoolToVis}}"/>
                                     <Button Content="{DynamicResource Task_AbrirWorktree}" Command="{Binding OpenWorktreeCommand}" Style="{StaticResource SubtleButton}" Margin="0,0,8,6"/>
                                     <Button Content="{DynamicResource Task_CapturarPowerBi}" Command="{Binding CapturePowerBiCommand}" Style="{StaticResource SubtleButton}" Margin="0,0,8,6"
                                             Visibility="{Binding CurrentTask.HasPowerBi, Converter={StaticResource BoolToVis}}"/>
@@ -603,7 +648,19 @@
                                                         Command="{Binding DataContext.ApproveCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
                                                 <Button Content="{DynamicResource Main_Negar}" Style="{StaticResource DangerButton}" Margin="8,0,0,0"
                                                         Command="{Binding DataContext.DenyCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                                <Button Content="{DynamicResource Main_VerScript}" Style="{StaticResource SubtleButton}" Margin="8,0,0,0"
+                                                        Visibility="{Binding HasScripts, Converter={StaticResource BoolToVis}}"
+                                                        Command="{Binding DataContext.ViewScriptCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
                                             </StackPanel>
+                                            <!-- Atalhos desta tarefa: nunca aparecem (nem valem) para risco ALTO. -->
+                                            <WrapPanel Margin="0,6,0,0" Visibility="{Binding CanUseTaskRules, Converter={StaticResource BoolToVis}}">
+                                                <Button Content="{DynamicResource Main_AprovarSemelhantes}" Style="{StaticResource SubtleButton}" Margin="0,0,8,4" Padding="8,3" FontSize="12"
+                                                        ToolTip="{DynamicResource Main_AprovarSemelhantesDica}"
+                                                        Command="{Binding DataContext.ApproveSimilarCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                                <Button Content="{DynamicResource Main_AprovarMedioBaixo}" Style="{StaticResource SubtleButton}" Margin="0,0,0,4" Padding="8,3" FontSize="12"
+                                                        ToolTip="{DynamicResource Main_AprovarMedioBaixoDica}"
+                                                        Command="{Binding DataContext.ApproveMediumLowCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                            </WrapPanel>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
@@ -612,6 +669,14 @@
                         <TextBlock Style="{StaticResource Muted}" Margin="2,0,0,0">
                             <Run Text="✔ "/><Run Text="{Binding AutoApprovedCount, Mode=OneWay}"/><Run Text="{DynamicResource Main_AcoesDeRiscoBaixo}"/>
                         </TextBlock>
+                        <Border Style="{StaticResource Card}" Margin="0,8,0,0" Padding="8,6" BorderBrush="{StaticResource AccentBrush}"
+                                Visibility="{Binding HasTaskRules, Converter={StaticResource BoolToVis}}">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="{DynamicResource Main_DesligarRegras}" Style="{StaticResource SubtleButton}" Padding="8,2" FontSize="11"
+                                        VerticalAlignment="Center" Margin="6,0,0,0" Command="{Binding ClearTaskRulesCommand}"/>
+                                <TextBlock Text="{Binding TaskRulesText}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
@@ -648,6 +713,11 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    <!-- Ao lado dos achados: devolve ao executor para analisar e corrigir. -->
+                    <Button Content="{DynamicResource Task_CorrigirAchados}" Command="{Binding FixFindingsCommand}" HorizontalAlignment="Stretch" Margin="0,4,0,0"
+                            Style="{StaticResource PrimaryButton}" Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}"
+                            ToolTip="{DynamicResource Task_CorrigirAchadosDica}"
+                            Visibility="{Binding CurrentTask.CanFixFindings, Converter={StaticResource BoolToVis}}"/>
                 </StackPanel>
             </Grid>
         </Border>

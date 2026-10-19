@@ -1,0 +1,20 @@
+<Window x:Class="NXPilot.Desktop.Views.ScriptViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Main_VerScript}" Width="900" Height="640" MinWidth="560" MinHeight="360"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{StaticResource BackgroundBrush}" FontFamily="Segoe UI" FontSize="13">
+    <DockPanel Margin="18,14">
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock x:Name="ActionText" FontFamily="{StaticResource MonoFont}" FontSize="12" TextWrapping="Wrap"/>
+            <TextBlock x:Name="HintText" Style="{StaticResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,8"/>
+            <ComboBox x:Name="FileBox" Padding="6,4" FontFamily="{StaticResource MonoFont}" FontSize="12" Margin="0,0,0,8" SelectionChanged="OnFileChanged"/>
+        </StackPanel>
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <Button DockPanel.Dock="Right" Content="{DynamicResource Hist_Fechar}" Style="{StaticResource SubtleButton}" IsCancel="True" Click="OnCloseClick"/>
+            <TextBlock x:Name="InfoText" Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+        </DockPanel>
+        <TextBox x:Name="ContentBox" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" FontSize="12" Padding="8"
+                 HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" AcceptsReturn="True"/>
+    </DockPanel>
+</Window>

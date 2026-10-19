@@ -17,6 +17,11 @@ public sealed class AppSettings
 {
     public string? Language { get; set; }
     public string? LastRepo { get; set; }
+    /// <summary>Versionamento da última tarefa: "Local" (repositório-sombra) ou "Git".</summary>
+    public string? Versioning { get; set; }
+    public string? LastSubject { get; set; }
+    /// <summary>Pasta dos assuntos do versionamento local (ex.: OneDrive); vazia = Documentos\NXPilot.</summary>
+    public string? SubjectsRoot { get; set; }
     public string? LastModel { get; set; }
     public string? CodexModel { get; set; }
     public string? Reviewer { get; set; }

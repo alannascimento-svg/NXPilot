@@ -45,6 +45,10 @@ public sealed partial class MainViewModel : ObservableObject
 
     public ObservableCollection<AgentItem> Agents { get; } = new();
     public ObservableCollection<ArtifactItem> Artifacts { get; } = new();
+
+    /// <summary>Arquivos que a tarefa criou/alterou — com Abrir e Mostrar na pasta.</summary>
+    public ObservableCollection<ResultFile> ResultFiles { get; } = new();
+    [ObservableProperty] private bool _hasResultFiles;
     public ObservableCollection<PhaseItem> Phases { get; } = new();
     public ObservableCollection<VerificationItem> Verification { get; } = new();
     public ObservableCollection<DiffLine> DiffLines { get; } = new();
@@ -70,6 +74,13 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _gateStatus = "Gate: …";
     [ObservableProperty] private int _autoApprovedCount;
 
+    /// <summary>Atalhos de aprovação ligados por você nesta tarefa (nunca liberam ALTO).</summary>
+    private readonly TaskApprovalRules _taskRules = new();
+
+    /// <summary>Resumo das regras da tarefa no painel de Decisões; vazio = nenhuma.</summary>
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasTaskRules))] private string _taskRulesText = "";
+    public bool HasTaskRules => TaskRulesText.Length > 0;
+
     public int CriticalCount => Verification.Count(v => v.Severity == "Critico");
     public int MajorCount => Verification.Count(v => v.Severity == "Maior");
     public int MinorCount => Verification.Count(v => v.Severity == "Menor");
@@ -92,6 +103,10 @@ public sealed partial class MainViewModel : ObservableObject
             PendingDecisions.Add(new DecisionItem(agent, action, ctx));
 
         LanguageService.LanguageChanged += OnLanguageChanged;
+        // Cronômetro da etapa em andamento (faixa de estado da tarefa).
+        var clock = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        clock.Tick += (_, _) => CurrentTask?.Tick();
+        clock.Start();
         _ = RebuildGateAsync();
         // Ponte com o hook dos agentes reais: fica escutando enquanto o app estiver aberto.
         _ = GatePipe.ServeAsync(_gatePipe, OnGateRequestAsync, _gateCts.Token);
@@ -122,7 +137,7 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
         var phase = SelectedPhase?.Number ?? 2;
-        Agents.Clear(); Artifacts.Clear(); Phases.Clear(); Verification.Clear(); DiffLines.Clear();
+        Agents.Clear(); Artifacts.Clear(); Phases.Clear(); Verification.Clear(); DiffLines.Clear(); ResultFiles.Clear(); HasResultFiles = false;
         LoadSampleData(addLog: false);
         SelectedPhase = Phases.FirstOrDefault(p => p.Number == phase);
         GateStatus = "Gate: " + _gate.Name;
@@ -159,7 +174,17 @@ public sealed partial class MainViewModel : ObservableObject
 
         try
         {
-            var (worktree, branch) = await GitWorktree.CreateAsync(info.RepoPath, task.Id);
+            if (info.Versioning == VersioningMode.Local)
+            {
+                var subject = ShadowRepo.LoadSubjects().FirstOrDefault(s => string.Equals(s.Dir, info.RepoPath, StringComparison.OrdinalIgnoreCase))
+                    ?? throw new InvalidOperationException(T($"Assunto \"{info.Subject}\" não encontrado.", $"Subject \"{info.Subject}\" not found.", $"Asunto \"{info.Subject}\" no encontrado."));
+                await ShadowRepo.SnapshotAsync(subject);
+                AddLog("git", "snapshot", T($"Versionamento local: snapshot do assunto \"{subject.Name}\" ({subject.Path}) no histórico {subject.Dir}",
+                    $"Local versioning: snapshot of subject \"{subject.Name}\" ({subject.Path}) into history {subject.Dir}",
+                    $"Versionado local: snapshot del asunto \"{subject.Name}\" ({subject.Path}) en el historial {subject.Dir}"));
+            }
+            var (worktree, branch) = await GitWorktree.CreateAsync(info.RepoPath, task.Id,
+                displayName: info.Subject is { } name ? SafeName(name) : new DirectoryInfo(info.RepoPath).Name);
             task.Worktree = worktree;
             task.Branch = branch;
             task.BaseCommit = await GitWorktree.HeadAsync(worktree);
@@ -171,6 +196,13 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
+        await PlanAsync(task);
+    }
+
+    /// <summary>Pede o plano em fases ao agente (modo plan: só lê) e deixa a tarefa aguardando a sua aprovação.</summary>
+    private async Task PlanAsync(TaskSession task)
+    {
+        var info = task.Info;
         task.State = TaskState.Planning;
         Persist();
         task.PowerBi = NXPilot.Integrations.PowerBiProject.Detect(task.Worktree!);
@@ -204,10 +236,71 @@ public sealed partial class MainViewModel : ObservableObject
         if (CurrentTask is not { CanApprove: true } task) return;
         AddLog(T("Você", "You", "Usted"), T("aprovado", "approved", "aprobado"), T($"Plano aprovado: {task.Title}", $"Plan approved: {task.Title}", $"Plan aprobado: {task.Title}"));
         ReplacePlanArtifact(T("aprovado por você", "approved by you", "aprobado por usted"));
+        await ExecutePhasesAsync(task, resumeNote: null);
+    }
+
+    /// <summary>
+    /// Retomar uma tarefa interrompida ou que falhou: sem plano, planeja de novo; com plano, segue
+    /// da fase que não terminou (as concluídas já estão commitadas no worktree). O agente recebe
+    /// um aviso de retomada — o Claude volta à mesma sessão; o Codex abre uma nova com esse contexto.
+    /// </summary>
+    [RelayCommand]
+    private async Task ResumeTask()
+    {
+        if (CurrentTask is not { CanResume: true } task) return;
+        AddLog(T("Você", "You", "Usted"), T("retomado", "resumed", "reanudado"), task.Title);
+        if (task.Phases.Count == 0)
+        {
+            await PlanAsync(task);
+            return;
+        }
+        var done = task.Phases.Where(p => task.PhaseStatus[p.Number - 1] == "Concluido").Select(p => $"{p.Number}. {p.Title}").ToList();
+        var note = T($"RETOMADA: esta tarefa foi interrompida e o usuário mandou continuar. Plano aprovado:\n{task.PlanText}\n\nFases já concluídas (commitadas no worktree): {(done.Count > 0 ? string.Join("; ", done) : "nenhuma")}. A fase abaixo pode ter ficado pela metade: confira o que já existe no worktree antes de refazer qualquer coisa.",
+                     $"RESUMED: this task was interrupted and the user asked to continue. Approved plan:\n{task.PlanText}\n\nPhases already done (committed in the worktree): {(done.Count > 0 ? string.Join("; ", done) : "none")}. The phase below may be half done: check what already exists in the worktree before redoing anything.",
+                     $"REANUDADA: esta tarea se interrumpió y el usuario pidió continuar. Plan aprobado:\n{task.PlanText}\n\nFases ya completadas (con commit en el worktree): {(done.Count > 0 ? string.Join("; ", done) : "ninguna")}. La fase de abajo puede haber quedado a medias: revise lo que ya existe en el worktree antes de rehacer algo.");
+        await ExecutePhasesAsync(task, note);
+    }
+
+    /// <summary>
+    /// A verificação não aprovou: o executor (mesma sessão) analisa os achados, corrige o que
+    /// procede sob o gate, vira um commit de correção e a verificação cruzada roda de novo.
+    /// </summary>
+    [RelayCommand]
+    private async Task FixFindings()
+    {
+        if (CurrentTask is not { CanFixFindings: true } task || task.Verification is not { } verification) return;
+        AddLog(T("Você", "You", "Usted"), T("corrigir achados", "fix findings", "corregir hallazgos"),
+            T($"{verification.Findings.Count} achado(s) devolvido(s) ao {ExecutorName}", $"{verification.Findings.Count} finding(s) sent back to {ExecutorName}", $"{verification.Findings.Count} hallazgo(s) devuelto(s) a {ExecutorName}"));
+        task.FixingFindings = true;
+        // Os achados antigos saem da tela: a verificação vai ser refeita depois da correção.
+        task.Verification = null;
+        Verification.Clear();
+        VerificationSummary = "";
+        OnVerificationChanged();
+        task.State = TaskState.Executing;
+        RenderPhases(task);
+        SetAgent(ExecutorName, "Rodando", T("analisando e corrigindo os achados", "analyzing and fixing the findings", "analizando y corrigiendo los hallazgos"));
+        Persist();
+
+        var executor = _executor ?? NewExecutor(task);
+        var summary = await RunAgentAsync(task, executor, new AgentRequest(TaskPlanning.FixFindingsPrompt(verification), task.Worktree!, AgentMode.Execute, task.SessionId,
+            task.Info.Executor == ExecutorKind.Codex ? task.Info.CodexModel : task.Info.Model));
+        task.FixingFindings = false;
+        if (task.State != TaskState.Executing) return; // falhou ou foi interrompida
+
+        var committed = await GitWorktree.CommitAllAsync(task.Worktree!, $"NXPilot · {T("Correção dos achados da verificação", "Fix for verification findings", "Corrección de los hallazgos de la verificación")}");
+        AddLog(ExecutorName, T("correção", "fix", "corrección"), T($"{(committed ? "Commit de correção no worktree" : "Sem alterações")}: {Trim(summary, 200)}",
+            $"{(committed ? "Fix committed in the worktree" : "No changes")}: {Trim(summary, 200)}", $"{(committed ? "Commit de corrección en el worktree" : "Sin cambios")}: {Trim(summary, 200)}"));
+        await FinishAsync(task);
+    }
+
+    /// <summary>Executa as fases que ainda não terminaram (commit ao fim de cada uma), depois diff e verificação cruzada.</summary>
+    private async Task ExecutePhasesAsync(TaskSession task, string? resumeNote)
+    {
         task.State = TaskState.Executing;
         var executor = _executor ?? NewExecutor(task);
 
-        foreach (var phase in task.Phases)
+        foreach (var phase in task.Phases.Where(p => task.PhaseStatus[p.Number - 1] != "Concluido"))
         {
             task.PhaseStatus[phase.Number - 1] = "Rodando";
             task.RefreshTexts();
@@ -216,6 +309,7 @@ public sealed partial class MainViewModel : ObservableObject
             Persist();
 
             var phasePrompt = await Planner.PhasePromptAsync(phase, task.Phases.Count);
+            if (resumeNote != null) { phasePrompt = resumeNote + "\n\n" + phasePrompt; resumeNote = null; } // só na primeira fase retomada
             var summary = await RunAgentAsync(task, executor, new AgentRequest(phasePrompt, task.Worktree!, AgentMode.Execute, task.SessionId,
                 task.Info.Executor == ExecutorKind.Codex ? task.Info.CodexModel : task.Info.Model));
             if (task.State != TaskState.Executing) { RenderPhases(task); return; }
@@ -227,9 +321,15 @@ public sealed partial class MainViewModel : ObservableObject
                 $"Fase {phase.Number} completada{(committed ? " (commit en el worktree)" : " (sin cambios)")}: {Trim(summary, 160)}"));
         }
         RenderPhases(task);
+        await FinishAsync(task);
+    }
 
+    /// <summary>Diff da tarefa inteira, verificação cruzada e conclusão.</summary>
+    private async Task FinishAsync(TaskSession task)
+    {
         var diff = await GitWorktree.DiffAsync(task.Worktree!, task.BaseCommit);
         RenderDiff(diff);
+        await RefreshResultFilesAsync(task);
         var files = diff.Split('\n').Count(l => l.StartsWith("diff --git"));
         Artifacts.Add(new ArtifactItem("✔", T("Resultado da execução", "Execution result", "Resultado de la ejecución"), T($"{files} arquivo(s) alterado(s) · branch {task.Branch}", $"{files} file(s) changed · branch {task.Branch}", $"{files} archivo(s) modificado(s) · branch {task.Branch}")));
 
@@ -328,6 +428,46 @@ public sealed partial class MainViewModel : ObservableObject
         catch (Exception ex) { AddLog("Power BI", T("erro", "error", "error"), ex.Message); Notifications.Notify(NotificationKind.Failure, "Power BI", ex.Message); }
     }
 
+    /// <summary>
+    /// Versionamento local: leva o resultado da tarefa para a pasta original, com confirmação.
+    /// Arquivo que você mudou na pasta depois do snapshot só é sobrescrito com uma segunda confirmação.
+    /// </summary>
+    [RelayCommand]
+    private async Task ApplyToFolder()
+    {
+        if (CurrentTask is not { CanApplyToFolder: true } task || task.Worktree is not { } wt || !Directory.Exists(wt) || task.BaseCommit is not { } baseCommit
+            || task.Info.SubjectFolder is not { } folder) return;
+        var owner = Application.Current.MainWindow;
+        if (MessageBox.Show(owner, T($"Copiar para {folder} os arquivos que a tarefa criou, alterou ou apagou?", $"Copy to {folder} the files the task created, changed or deleted?", $"¿Copiar a {folder} los archivos que la tarea creó, modificó o eliminó?"),
+                "NXPilot", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        try
+        {
+            var result = await ShadowRepo.ApplyAsync(folder, wt, baseCommit);
+            if (result.Conflicts.Count > 0)
+            {
+                var list = string.Join("\n", result.Conflicts.Take(15)) + (result.Conflicts.Count > 15 ? "\n…" : "");
+                if (MessageBox.Show(owner, T($"Estes arquivos mudaram na pasta depois que a tarefa começou:\n\n{list}\n\nSobrescrever com a versão da tarefa? (Não = nada é gravado)",
+                                             $"These files changed in the folder after the task started:\n\n{list}\n\nOverwrite with the task's version? (No = nothing is written)",
+                                             $"Estos archivos cambiaron en la carpeta después de que la tarea empezó:\n\n{list}\n\n¿Sobrescribir con la versión de la tarea? (No = no se escribe nada)"),
+                        "NXPilot", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
+                {
+                    AddLog(T("Você", "You", "Usted"), T("aplicar", "apply", "aplicar"), T($"Cancelado: {result.Conflicts.Count} conflito(s) na pasta.", $"Cancelled: {result.Conflicts.Count} conflict(s) in the folder.", $"Cancelado: {result.Conflicts.Count} conflicto(s) en la carpeta."));
+                    return;
+                }
+                result = await ShadowRepo.ApplyAsync(folder, wt, baseCommit, overwriteConflicts: true);
+            }
+            AddLog(T("Você", "You", "Usted"), T("aplicado", "applied", "aplicado"),
+                T($"{result.Written} arquivo(s) gravado(s) e {result.Deleted} apagado(s) em {folder}", $"{result.Written} file(s) written and {result.Deleted} deleted in {folder}", $"{result.Written} archivo(s) escrito(s) y {result.Deleted} eliminado(s) en {folder}"));
+            Notifications.Notify(NotificationKind.Task, T("Resultado aplicado na pasta", "Result applied to the folder", "Resultado aplicado en la carpeta"), $"{task.Title} · {folder}");
+            await RefreshResultFilesAsync(task); // agora apontam para a pasta do assunto
+        }
+        catch (Exception ex)
+        {
+            AddLog("git", T("erro", "error", "error"), ex.Message);
+            Notifications.Notify(NotificationKind.Failure, T("Não foi possível aplicar", "Could not apply", "No se pudo aplicar"), ex.Message);
+        }
+    }
+
     [RelayCommand]
     private void OpenWorktree()
     {
@@ -351,7 +491,10 @@ public sealed partial class MainViewModel : ObservableObject
         if (task.Verification is { } v) RenderVerification(v);
         SetAgent(ExecutorName, "Concluido", task.StateLabel);
         if (task.Worktree is { } wt && Directory.Exists(wt))
+        {
             RenderDiff(await GitWorktree.DiffAsync(wt, task.BaseCommit));
+            await RefreshResultFilesAsync(task);
+        }
         else
             AppendTerminal(T("(o worktree desta tarefa não existe mais)", "(this task's worktree no longer exists)", "(el worktree de esta tarea ya no existe)"));
     }
@@ -359,9 +502,11 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Limpa a tela de exemplo/tarefa anterior e passa a mostrar esta tarefa.</summary>
     private void ShowTask(TaskSession task)
     {
-        Agents.Clear(); Artifacts.Clear(); Phases.Clear(); Verification.Clear(); DiffLines.Clear();
+        Agents.Clear(); Artifacts.Clear(); Phases.Clear(); Verification.Clear(); DiffLines.Clear(); ResultFiles.Clear(); HasResultFiles = false;
         foreach (var d in PendingDecisions.Where(d => d.Response == null).ToList()) PendingDecisions.Remove(d);
         _terminal.Clear();
+        _taskRules.Clear(); // tarefa nova começa sem atalhos de aprovação
+        RefreshTaskRulesText();
         CurrentTask = task;
         VerificationSummary = "";
         OnPropertyChanged(nameof(TaskTitle));
@@ -437,7 +582,11 @@ public sealed partial class MainViewModel : ObservableObject
     private string ExecutorName => CurrentTask?.Info.Executor == ExecutorKind.Codex ? "Codex" : "Claude Code";
 
     /// <summary>Fim da tarefa: encerra o processo do Codex (o Claude roda um processo por chamada).</summary>
-    private void EndExecutor() => (_executor as IDisposable)?.Dispose();
+    private void EndExecutor()
+    {
+        (_executor as IDisposable)?.Dispose();
+        ClearTaskRules(); // regras valem só enquanto a tarefa roda
+    }
 
     private IAgentAdapter NewExecutor(TaskSession task)
     {
@@ -478,11 +627,22 @@ public sealed partial class MainViewModel : ObservableObject
             return new GateResponse(true, $"{r.Level}: {r.Reason}");
         }
 
+        // Regra que você ligou nesta tarefa (semelhantes / médio e baixo). ALTO nunca entra aqui.
+        if (await OnUiGet(() => _taskRules.Allows(req.Action, r.Level)) is { } rule)
+        {
+            await OnUi(() =>
+            {
+                AutoApprovedCount++;
+                AddLog("Gate", T("aprovado por regra", "approved by rule", "aprobado por regla"), $"{agent}: {req.Action} ({r.Level} · {rule})");
+            });
+            return new GateResponse(true, $"{r.Level}: {rule}");
+        }
+
         // MÉDIO/ALTO: vai para o painel e o agente espera a sua decisão.
         var response = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         await OnUi(() =>
         {
-            var d = new DecisionItem(agent, req.Action, CurrentTask?.Title ?? "") { Response = response };
+            var d = new DecisionItem(agent, req.Action, CurrentTask?.Title ?? "") { Response = response, Scripts = ScriptReferences.Find(req.Action, worktree) };
             d.Level = r.Level;
             d.RiskDetail = $"{r.Confidence:P0} · {AiLabViewModel.ShortEngine(r.Engine)} · {BenchmarkRow.FormatMs(r.Elapsed.TotalMilliseconds)}" + (r.Reason != null ? $"\n{r.Reason}" : "");
             PendingDecisions.Insert(0, d);
@@ -587,6 +747,9 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     private static string Trim(string s, int max) => s.Length > max ? s[..max] + "…" : s;
+
+    /// <summary>Nome de assunto usado como nome de pasta (sem caracteres inválidos no Windows).</summary>
+    private static string SafeName(string s) => string.Concat(s.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '-' : c)).Trim();
 
     private static Task OnUi(Action a) => Application.Current?.Dispatcher.InvokeAsync(a).Task ?? Task.CompletedTask;
 
@@ -702,6 +865,105 @@ public sealed partial class MainViewModel : ObservableObject
         if (!PendingDecisions.Remove(d)) return;
         d.Response?.TrySetResult(true); // agente real: libera a ferramenta que estava esperando
         AddLog(T("Você", "You", "Usted"), T("aprovado", "approved", "aprobado"), $"{d.Agent}: {d.Action} ({T("risco", "risk", "riesgo")} {d.Level})");
+    }
+
+    /// <summary>Aprova e libera, nesta tarefa, os próximos pedidos com a mesma assinatura de comando (até MÉDIO).</summary>
+    [RelayCommand]
+    private void ApproveSimilar(DecisionItem d)
+    {
+        if (d.Level is not (RiskLevel.Baixo or RiskLevel.Medio)) return;
+        _taskRules.AddSimilar(d.Action);
+        AddLog(T("Você", "You", "Usted"), T("regra da tarefa", "task rule", "regla de la tarea"),
+            T($"aprovar semelhantes: {TaskApprovalRules.Signature(d.Action)}", $"approve similar: {TaskApprovalRules.Signature(d.Action)}", $"aprobar similares: {TaskApprovalRules.Signature(d.Action)}"));
+        Approve(d);
+        ApplyTaskRulesToPending();
+    }
+
+    /// <summary>Aprova e deixa MÉDIO e BAIXO passarem sozinhos até a tarefa acabar. ALTO continua com você.</summary>
+    [RelayCommand]
+    private void ApproveMediumLow(DecisionItem d)
+    {
+        if (d.Level is not (RiskLevel.Baixo or RiskLevel.Medio)) return;
+        _taskRules.ApproveMedium = true;
+        AddLog(T("Você", "You", "Usted"), T("regra da tarefa", "task rule", "regla de la tarea"),
+            T("aprovar médio e baixo até o fim da tarefa (ALTO continua pedindo)", "approve medium and low until the task ends (HIGH still asks)", "aprobar medio y bajo hasta el fin de la tarea (ALTO sigue preguntando)"));
+        Approve(d);
+        ApplyTaskRulesToPending();
+    }
+
+    /// <summary>
+    /// Lista os arquivos que a tarefa criou/alterou. Modo local: o arquivo que já foi aplicado
+    /// (igual na pasta do assunto) aponta para a pasta do assunto; o resto, para o worktree.
+    /// </summary>
+    private async Task RefreshResultFilesAsync(TaskSession task)
+    {
+        ResultFiles.Clear();
+        HasResultFiles = false;
+        if (task.Worktree is not { } wt || !Directory.Exists(wt)) return;
+        try
+        {
+            var files = await GitWorktree.ChangedFilesAsync(wt, task.BaseCommit);
+            var items = files.Select(rel =>
+            {
+                var local = Path.Combine(wt, rel.Replace('/', Path.DirectorySeparatorChar));
+                if (task.Info.SubjectFolder is { } folder)
+                {
+                    var applied = Path.Combine(folder, rel.Replace('/', Path.DirectorySeparatorChar));
+                    if (File.Exists(applied) && File.Exists(local) && File.ReadAllBytes(applied).AsSpan().SequenceEqual(File.ReadAllBytes(local))) local = applied;
+                }
+                return new ResultFile(rel, local);
+            }).OrderByDescending(f => f.IsDeliverable).ThenBy(f => f.RelativePath, StringComparer.OrdinalIgnoreCase);
+            foreach (var f in items) ResultFiles.Add(f);
+            HasResultFiles = ResultFiles.Count > 0;
+        }
+        catch (Exception ex) { AddLog("git", T("erro", "error", "error"), ex.Message); }
+    }
+
+    /// <summary>Abre o documento no programa padrão — só documentos (um .py aberto assim seria executado).</summary>
+    [RelayCommand]
+    private void OpenResult(ResultFile f)
+    {
+        if (f.CanOpen && File.Exists(f.FullPath)) Process.Start(new ProcessStartInfo(f.FullPath) { UseShellExecute = true });
+    }
+
+    /// <summary>Abre o Explorer já com o arquivo selecionado.</summary>
+    [RelayCommand]
+    private void ShowResultInFolder(ResultFile f)
+    {
+        if (File.Exists(f.FullPath)) Process.Start("explorer.exe", $"/select,\"{f.FullPath}\"");
+    }
+
+    /// <summary>Mostra o script que o comando vai rodar — numa janela de leitura, nunca pelo programa padrão (que executaria o .py).</summary>
+    [RelayCommand]
+    private void ViewScript(DecisionItem d)
+    {
+        if (!d.HasScripts) return;
+        new Views.ScriptViewerWindow(d.Action, d.Scripts) { Owner = Application.Current.MainWindow }.Show();
+    }
+
+    [RelayCommand]
+    private void ClearTaskRules()
+    {
+        if (!_taskRules.IsEmpty) AddLog(T("Você", "You", "Usted"), T("regra da tarefa", "task rule", "regla de la tarea"), T("regras da tarefa desligadas", "task rules turned off", "reglas de la tarea desactivadas"));
+        _taskRules.Clear();
+        RefreshTaskRulesText();
+    }
+
+    /// <summary>Pedidos que já estavam esperando e agora se encaixam numa regra da tarefa.</summary>
+    private void ApplyTaskRulesToPending()
+    {
+        foreach (var p in PendingDecisions.Where(p => p.Level is { } level && _taskRules.Allows(p.Action, level) != null).ToList())
+            Approve(p);
+        RefreshTaskRulesText();
+    }
+
+    private void RefreshTaskRulesText()
+    {
+        var parts = new List<string>();
+        if (_taskRules.ApproveMedium) parts.Add(T("médio e baixo aprovados sozinhos", "medium and low approved automatically", "medio y bajo aprobados automáticamente"));
+        if (_taskRules.SimilarSignatures.Count > 0)
+            parts.Add(T($"{_taskRules.SimilarSignatures.Count} comando(s) semelhante(s) liberado(s)", $"{_taskRules.SimilarSignatures.Count} similar command(s) allowed", $"{_taskRules.SimilarSignatures.Count} comando(s) similar(es) permitido(s)"));
+        TaskRulesText = parts.Count == 0 ? "" : T("Nesta tarefa: ", "In this task: ", "En esta tarea: ") + string.Join(" · ", parts) + T(" (ALTO sempre pede)", " (HIGH always asks)", " (ALTO siempre pregunta)");
     }
 
     [RelayCommand]

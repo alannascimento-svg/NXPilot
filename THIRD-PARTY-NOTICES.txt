@@ -36,6 +36,17 @@ CommunityToolkit.Mvvm 8.2.2
   Licença: MIT — Copyright (c) .NET Foundation and Contributors
   https://github.com/CommunityToolkit/dotnet/blob/main/License.md
 
+LibGit2Sharp 0.32.0 (git embutido: worktree, commit por fase, diff e versionamento local)
+  Licença: MIT — Copyright (c) LibGit2Sharp contributors
+  https://github.com/libgit2/libgit2sharp/blob/master/LICENSE.md
+
+libgit2 (LibGit2Sharp.NativeBinaries 2.0.324 — git2-*.dll, usada sem modificação)
+  Licença: GPLv2 com exceção de linking ("the authors give you unlimited permission to
+  link the compiled version of this library into combinations with other programs").
+  Inclui zlib (zlib), PCRE2 (BSD), llhttp e ntlmclient (MIT), trechos winhttp (LGPL 2.1)
+  e outros componentes permissivos listados no COPYING.
+  https://github.com/libgit2/libgit2/blob/main/COPYING
+
 .NET Runtime / Windows Desktop Runtime (self-contained)
   Licença: MIT — Copyright (c) .NET Foundation and Contributors
   https://github.com/dotnet/runtime/blob/main/LICENSE.TXT

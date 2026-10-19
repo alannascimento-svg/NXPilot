@@ -42,7 +42,7 @@ public partial class HistoryWindow : Window
                 ? T($"{v.Findings.Count(f => f.Severity == "Critico")} crít. · {v.Findings.Count} total", $"{v.Findings.Count(f => f.Severity == "Critico")} crit. · {v.Findings.Count} total", $"{v.Findings.Count(f => f.Severity == "Critico")} crít. · {v.Findings.Count} total")
                 : "—";
             return new Row(r, r.CreatedAt.ToString("dd/MM HH:mm"), r.Info.Title, label, findings,
-                r.CostUsd > 0 ? $"US$ {r.CostUsd:0.00}" : "—", r.Info.RepoPath);
+                r.CostUsd > 0 ? $"US$ {r.CostUsd:0.00}" : "—", r.Info.Subject is { } subject ? "◆ " + subject : r.Info.RepoPath);
         }).ToList();
         Grid.ItemsSource = rows;
         EmptyText.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -87,7 +87,7 @@ public partial class HistoryWindow : Window
         try
         {
             if (r.Worktree is { } wt && Directory.Exists(wt))
-                await GitWorktree.RemoveAsync(r.Info.RepoPath, wt, r.Branch);
+                await GitWorktree.RemoveAsync(r.Info.RepoPath, wt, r.Branch); // modo local: RepoPath é o repositório-sombra do assunto
             TaskStore.Delete(r.Id);
             Reload();
         }

@@ -106,7 +106,13 @@
     <sys:String x:Key="Main_Decisoes">DECISÕES</sys:String>
     <sys:String x:Key="Main_Aprovar">Aprovar</sys:String>
     <sys:String x:Key="Main_Negar">Negar</sys:String>
-    <sys:String x:Key="Main_AcoesDeRiscoBaixo" xml:space="preserve"> ações de risco BAIXO aprovadas automaticamente (ver Log).</sys:String>
+    <sys:String x:Key="Main_AprovarSemelhantes">Aprovar semelhantes</sys:String>
+    <sys:String x:Key="Main_AprovarSemelhantesDica">Aprova este e, até o fim da tarefa, os pedidos com o mesmo comando (outros argumentos). Risco ALTO sempre volta para você.</sys:String>
+    <sys:String x:Key="Main_AprovarMedioBaixo">Aprovar médio e baixo</sys:String>
+    <sys:String x:Key="Main_AprovarMedioBaixoDica">Aprova este e deixa todo pedido de risco MÉDIO ou BAIXO passar sozinho até o fim da tarefa. Risco ALTO sempre volta para você.</sys:String>
+    <sys:String x:Key="Main_DesligarRegras">Desligar</sys:String>
+    <sys:String x:Key="Main_VerScript">Ver script</sys:String>
+    <sys:String x:Key="Main_AcoesDeRiscoBaixo" xml:space="preserve"> outras ações já aprovadas automaticamente nesta sessão (risco BAIXO ou regra da tarefa — ver Log).</sys:String>
     <sys:String x:Key="Main_VerificacaoFase1">VERIFICAÇÃO · FASE 1</sys:String>
     <sys:String x:Key="Main_Critico" xml:space="preserve"> crítico</sys:String>
     <sys:String x:Key="Main_Maior" xml:space="preserve"> maior</sys:String>
@@ -144,7 +150,23 @@
     <sys:String x:Key="Prov_Cancelar">Cancelar</sys:String>
     <sys:String x:Key="Prov_Salvar">Salvar</sys:String>
     <sys:String x:Key="NewTask_Titulo">Nova tarefa</sys:String>
-    <sys:String x:Key="NewTask_Subtitulo">O agente (Claude Code ou Codex) primeiro só LÊ o repositório e propõe um plano. Nada é escrito antes da sua aprovação, e tudo acontece num worktree isolado — a sua pasta de trabalho não é tocada.</sys:String>
+    <sys:String x:Key="NewTask_Subtitulo">O agente (Claude Code ou Codex) primeiro só LÊ o projeto e propõe um plano. Nada é escrito antes da sua aprovação, e tudo acontece num worktree isolado — a sua pasta de trabalho não é tocada.</sys:String>
+    <sys:String x:Key="NewTask_Versionamento">Versionamento</sys:String>
+    <sys:String x:Key="NewTask_VersaoLocal">Local — uma pasta por assunto, sem git (recomendado)</sys:String>
+    <sys:String x:Key="NewTask_VersaoGit">Repositório git do projeto (GitHub, Azure DevOps…)</sys:String>
+    <sys:String x:Key="NewTask_Assunto">Assunto</sys:String>
+    <sys:String x:Key="NewTask_Assuntos">Assuntos…</sys:String>
+    <sys:String x:Key="Subj_Titulo">Assuntos</sys:String>
+    <sys:String x:Key="Subj_Subtitulo">Cada assunto é uma pasta comum (sem git) onde ficam os arquivos. O NXPilot guarda o histórico dele numa pasta oculta ao lado, e a tarefa só grava na pasta quando você aplica o resultado.</sys:String>
+    <sys:String x:Key="Subj_PastaSombra">Pasta dos assuntos</sys:String>
+    <sys:String x:Key="Subj_PastaSombraDica">Pode ser uma pasta do OneDrive ou do Google Drive, para ter backup dos arquivos e do histórico. Evite abrir o mesmo assunto em dois computadores ao mesmo tempo: a sincronização pode corromper o histórico. Os worktrees das tarefas ficam no disco local.</sys:String>
+    <sys:String x:Key="Subj_AbrirPasta">Abrir pasta</sys:String>
+    <sys:String x:Key="Subj_MoverPasta">Mover para outra pasta…</sys:String>
+    <sys:String x:Key="Subj_Alterar">Alterar…</sys:String>
+    <sys:String x:Key="Subj_UsarPadrao">Usar o padrão</sys:String>
+    <sys:String x:Key="Subj_Assuntos">Assuntos</sys:String>
+    <sys:String x:Key="Subj_Criar">Criar</sys:String>
+    <sys:String x:Key="Subj_NomeRepo">Repositório:</sys:String>
     <sys:String x:Key="NewTask_Repositorio">Repositório git (pasta)</sys:String>
     <sys:String x:Key="NewTask_Escolher">Escolher…</sys:String>
     <sys:String x:Key="NewTask_NomeTarefa">Título da tarefa</sys:String>
@@ -161,7 +183,14 @@
     <sys:String x:Key="Task_AprovarExecutar">✓  Aprovar plano e executar</sys:String>
     <sys:String x:Key="Task_Descartar">Descartar</sys:String>
     <sys:String x:Key="Task_Interromper">■  Interromper</sys:String>
+    <sys:String x:Key="Task_Retomar">▶  Retomar de onde parou</sys:String>
+    <sys:String x:Key="Task_ArquivosResultado">ARQUIVOS DO RESULTADO</sys:String>
+    <sys:String x:Key="Task_AbrirArquivo">Abrir</sys:String>
+    <sys:String x:Key="Task_MostrarNaPasta">Mostrar na pasta</sys:String>
+    <sys:String x:Key="Task_CorrigirAchados">🔍  Analisar e corrigir achados</sys:String>
+    <sys:String x:Key="Task_CorrigirAchadosDica">Devolve os achados da verificação ao agente (mesma sessão): ele analisa, corrige o que procede sob o gate e explica o que não procede. Depois a verificação cruzada roda de novo.</sys:String>
     <sys:String x:Key="Task_AbrirWorktree">Abrir worktree</sys:String>
+    <sys:String x:Key="Task_AplicarNaPasta">⇩  Aplicar na pasta original</sys:String>
     <sys:String x:Key="Task_CriteriosLabel">Critérios de aceite</sys:String>
     <sys:String x:Key="NewTask_Revisor">Revisor (verificação cruzada)</sys:String>
     <sys:String x:Key="NewTask_RevisorCodex">Codex — somente leitura (recomendado)</sys:String>

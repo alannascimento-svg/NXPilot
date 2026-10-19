@@ -106,7 +106,13 @@
     <sys:String x:Key="Main_Decisoes">DECISIONES</sys:String>
     <sys:String x:Key="Main_Aprovar">Aprobar</sys:String>
     <sys:String x:Key="Main_Negar">Denegar</sys:String>
-    <sys:String x:Key="Main_AcoesDeRiscoBaixo" xml:space="preserve"> acciones de riesgo BAJO aprobadas automáticamente (ver Log).</sys:String>
+    <sys:String x:Key="Main_AprovarSemelhantes">Aprobar similares</sys:String>
+    <sys:String x:Key="Main_AprovarSemelhantesDica">Aprueba este y, hasta el fin de la tarea, las solicitudes con el mismo comando (otros argumentos). El riesgo ALTO siempre vuelve a usted.</sys:String>
+    <sys:String x:Key="Main_AprovarMedioBaixo">Aprobar medio y bajo</sys:String>
+    <sys:String x:Key="Main_AprovarMedioBaixoDica">Aprueba este y deja pasar solas todas las solicitudes de riesgo MEDIO o BAJO hasta el fin de la tarea. El riesgo ALTO siempre vuelve a usted.</sys:String>
+    <sys:String x:Key="Main_DesligarRegras">Desactivar</sys:String>
+    <sys:String x:Key="Main_VerScript">Ver script</sys:String>
+    <sys:String x:Key="Main_AcoesDeRiscoBaixo" xml:space="preserve"> otras acciones ya aprobadas automáticamente en esta sesión (riesgo BAJO o regla de la tarea — ver Log).</sys:String>
     <sys:String x:Key="Main_VerificacaoFase1">VERIFICACIÓN · FASE 1</sys:String>
     <sys:String x:Key="Main_Critico" xml:space="preserve"> crítico</sys:String>
     <sys:String x:Key="Main_Maior" xml:space="preserve"> mayor</sys:String>
@@ -144,7 +150,23 @@
     <sys:String x:Key="Prov_Cancelar">Cancelar</sys:String>
     <sys:String x:Key="Prov_Salvar">Guardar</sys:String>
     <sys:String x:Key="NewTask_Titulo">Nueva tarea</sys:String>
-    <sys:String x:Key="NewTask_Subtitulo">El agente (Claude Code o Codex) primero solo LEE el repositorio y propone un plan. No se escribe nada antes de su aprobación, y todo ocurre en un worktree aislado — su carpeta de trabajo no se toca.</sys:String>
+    <sys:String x:Key="NewTask_Subtitulo">El agente (Claude Code o Codex) primero solo LEE el proyecto y propone un plan. No se escribe nada antes de su aprobación, y todo ocurre en un worktree aislado — su carpeta de trabajo no se toca.</sys:String>
+    <sys:String x:Key="NewTask_Versionamento">Versionado</sys:String>
+    <sys:String x:Key="NewTask_VersaoLocal">Local — una carpeta por asunto, sin git (recomendado)</sys:String>
+    <sys:String x:Key="NewTask_VersaoGit">Repositorio git del proyecto (GitHub, Azure DevOps…)</sys:String>
+    <sys:String x:Key="NewTask_Assunto">Asunto</sys:String>
+    <sys:String x:Key="NewTask_Assuntos">Asuntos…</sys:String>
+    <sys:String x:Key="Subj_Titulo">Asuntos</sys:String>
+    <sys:String x:Key="Subj_Subtitulo">Cada asunto es una carpeta común (sin git) donde están los archivos. NXPilot guarda su historial en una carpeta oculta al lado, y la tarea solo escribe en la carpeta cuando usted aplica el resultado.</sys:String>
+    <sys:String x:Key="Subj_PastaSombra">Carpeta de los asuntos</sys:String>
+    <sys:String x:Key="Subj_PastaSombraDica">Puede ser una carpeta de OneDrive o Google Drive, para tener copia de seguridad de los archivos y del historial. Evite abrir el mismo asunto en dos computadoras al mismo tiempo: la sincronización puede dañar el historial. Los worktrees de las tareas quedan en el disco local.</sys:String>
+    <sys:String x:Key="Subj_AbrirPasta">Abrir carpeta</sys:String>
+    <sys:String x:Key="Subj_MoverPasta">Mover a otra carpeta…</sys:String>
+    <sys:String x:Key="Subj_Alterar">Cambiar…</sys:String>
+    <sys:String x:Key="Subj_UsarPadrao">Usar el predeterminado</sys:String>
+    <sys:String x:Key="Subj_Assuntos">Asuntos</sys:String>
+    <sys:String x:Key="Subj_Criar">Crear</sys:String>
+    <sys:String x:Key="Subj_NomeRepo">Repositorio:</sys:String>
     <sys:String x:Key="NewTask_Repositorio">Repositorio git (carpeta)</sys:String>
     <sys:String x:Key="NewTask_Escolher">Elegir…</sys:String>
     <sys:String x:Key="NewTask_NomeTarefa">Título de la tarea</sys:String>
@@ -161,7 +183,14 @@
     <sys:String x:Key="Task_AprovarExecutar">✓  Aprobar plan y ejecutar</sys:String>
     <sys:String x:Key="Task_Descartar">Descartar</sys:String>
     <sys:String x:Key="Task_Interromper">■  Interrumpir</sys:String>
+    <sys:String x:Key="Task_Retomar">▶  Reanudar donde se detuvo</sys:String>
+    <sys:String x:Key="Task_ArquivosResultado">ARCHIVOS DEL RESULTADO</sys:String>
+    <sys:String x:Key="Task_AbrirArquivo">Abrir</sys:String>
+    <sys:String x:Key="Task_MostrarNaPasta">Mostrar en la carpeta</sys:String>
+    <sys:String x:Key="Task_CorrigirAchados">🔍  Analizar y corregir hallazgos</sys:String>
+    <sys:String x:Key="Task_CorrigirAchadosDica">Devuelve los hallazgos de la verificación al agente (misma sesión): los analiza, corrige los que proceden bajo el gate y explica los que no. Después la verificación cruzada se ejecuta de nuevo.</sys:String>
     <sys:String x:Key="Task_AbrirWorktree">Abrir worktree</sys:String>
+    <sys:String x:Key="Task_AplicarNaPasta">⇩  Aplicar en la carpeta original</sys:String>
     <sys:String x:Key="Task_CriteriosLabel">Criterios de aceptación</sys:String>
     <sys:String x:Key="NewTask_Revisor">Revisor (verificación cruzada)</sys:String>
     <sys:String x:Key="NewTask_RevisorCodex">Codex — solo lectura (recomendado)</sys:String>

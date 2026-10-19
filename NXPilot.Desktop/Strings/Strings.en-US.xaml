@@ -106,7 +106,13 @@
     <sys:String x:Key="Main_Decisoes">DECISIONS</sys:String>
     <sys:String x:Key="Main_Aprovar">Approve</sys:String>
     <sys:String x:Key="Main_Negar">Deny</sys:String>
-    <sys:String x:Key="Main_AcoesDeRiscoBaixo" xml:space="preserve"> LOW-risk actions approved automatically (see Log).</sys:String>
+    <sys:String x:Key="Main_AprovarSemelhantes">Approve similar</sys:String>
+    <sys:String x:Key="Main_AprovarSemelhantesDica">Approves this one and, until the task ends, requests with the same command (other arguments). HIGH risk always comes back to you.</sys:String>
+    <sys:String x:Key="Main_AprovarMedioBaixo">Approve medium and low</sys:String>
+    <sys:String x:Key="Main_AprovarMedioBaixoDica">Approves this one and lets every MEDIUM or LOW risk request through until the task ends. HIGH risk always comes back to you.</sys:String>
+    <sys:String x:Key="Main_DesligarRegras">Turn off</sys:String>
+    <sys:String x:Key="Main_VerScript">View script</sys:String>
+    <sys:String x:Key="Main_AcoesDeRiscoBaixo" xml:space="preserve"> other actions already approved automatically this session (LOW risk or task rule — see Log).</sys:String>
     <sys:String x:Key="Main_VerificacaoFase1">VERIFICATION · PHASE 1</sys:String>
     <sys:String x:Key="Main_Critico" xml:space="preserve"> critical</sys:String>
     <sys:String x:Key="Main_Maior" xml:space="preserve"> major</sys:String>
@@ -144,7 +150,23 @@
     <sys:String x:Key="Prov_Cancelar">Cancel</sys:String>
     <sys:String x:Key="Prov_Salvar">Save</sys:String>
     <sys:String x:Key="NewTask_Titulo">New task</sys:String>
-    <sys:String x:Key="NewTask_Subtitulo">The agent (Claude Code or Codex) first only READS the repository and proposes a plan. Nothing is written before your approval, and everything happens in an isolated worktree — your working folder is not touched.</sys:String>
+    <sys:String x:Key="NewTask_Subtitulo">The agent (Claude Code or Codex) first only READS the project and proposes a plan. Nothing is written before your approval, and everything happens in an isolated worktree — your working folder is not touched.</sys:String>
+    <sys:String x:Key="NewTask_Versionamento">Versioning</sys:String>
+    <sys:String x:Key="NewTask_VersaoLocal">Local — one folder per subject, no git (recommended)</sys:String>
+    <sys:String x:Key="NewTask_VersaoGit">Project git repository (GitHub, Azure DevOps…)</sys:String>
+    <sys:String x:Key="NewTask_Assunto">Subject</sys:String>
+    <sys:String x:Key="NewTask_Assuntos">Subjects…</sys:String>
+    <sys:String x:Key="Subj_Titulo">Subjects</sys:String>
+    <sys:String x:Key="Subj_Subtitulo">Each subject is a regular folder (no git) that holds the files. NXPilot keeps its history in a hidden folder next to it, and the task only writes to the folder when you apply the result.</sys:String>
+    <sys:String x:Key="Subj_PastaSombra">Subjects folder</sys:String>
+    <sys:String x:Key="Subj_PastaSombraDica">It can be a OneDrive or Google Drive folder, to back up the files and the history. Avoid opening the same subject on two computers at the same time: syncing can corrupt the history. Task worktrees stay on the local disk.</sys:String>
+    <sys:String x:Key="Subj_AbrirPasta">Open folder</sys:String>
+    <sys:String x:Key="Subj_MoverPasta">Move to another folder…</sys:String>
+    <sys:String x:Key="Subj_Alterar">Change…</sys:String>
+    <sys:String x:Key="Subj_UsarPadrao">Use the default</sys:String>
+    <sys:String x:Key="Subj_Assuntos">Subjects</sys:String>
+    <sys:String x:Key="Subj_Criar">Create</sys:String>
+    <sys:String x:Key="Subj_NomeRepo">Repository:</sys:String>
     <sys:String x:Key="NewTask_Repositorio">Git repository (folder)</sys:String>
     <sys:String x:Key="NewTask_Escolher">Browse…</sys:String>
     <sys:String x:Key="NewTask_NomeTarefa">Task title</sys:String>
@@ -161,7 +183,14 @@
     <sys:String x:Key="Task_AprovarExecutar">✓  Approve plan and run</sys:String>
     <sys:String x:Key="Task_Descartar">Discard</sys:String>
     <sys:String x:Key="Task_Interromper">■  Stop</sys:String>
+    <sys:String x:Key="Task_Retomar">▶  Resume where it stopped</sys:String>
+    <sys:String x:Key="Task_ArquivosResultado">RESULT FILES</sys:String>
+    <sys:String x:Key="Task_AbrirArquivo">Open</sys:String>
+    <sys:String x:Key="Task_MostrarNaPasta">Show in folder</sys:String>
+    <sys:String x:Key="Task_CorrigirAchados">🔍  Analyze and fix findings</sys:String>
+    <sys:String x:Key="Task_CorrigirAchadosDica">Sends the verification findings back to the agent (same session): it analyzes them, fixes the valid ones under the gate and explains the ones that are not. Then cross-verification runs again.</sys:String>
     <sys:String x:Key="Task_AbrirWorktree">Open worktree</sys:String>
+    <sys:String x:Key="Task_AplicarNaPasta">⇩  Apply to the original folder</sys:String>
     <sys:String x:Key="Task_CriteriosLabel">Acceptance criteria</sys:String>
     <sys:String x:Key="NewTask_Revisor">Reviewer (cross-verification)</sys:String>
     <sys:String x:Key="NewTask_RevisorCodex">Codex — read-only (recommended)</sys:String>

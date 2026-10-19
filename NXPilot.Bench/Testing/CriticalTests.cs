@@ -38,6 +38,44 @@ public static class CriticalTests
             AssertEqual(GateOutcome.AskUser, DecisionGate.Decide(R(RiskLevel.Alto, 1)), "ALTO nunca passa sozinho.");
             return Task.CompletedTask;
         }),
+        new("Regras da tarefa: semelhantes e médio/baixo nunca liberam ALTO", () =>
+        {
+            var rules = new TaskApprovalRules();
+            const string asked = "PowerShell: python -m relatorio_riscos.gerar; git status --short";
+            AssertTrue(rules.IsEmpty && rules.Allows(asked, RiskLevel.Medio) == null, "Sem regra, MÉDIO volta para você.");
+            rules.AddSimilar(asked);
+            AssertTrue(rules.Allows("PowerShell: python -m relatorio_riscos.gerar --ano 2026; git status", RiskLevel.Medio) != null, "Mesmo comando com outros argumentos é semelhante.");
+            AssertTrue(rules.Allows("PowerShell: python -m outro_pacote; git status", RiskLevel.Medio) == null, "Outro módulo NÃO é semelhante.");
+            AssertTrue(rules.Allows("PowerShell: python -m relatorio_riscos.gerar; git push", RiskLevel.Medio) == null, "Comando extra no composto NÃO é semelhante.");
+            AssertTrue(rules.Allows(asked, RiskLevel.Alto) == null, "Semelhante com risco ALTO volta para você.");
+            AssertEqual(TaskApprovalRules.Signature("Write: C:\\wt\\saida\\a.docx"), TaskApprovalRules.Signature("Write: C:\\wt\\saida\\b.docx"), "Arquivo: mesma pasta e extensão.");
+
+            rules.ApproveMedium = true;
+            AssertTrue(rules.Allows("Bash: npm install", RiskLevel.Medio) != null, "Médio e baixo liberado na tarefa.");
+            AssertTrue(rules.Allows("Bash: rm -rf /", RiskLevel.Alto) == null, "ALTO nunca passa por regra da tarefa.");
+            rules.Clear();
+            AssertTrue(rules.IsEmpty && rules.Allows(asked, RiskLevel.Medio) == null, "Tarefa nova começa sem regras.");
+            return Task.CompletedTask;
+        }),
+
+        new("Ver script: acha o .py (direto ou via -m) que o comando vai rodar", () =>
+        {
+            var wt = Path.Combine(Path.GetTempPath(), "nx-script-" + Guid.NewGuid().ToString("N")[..8]);
+            Directory.CreateDirectory(Path.Combine(wt, "relatorio_riscos"));
+            File.WriteAllText(Path.Combine(wt, "relatorio_riscos", "gerar.py"), "print(1)\n");
+            File.WriteAllText(Path.Combine(wt, "limpar.ps1"), "Remove-Item x\n");
+            try
+            {
+                var viaModule = ScriptReferences.Find("PowerShell: python -m relatorio_riscos.gerar; git status", wt);
+                AssertEqual(Path.Combine(wt, "relatorio_riscos", "gerar.py"), viaModule.SingleOrDefault() ?? "", "python -m pacote.modulo → arquivo do módulo.");
+                AssertEqual(2, ScriptReferences.Find("PowerShell: pwsh -File .\\limpar.ps1; python \"relatorio_riscos/gerar.py\"", wt).Count, "Caminho relativo e entre aspas.");
+                AssertEqual(0, ScriptReferences.Find("Bash: python -c \"print(1)\"", wt).Count, "Código inline não é arquivo.");
+                AssertEqual(0, ScriptReferences.Find("Bash: python nao_existe.py", wt).Count, "Arquivo que não existe não aparece.");
+            }
+            finally { try { ForceDelete(wt); } catch { /* temporário */ } }
+            return Task.CompletedTask;
+        }),
+
         new("Regras: comando composto — uma parte inofensiva não libera o resto", async () =>
         {
             var rules = new RuleRiskClassifier();
@@ -199,28 +237,125 @@ public static class CriticalTests
         }),
 
         // ---------------------------------------------------------------- worktree (isolamento)
-        new("Git: worktree isolado, commit por fase, diff desde a base, remoção", async () =>
+        new("Git: worktree isolado, commit por fase, diff desde a base, remoção (git embutido)", async () =>
         {
-            if (!HasGit()) Skip("git não encontrado nesta máquina");
             var repo = Path.Combine(Path.GetTempPath(), "nx-git-" + Guid.NewGuid().ToString("N")[..8]);
             Directory.CreateDirectory(repo);
             try
             {
-                Git(repo, "init", "-q");
+                LibGit2Sharp.Repository.Init(repo);
                 File.WriteAllText(Path.Combine(repo, "README.md"), "# t\n");
-                Git(repo, "add", "-A");
-                Git(repo, "-c", "user.name=NX", "-c", "user.email=t@nx.local", "commit", "-q", "-m", "i");
+                using (var r = new LibGit2Sharp.Repository(repo))
+                {
+                    LibGit2Sharp.Commands.Stage(r, "*");
+                    var sig = new LibGit2Sharp.Signature("NX", "t@nx.local", DateTimeOffset.Now);
+                    r.Commit("i", sig, sig, new LibGit2Sharp.CommitOptions());
+                }
                 var (wt, branch) = await GitWorktree.CreateAsync(repo, "t" + Guid.NewGuid().ToString("N")[..6]);
+                AssertTrue(branch.StartsWith("nxpilot/"), "Branch da tarefa: nxpilot/<id>.");
+                using (var w = new LibGit2Sharp.Repository(wt))
+                    AssertEqual(branch, w.Head.FriendlyName, "O worktree está no branch da tarefa.");
                 var head = await GitWorktree.HeadAsync(wt);
                 File.WriteAllText(Path.Combine(wt, "novo.txt"), "x\n");
+                AssertContains("diff --git a/novo.txt", await GitWorktree.DiffAsync(wt, head), "Diff inclui arquivo novo ainda sem commit.");
                 AssertTrue(await GitWorktree.CommitAllAsync(wt, "fase 1"), "Fase com mudança deve gerar commit.");
                 AssertFalse(await GitWorktree.CommitAllAsync(wt, "fase 2"), "Fase sem mudança não deve gerar commit.");
                 AssertContains("novo.txt", await GitWorktree.DiffAsync(wt, head), "Diff desde a base inclui o commit da fase.");
                 AssertFalse(File.Exists(Path.Combine(repo, "novo.txt")), "O repositório original NÃO pode mudar.");
                 await GitWorktree.RemoveAsync(repo, wt, branch);
                 AssertFalse(Directory.Exists(wt), "Worktree removido.");
+                using (var r = new LibGit2Sharp.Repository(repo))
+                {
+                    AssertTrue(r.Branches[branch] == null, "Branch da tarefa removido.");
+                    AssertEqual(0, r.Worktrees.Count(), "Registro do worktree removido.");
+                }
             }
             finally { try { ForceDelete(repo); } catch { /* temporário */ } }
+        }),
+
+        new("Versionamento local: assunto = subpasta, histórico oculto ao lado, aplicar com conflito, push, mover", async () =>
+        {
+            var root = Path.Combine(Path.GetTempPath(), "nx-local-" + Guid.NewGuid().ToString("N")[..8]);
+            var previousRoot = ShadowRepo.Root;
+            var previousFile = ShadowRepo.SubjectsFile;
+            ShadowRepo.Root = Path.Combine(root, "nuvem"); // pasta de assuntos escolhida (ex.: OneDrive)
+            ShadowRepo.SubjectsFile = Path.Combine(root, "subjects.json"); // nunca a lista real do usuário
+            try
+            {
+                var subject = ShadowRepo.CreateSubject("Relatórios");
+                AssertEqual(Path.Combine(ShadowRepo.Root, "Relatórios"), subject.Path, "Assunto é uma subpasta da pasta de assuntos.");
+                AssertTrue(ShadowRepo.LoadSubjects().Any(s => s.Name == "Relatórios"), "Assunto aparece na lista.");
+                var folder = subject.Path;
+                Directory.CreateDirectory(Path.Combine(folder, "bin"));
+                File.WriteAllText(Path.Combine(folder, "a.txt"), "a\n");
+                File.WriteAllText(Path.Combine(folder, "b.txt"), "b\n");
+                File.WriteAllText(Path.Combine(folder, "apagar.txt"), "x\n");
+                File.WriteAllText(Path.Combine(folder, "bin", "pesado.dll"), "dll");
+
+                AssertEqual(Path.Combine(ShadowRepo.Root, ".nxpilot", "Relatórios"), await ShadowRepo.SnapshotAsync(subject), "Histórico em <pasta>/.nxpilot/<assunto>.");
+                AssertTrue(new DirectoryInfo(Path.Combine(ShadowRepo.Root, ".nxpilot")).Attributes.HasFlag(FileAttributes.Hidden), "Pasta do histórico é oculta.");
+                AssertFalse(Directory.Exists(Path.Combine(folder, ".git")) || File.Exists(Path.Combine(folder, ".git")), "A pasta do assunto NÃO ganha .git.");
+                AssertEqual(1, ShadowRepo.LoadSubjects().Count, ".nxpilot não vira assunto.");
+                using (var r = new LibGit2Sharp.Repository(subject.Dir))
+                {
+                    var tip = r.Head.Tip.Sha;
+                    await ShadowRepo.SnapshotAsync(subject);
+                    AssertEqual(tip, r.Head.Tip.Sha, "Sem mudança na pasta, sem commit novo.");
+                }
+
+                var (wt, branch) = await GitWorktree.CreateAsync(subject.Dir, "t" + Guid.NewGuid().ToString("N")[..6], displayName: subject.Name);
+                AssertTrue(File.Exists(Path.Combine(wt, "a.txt")), "Worktree nasce com os arquivos do assunto.");
+                AssertFalse(File.Exists(Path.Combine(wt, "bin", "pesado.dll")), "bin/ fica fora do snapshot.");
+                var head = await GitWorktree.HeadAsync(wt);
+
+                File.WriteAllText(Path.Combine(wt, "a.txt"), "a da tarefa\n");
+                File.WriteAllText(Path.Combine(wt, "b.txt"), "b da tarefa\n");
+                File.WriteAllText(Path.Combine(wt, "novo.txt"), "novo\n");
+                File.Delete(Path.Combine(wt, "apagar.txt"));
+                await GitWorktree.CommitAllAsync(wt, "fase 1");
+                AssertEqual("a\n", File.ReadAllText(Path.Combine(folder, "a.txt")), "A pasta só muda quando você aplica.");
+
+                File.WriteAllText(Path.Combine(folder, "b.txt"), "b mudado por você\n");
+                var blocked = await ShadowRepo.ApplyAsync(folder, wt, head);
+                AssertEqual("b.txt", string.Join(",", blocked.Conflicts), "Arquivo mudado na pasta depois do snapshot é conflito.");
+                AssertEqual("a\n", File.ReadAllText(Path.Combine(folder, "a.txt")), "Com conflito, nada é gravado.");
+
+                File.WriteAllText(Path.Combine(folder, "b.txt"), "b\n");
+                var applied = await ShadowRepo.ApplyAsync(folder, wt, head);
+                AssertEqual(0, applied.Conflicts.Count, "Sem conflito depois de desfazer a mudança.");
+                AssertEqual("a da tarefa\n", File.ReadAllText(Path.Combine(folder, "a.txt")), "Arquivo alterado aplicado.");
+                AssertTrue(File.Exists(Path.Combine(folder, "novo.txt")), "Arquivo novo aplicado.");
+                AssertFalse(File.Exists(Path.Combine(folder, "apagar.txt")), "Arquivo apagado pela tarefa sai da pasta.");
+                AssertTrue(File.Exists(Path.Combine(folder, "bin", "pesado.dll")), "Arquivos fora do snapshot ficam intocados.");
+
+                // "Mover para o GitHub": aqui um repositório bare local faz o papel do servidor.
+                var server = Path.Combine(root, "server.git");
+                LibGit2Sharp.Repository.Init(server, isBare: true);
+                await ShadowRepo.PushAsync(subject.Dir, server, "");
+                using (var s = new LibGit2Sharp.Repository(server))
+                {
+                    AssertTrue(s.Branches["main"] != null, "Push leva o main (snapshots).");
+                    AssertTrue(s.Branches[branch] != null, "Push leva o branch da tarefa.");
+                }
+
+                var stillOpen = false;
+                try { await ShadowRepo.MoveAsync(subject, Path.Combine(root, "outra")); } catch (InvalidOperationException) { stillOpen = true; }
+                AssertTrue(stillOpen, "Com worktree aberto, mover é recusado.");
+                await GitWorktree.RemoveAsync(subject.Dir, wt, branch);
+                AssertFalse(Directory.Exists(wt), "Worktree removido.");
+
+                var moved = await ShadowRepo.MoveAsync(subject, Path.Combine(root, "outra"));
+                AssertTrue(File.Exists(Path.Combine(moved.Path, "a.txt")) && !Directory.Exists(folder), "Mover leva a pasta do assunto.");
+                AssertTrue(LibGit2Sharp.Repository.IsValid(moved.Dir) && !Directory.Exists(subject.Dir), "Mover leva o histórico junto.");
+                AssertTrue(ShadowRepo.LoadSubjects().Any(s => s.Path == moved.Path), "Assunto movido continua na lista.");
+                AssertEqual(server, ShadowRepo.LoadSubjects().First(s => s.Path == moved.Path).RemoteUrl, "Remoto lido do próprio histórico.");
+            }
+            finally
+            {
+                ShadowRepo.Root = previousRoot;
+                ShadowRepo.SubjectsFile = previousFile;
+                try { ForceDelete(root); } catch { /* temporário */ }
+            }
         }),
 
         // ---------------------------------------------------------------- segredos e canais

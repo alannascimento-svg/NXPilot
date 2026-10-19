@@ -56,6 +56,17 @@ public sealed class GitHubApi : IGitHostApi
         return list;
     }
 
+    /// <summary>Cria um repositório VAZIO na conta do token (privado por padrão) — destino de "mover para o GitHub".</summary>
+    public async Task<GitRepository> CreateRepositoryAsync(string name, string description, bool isPrivate = true, CancellationToken ct = default)
+    {
+        using var resp = await _http.PostAsJsonAsync("user/repos", new { name, description, @private = isPrivate, auto_init = false }, ct);
+        using var doc = await ReadAsync(resp, ct);
+        var r = doc.RootElement;
+        return new GitRepository(GitProvider.GitHub, r.GetProperty("clone_url").GetString()!,
+            r.GetProperty("owner").GetProperty("login").GetString()!, r.GetProperty("name").GetString()!,
+            DefaultBranch: "main", WebUrl: r.GetProperty("html_url").GetString());
+    }
+
     public async Task<PullRequestInfo> CreatePullRequestAsync(GitRepository repo, string sourceBranch, string targetBranch,
         string title, string description, CancellationToken ct = default)
     {
