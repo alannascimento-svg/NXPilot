@@ -13,15 +13,32 @@ O NXPilot agora é publicado em duas partes separadas, como o NXProject:
 - **Já tem o NXPilot:** abra **⚙ Configurar** e use **Verificar atualização**. O app baixa só o NXPilot-Release.zip, troca os arquivos e reabre. Nenhum script é executado.
 - **Voltar versão:** em **⚙ Configurar**, escolha uma versão anterior e clique em **Instalar esta versão**.
 
+> **Esta versão traz uma biblioteca nova na base** (o git embutido). Quem atualizar por **Verificar atualização** recebe o aviso e o app baixa o Setup novo sozinho.
+
 ### Novidades
 
-**📦 Setup no modelo do NXProject**
+**🗂 Criar tarefa sem git: versionamento local por assunto**
 
-- O Setup não leva mais o app junto: traz só a base, e o app vem da release de cada versão. Quando muda só o NXPilot, o Setup não precisa ser publicado de novo.
-- Novo **passo 1 · .NET 10 Desktop Runtime**, como no NXProject-Setup: confere se o .NET está instalado e oferece **Instalar .NET 10** (instalador oficial da Microsoft, pede administrador) ou **Baixar no navegador**.
+- A Nova tarefa tem o campo **Versionamento**. **Local** (o padrão) não exige git nem Git instalado. **Repositório git do projeto** é para clones do GitHub, Azure DevOps e outros.
+- No modo local, cada **assunto** é uma pasta comum (por exemplo, `Documentos\NXPilot\Relatórios`) onde ficam os arquivos. O histórico fica numa pasta oculta ao lado, e a pasta do assunto não ganha `.git`.
+- A tarefa trabalha numa cópia isolada. A pasta do assunto só muda quando você clica em **Aplicar na pasta original**. Se você também mexeu num arquivo depois que a tarefa começou, o NXPilot mostra o conflito e só sobrescreve se você confirmar.
+- Na janela **Assuntos…**:
+  - **Pasta dos assuntos:** pode ser uma pasta do OneDrive ou do Google Drive, para ter backup.
+  - **Mover para outra pasta…:** leva a pasta e o histórico juntos.
+  - **Mover para o GitHub…:** cria um repositório privado e envia o histórico. Pede a sua aprovação, porque é push na branch principal (risco ALTO).
+- O git agora vem embutido no NXPilot (LibGit2Sharp, licença MIT), inclusive no modo git, que deixou de precisar do Git instalado.
 
-**🟠 Ícone e atalho**
+**✅ Decisões mais rápidas, sem perder o controle**
 
-- O NXPilot ganhou ícone próprio: o "NX" da família Nexus XData (o mesmo do NXProject), em **laranja**. Aparece no atalho, na barra de tarefas e no Setup.
-- O Setup cria o atalho **NXPilot** na área de trabalho pela API do próprio Windows, sem rodar script, então o antivírus não bloqueia. Na atualização, o atalho antigo é substituído.
-- Se mesmo assim não der para criar o atalho, o Setup avisa, em vez de dizer que criou.
+- **Aprovar semelhantes:** aprova o pedido e libera, até o fim da tarefa, os próximos com o mesmo comando (com outros argumentos).
+- **Aprovar médio e baixo:** deixa os pedidos de risco médio e baixo passarem sozinhos até o fim da tarefa.
+- **Risco ALTO sempre volta para você**, inclusive gravar fora do worktree. As regras valem só para a tarefa atual, aparecem no painel com o botão **Desligar** e cada aprovação automática fica registrada no Log.
+- **Ver script:** quando o pedido roda um `.py`, `.ps1`, `.js` e similares (inclusive `python -m pacote.modulo`), o arquivo abre numa janela de leitura do NXPilot, nunca pelo programa padrão, que executaria o script.
+
+**🔁 Tarefas**
+
+- **Retomar de onde parou:** uma tarefa interrompida ou que falhou continua a partir da fase que não terminou.
+- **Analisar e corrigir achados:** quando a verificação cruzada não aprova, os achados voltam para o agente. Ele corrige o que procede (sob o gate), e a verificação roda de novo.
+- **Arquivos do resultado:** o card da tarefa lista o que foi criado ou alterado, com **Abrir** (só para documentos) e **Mostrar na pasta**.
+- **Indicador de execução:** barra animada e cronômetro enquanto o agente trabalha.
+- **Nova tarefa** em duas colunas: mais larga e mais baixa.
