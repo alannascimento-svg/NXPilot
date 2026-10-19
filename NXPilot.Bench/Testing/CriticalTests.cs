@@ -26,8 +26,40 @@ namespace NXPilot.Testing;
 /// </summary>
 public static class CriticalTests
 {
+    private static async Task CheckRiskExampleStoreAsync()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "nx-examples-" + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(folder, "examples.json");
+        try
+        {
+            var store = new RiskExampleStore(path);
+            AssertEqual(0, store.Load().Count, "Primeiro uso: sem exemplos ensinados.");
+            store.Upsert(new RiskExample("ação de teste", RiskLevel.Alto));
+            new RiskExampleStore(path).Upsert(new RiskExample("ação de teste", RiskLevel.Medio));
+            var reloaded = new RiskExampleStore(path).Load();
+            AssertEqual(1, reloaded.Count, "Corrigir a mesma ação não deve duplicá-la.");
+            AssertEqual(RiskLevel.Medio, reloaded.Single().Level, "Outro leitor deve recuperar o rótulo corrigido.");
+            await Task.WhenAll(Enumerable.Range(0, 12).Select(i => Task.Run(() =>
+                new RiskExampleStore(path).Upsert(new RiskExample("ação " + i, RiskLevel.Alto)))));
+            AssertEqual(13, store.Load().Count, "Gravações concorrentes no processo preservam todos os exemplos.");
+            File.WriteAllText(path, "invalid-json");
+            try { store.Upsert(new RiskExample("outra ação", RiskLevel.Baixo)); throw new Exception("Arquivo inválido foi sobrescrito."); }
+            catch (InvalidDataException) { }
+            AssertEqual("invalid-json", File.ReadAllText(path), "Um arquivo inválido deve ser preservado para recuperação.");
+        }
+        finally
+        {
+            if (Directory.Exists(folder))
+            {
+                foreach (var file in Directory.EnumerateFiles(folder)) File.Delete(file);
+                Directory.Delete(folder);
+            }
+        }
+    }
+
     public static IReadOnlyList<CriticalTest> All => new CriticalTest[]
     {
+        new("Laboratório: exemplos persistem, correções substituem rótulos e arquivo inválido é preservado", CheckRiskExampleStoreAsync),
         // ---------------------------------------------------------------- gate e regras
         new("Gate: só BAIXO com confiança ≥ 60% aprova sozinho", () =>
         {

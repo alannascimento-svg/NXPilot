@@ -88,6 +88,13 @@ O NXPilot é publicado em duas partes separadas, como o NXProject:
 > O `NXPilot-Release.zip` sozinho **não** roda numa máquina nova: ele não tem o runtime .NET. Instale sempre
 > primeiro com o `NXPilot-Setup.zip`.
 
+### Exemplos do Laboratório IA
+
+**Ensinar** salva as ações rotuladas em `%LOCALAPPDATA%\NXPilot\risk-examples.json` e as
+recupera ao reiniciar o gate ou o aplicativo. Corrigir a mesma ação substitui o rótulo anterior.
+Os exemplos pertencem ao perfil atual do Windows; os benchmarks mantêm o conjunto de referência separado.
+Com o modelo ONNX instalado, rode `NXPilot.Bench.exe --test-onnx-learning` para verificar o fluxo completo de recarga.
+
 ## Desenvolvimento
 
 ```powershell

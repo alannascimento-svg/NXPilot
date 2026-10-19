@@ -21,7 +21,8 @@ public enum OnnxDevice { Cpu, DirectML }
 /// Aprender = <see cref="AddExample"/>: cada decisão do usuário vira um exemplo novo,
 /// sem re-treino.
 /// </summary>
-public sealed class OnnxRiskClassifier(OnnxModelStore store, OnnxDevice device, IEnumerable<RiskExample>? seed = null) : IRiskClassifier
+public sealed class OnnxRiskClassifier(OnnxModelStore store, OnnxDevice device, IEnumerable<RiskExample>? seed = null,
+    RiskExampleStore? exampleStore = null) : IRiskClassifier
 {
     private const int MaxTokens = 128;
     private const int TopK = 3;
@@ -58,7 +59,10 @@ public sealed class OnnxRiskClassifier(OnnxModelStore store, OnnxDevice device, 
         _needsTokenTypes = _session.InputMetadata.ContainsKey("token_type_ids");
         _tokenizer = BertTokenizer.Create(store.VocabPath);
 
-        foreach (var ex in _seed)
+        // Os benchmarks omitem exampleStore para manter o conjunto de referência independente.
+        var examples = _seed.Concat(exampleStore?.Load() ?? Array.Empty<RiskExample>())
+            .GroupBy(e => e.Action, StringComparer.Ordinal).Select(g => g.Last());
+        foreach (var ex in examples)
         {
             ct.ThrowIfCancellationRequested();
             _memory.Add((Embed(ex.Action), ex));
@@ -68,8 +72,15 @@ public sealed class OnnxRiskClassifier(OnnxModelStore store, OnnxDevice device, 
     /// <summary>Ensina um exemplo novo (ex.: decisão aprovada/negada pelo usuário).</summary>
     public void AddExample(RiskExample example)
     {
+        example = RiskExampleStore.Validate(example);
         var v = Embed(example.Action);
-        lock (_memory) _memory.Add((v, example));
+        lock (_memory)
+        {
+            // Só publica o aprendizado depois da gravação; erro de disco volta para a tela.
+            exampleStore?.Upsert(example);
+            _memory.RemoveAll(m => m.Example.Action == example.Action);
+            _memory.Add((v, example));
+        }
     }
 
     public Task<RiskResult> ClassifyAsync(string action, CancellationToken ct = default)

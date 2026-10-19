@@ -778,7 +778,16 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         var device = Lab.UseGpu ? OnnxDevice.DirectML : OnnxDevice.Cpu;
-        var onnx = new OnnxRiskClassifier(OnnxStore, device);
+        var examples = new RiskExampleStore();
+        try { _ = examples.Load(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            GateStatus = T("Gate: só Regras (falha ao ler os exemplos ensinados)", "Gate: rules only (could not read learned examples)", "Gate: solo Reglas (no se pudieron leer los ejemplos aprendidos)");
+            AddLog("Gate", T("aviso", "warning", "aviso"), ex.Message);
+            await ClassifyPendingAsync();
+            return;
+        }
+        var onnx = new OnnxRiskClassifier(OnnxStore, device, exampleStore: examples);
         try
         {
             await onnx.InitializeAsync();
@@ -788,7 +797,7 @@ public sealed partial class MainViewModel : ObservableObject
             onnx.Dispose();
             AddLog("Gate", T("aviso", "warning", "aviso"), T($"GPU (DirectML) indisponível: {ex.Message} — voltando para CPU.", $"GPU (DirectML) unavailable: {ex.Message} — falling back to CPU.", $"GPU (DirectML) no disponible: {ex.Message} — volviendo a CPU."));
             Lab.ReportGpuUnavailable();
-            onnx = new OnnxRiskClassifier(OnnxStore, OnnxDevice.Cpu);
+            onnx = new OnnxRiskClassifier(OnnxStore, OnnxDevice.Cpu, exampleStore: examples);
             await onnx.InitializeAsync();
         }
         GateOnnx = onnx;

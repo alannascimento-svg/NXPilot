@@ -26,6 +26,9 @@ if (langIdx >= 0 && langIdx + 1 < args.Length)
     args = args.Where((_, i) => i != langIdx && i != langIdx + 1).ToArray();
 }
 
+if (args.Contains("--test-onnx-learning"))
+    return await NXPilot.Testing.TestRunner.RunAsync("ONNX — aprendizado persistente", NXPilot.Testing.OnnxLearningTests.All);
+
 if (args.Contains("--smoke"))
     return await SmokeAsync(store);
 

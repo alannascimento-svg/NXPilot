@@ -88,6 +88,13 @@ desktop shortcut — so it needs internet access:
 > `NXPilot-Release.zip` alone does **not** run on a new machine: it has no .NET runtime. Always install with
 > `NXPilot-Setup.zip` first.
 
+### AI Lab examples
+
+**Teach** saves labeled actions in `%LOCALAPPDATA%\NXPilot\risk-examples.json` and reloads
+them when the gate or app restarts. Correcting the same action replaces its previous label.
+Examples belong to the current Windows profile; benchmarks keep their reference dataset separate.
+With the ONNX model installed, run `NXPilot.Bench.exe --test-onnx-learning` to verify the full reload flow.
+
 ## Development
 
 ```powershell
