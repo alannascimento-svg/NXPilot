@@ -43,14 +43,7 @@ public static class OnnxLearningTests
                 await benchmark.InitializeAsync();
                 AssertEqual(before, benchmark.ExampleCount, "O benchmark continua usando apenas os exemplos de referência.");
             }
-            finally
-            {
-                if (Directory.Exists(folder))
-                {
-                    foreach (var file in Directory.EnumerateFiles(folder)) File.Delete(file);
-                    Directory.Delete(folder);
-                }
-            }
+            finally { await TestCleanup.DeleteFlatDirectoryAsync(folder); }
         }),
     };
 }

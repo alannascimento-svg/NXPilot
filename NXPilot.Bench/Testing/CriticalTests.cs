@@ -47,14 +47,7 @@ public static class CriticalTests
             catch (InvalidDataException) { }
             AssertEqual("invalid-json", File.ReadAllText(path), "Um arquivo inválido deve ser preservado para recuperação.");
         }
-        finally
-        {
-            if (Directory.Exists(folder))
-            {
-                foreach (var file in Directory.EnumerateFiles(folder)) File.Delete(file);
-                Directory.Delete(folder);
-            }
-        }
+        finally { await TestCleanup.DeleteFlatDirectoryAsync(folder); }
     }
 
     public static IReadOnlyList<CriticalTest> All => new CriticalTest[]
