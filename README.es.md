@@ -88,13 +88,6 @@ acceso directo en el escritorio — por eso necesita internet:
 > `NXPilot-Release.zip` por sí solo **no** funciona en una máquina nueva: no incluye el runtime de .NET. Instale
 > siempre primero con `NXPilot-Setup.zip`.
 
-### Ejemplos del Laboratorio IA
-
-**Enseñar** guarda las acciones etiquetadas en `%LOCALAPPDATA%\NXPilot\risk-examples.json`
-y las recupera al reiniciar el gate o la aplicación. Corregir la misma acción reemplaza la etiqueta anterior.
-Los ejemplos pertenecen al perfil actual de Windows; los benchmarks mantienen separado su conjunto de referencia.
-Con el modelo ONNX instalado, ejecute `NXPilot.Bench.exe --test-onnx-learning` para verificar el flujo completo de recarga.
-
 ## Desarrollo
 
 ```powershell
@@ -105,6 +98,13 @@ Con el modelo ONNX instalado, ejecute `NXPilot.Bench.exe --test-onnx-learning` p
 ```
 
 Pruebas críticas: `NXPilot.Bench.exe --test [filtro]`.
+
+### Ejemplos del Laboratorio IA
+
+**Enseñar** guarda las acciones etiquetadas en `%LOCALAPPDATA%\NXPilot\risk-examples.json`
+y las recupera al reiniciar el gate o la aplicación. Corregir la misma acción reemplaza la etiqueta anterior.
+Los ejemplos pertenecen al perfil actual de Windows; los benchmarks mantienen separado su conjunto de referencia.
+Con el modelo ONNX instalado, ejecute `NXPilot.Bench.exe --test-onnx-learning` para verificar el flujo completo de recarga.
 
 ## Licencia
 
