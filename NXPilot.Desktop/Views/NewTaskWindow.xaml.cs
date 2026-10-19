@@ -41,6 +41,9 @@ public partial class NewTaskWindow : Window
         CodexModelBox.Text = s.CodexModel ?? "";
         Select(ModelBox, s.LastModel ?? "");
         Select(ReviewerBox, s.Reviewer ?? nameof(ReviewerKind.Codex));
+        Select(VersioningBox, s.Versioning ?? nameof(VersioningMode.Local));
+        UpdateVersioningHint();
+        LoadSubjects(s.LastSubject);
 
         // Quem tem só o Codex (ou só o Claude) também cria tarefa: mostra o que está instalado e
         // já seleciona o último usado ou, na primeira vez, o que existe na máquina.
@@ -55,7 +58,7 @@ public partial class NewTaskWindow : Window
 
         Loaded += async (_, _) =>
         {
-            (RepoBox.Text.Length == 0 ? RepoBox : TitleBox).Focus();
+            (SelectedVersioning == VersioningMode.Git && RepoBox.Text.Length == 0 ? RepoBox : TitleBox).Focus();
             await LoadCodexModelsAsync();
         };
     }
@@ -154,6 +157,55 @@ public partial class NewTaskWindow : Window
         AgentHint.Text = hint;
     }
 
+    private VersioningMode SelectedVersioning =>
+        Enum.TryParse<VersioningMode>((VersioningBox.SelectedItem as ComboBoxItem)?.Tag as string, out var mode) ? mode : VersioningMode.Local;
+
+    private ShadowSubject? SelectedSubject => SubjectBox.SelectedItem as ShadowSubject;
+
+    private void OnVersioningChanged(object sender, SelectionChangedEventArgs e) => UpdateVersioningHint();
+
+    /// <summary>Local: um assunto (pastas sem git, histórico no repositório-sombra). Git: o repositório do projeto.</summary>
+    private void UpdateVersioningHint()
+    {
+        if (VersioningHint == null || SubjectRow == null || RepoRow == null) return; // SelectionChanged dispara durante o InitializeComponent
+        var local = SelectedVersioning == VersioningMode.Local;
+        SubjectRow.Visibility = local ? Visibility.Visible : Visibility.Collapsed;
+        RepoRow.Visibility = local ? Visibility.Collapsed : Visibility.Visible;
+        VersioningHint.Text = local
+            ? T("Cada assunto é uma pasta comum, sem precisar de git. O NXPilot guarda o histórico à parte (a pasta não ganha .git) e só grava nela quando você aplicar o resultado. Dá para mover o assunto para outra pasta ou para o GitHub depois.",
+                "Each subject is a regular folder, no git needed. NXPilot keeps the history separately (no .git is added to the folder) and only writes to it when you apply the result. The subject can be moved to another folder or to GitHub later.",
+                "Cada asunto es una carpeta común, sin necesidad de git. NXPilot guarda el historial aparte (la carpeta no recibe .git) y solo escribe en ella cuando usted aplica el resultado. El asunto se puede mover a otra carpeta o a GitHub después.")
+            : T("A pasta de um clone do GitHub, Azure DevOps ou outro git. A tarefa vira um branch nxpilot/<id> no próprio repositório; juntar (merge/PR) é decisão sua.",
+                "A clone folder from GitHub, Azure DevOps or another git host. The task becomes an nxpilot/<id> branch in the repository itself; merging (merge/PR) is up to you.",
+                "La carpeta de un clon de GitHub, Azure DevOps u otro git. La tarea se convierte en una rama nxpilot/<id> en el propio repositorio; integrar (merge/PR) es decisión suya.");
+    }
+
+    /// <summary>Recarrega os assuntos (depois de editar na janela Assuntos) mantendo o escolhido.</summary>
+    private void LoadSubjects(string? select)
+    {
+        var subjects = ShadowRepo.LoadSubjects();
+        SubjectBox.ItemsSource = subjects;
+        SubjectBox.SelectedItem = subjects.FirstOrDefault(s => s.Name == select) ?? subjects.FirstOrDefault();
+        UpdateSubjectHint();
+    }
+
+    private void OnSubjectChanged(object sender, SelectionChangedEventArgs e) => UpdateSubjectHint();
+
+    private void UpdateSubjectHint()
+    {
+        if (SubjectHint == null) return;
+        SubjectHint.Text = SelectedSubject is { } s
+            ? s.Path + (s.WebUrl is { } url ? "  ·  GitHub: " + url : "")
+            : T("Nenhum assunto ainda — crie um em \"Assuntos…\" e coloque os arquivos na pasta dele.", "No subjects yet — create one in \"Subjects…\" and put the files in its folder.", "Aún no hay asuntos — cree uno en \"Asuntos…\" y ponga los archivos en su carpeta.");
+    }
+
+    private void OnSubjectsClick(object sender, RoutedEventArgs e)
+    {
+        var window = new SubjectsWindow(SelectedSubject?.Name) { Owner = this };
+        window.ShowDialog();
+        LoadSubjects(window.SelectedName ?? SelectedSubject?.Name);
+    }
+
     private static void Select(ComboBox box, string tag)
     {
         foreach (ComboBoxItem item in box.Items)
@@ -172,6 +224,7 @@ public partial class NewTaskWindow : Window
         var repo = RepoBox.Text.Trim();
         var reviewer = Enum.Parse<ReviewerKind>((ReviewerBox.SelectedItem as ComboBoxItem)?.Tag as string ?? nameof(ReviewerKind.Codex));
         var executor = SelectedExecutor;
+        var versioning = SelectedVersioning;
         string? error = null;
         if (NXAgenticSelected) error = NXAgenticUnderConstruction;
         else if (executor == ExecutorKind.Codex ? !_codexInstalled : !_claudeInstalled)
@@ -182,9 +235,13 @@ public partial class NewTaskWindow : Window
                 : T("O Claude Code não foi encontrado nesta máquina. Instale e faça login, ou escolha o Codex.",
                     "Claude Code was not found on this machine. Install it and sign in, or choose Codex.",
                     "Claude Code no se encontró en esta máquina. Instálelo e inicie sesión, o elija Codex.");
-        else if (!Directory.Exists(repo)) error = T("Escolha a pasta de um repositório git.", "Choose a git repository folder.", "Elija la carpeta de un repositorio git.");
-        else if (!Directory.Exists(Path.Combine(repo, ".git")) && !File.Exists(Path.Combine(repo, ".git")))
-            error = T("A pasta não tem .git — escolha a raiz de um repositório git.", "The folder has no .git — choose the root of a git repository.", "La carpeta no tiene .git — elija la raíz de un repositorio git.");
+        else if (versioning == VersioningMode.Local && SelectedSubject == null)
+            error = T("Escolha um assunto (botão \"Assuntos…\").", "Choose a subject (\"Subjects…\" button).", "Elija un asunto (botón \"Asuntos…\").");
+        else if (versioning == VersioningMode.Git && !Directory.Exists(repo)) error = T("Escolha a pasta de um repositório git.", "Choose a git repository folder.", "Elija la carpeta de un repositorio git.");
+        else if (versioning == VersioningMode.Git && !Directory.Exists(Path.Combine(repo, ".git")) && !File.Exists(Path.Combine(repo, ".git")))
+            error = T("A pasta não tem .git — escolha a raiz de um repositório git, ou use o versionamento local.",
+                      "The folder has no .git — choose the root of a git repository, or use local versioning.",
+                      "La carpeta no tiene .git — elija la raíz de un repositorio git, o use el versionado local.");
         else if (TitleBox.Text.Trim().Length == 0) error = T("Dê um título à tarefa.", "Give the task a title.", "Dé un título a la tarea.");
         else if (IntentBox.Text.Trim().Length < 10) error = T("Descreva a intenção (o que deve ser feito).", "Describe the intent (what should be done).", "Describa la intención (qué se debe hacer).");
         else if (executor == ExecutorKind.Codex && CodexModelBox.Text.Trim().Length == 0)
@@ -199,18 +256,22 @@ public partial class NewTaskWindow : Window
 
         var model = (ModelBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
         var codexModel = CodexModelBox.Text.Trim();
+        var subject = versioning == VersioningMode.Local ? SelectedSubject : null;
         AppSettings.Update(s =>
         {
-            s.LastRepo = repo;
+            if (subject == null) s.LastRepo = repo;
+            else s.LastSubject = subject.Name;
+            s.Versioning = versioning.ToString();
             s.LastModel = model;
             s.CodexModel = codexModel;
             s.Reviewer = reviewer.ToString();
             s.Executor = executor.ToString();
         });
 
-        Result = new NewTaskInfo(repo, TitleBox.Text.Trim(), IntentBox.Text.Trim(),
+        Result = new NewTaskInfo(subject?.Dir ?? repo, TitleBox.Text.Trim(), IntentBox.Text.Trim(),
             CriteriaBox.Text.Trim().Length > 0 ? CriteriaBox.Text.Trim() : T("(não informados)", "(not provided)", "(no informado)"),
-            model.Length > 0 ? model : null, reviewer, codexModel.Length > 0 ? codexModel : null, executor);
+            model.Length > 0 ? model : null, reviewer, codexModel.Length > 0 ? codexModel : null, executor, versioning,
+            subject?.Name, subject?.Path);
         DialogResult = true;
     }
 }

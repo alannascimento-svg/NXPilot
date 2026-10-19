@@ -18,6 +18,7 @@ public partial class App : Application
         // --lang en-US força o idioma só nesta execução (prints, testes) sem gravar a escolha.
         var i = Array.IndexOf(e.Args, "--lang");
         LanguageService.Apply(i >= 0 && i + 1 < e.Args.Length ? e.Args[i + 1] : LanguageService.LoadPreferred());
+        NXPilot.Agents.ShadowRepo.Root = AppSettings.Load().SubjectsRoot ?? ""; // vazio = padrão
         base.OnStartup(e);
     }
 }

@@ -18,8 +18,13 @@ public enum ReviewerKind { Codex, Claude, None }
 public enum ExecutorKind { Claude, Codex }
 
 /// <summary>O que a pessoa preencheu no assistente de Nova tarefa.</summary>
+/// <param name="RepoPath">Raiz do repositório git, ou o repositório-sombra do assunto (modo local).</param>
+/// <param name="Versioning">Tarefas antigas (sem o campo) eram sempre git.</param>
+/// <param name="Subject">Modo local: nome do assunto.</param>
+/// <param name="SubjectFolder">Modo local: pasta do assunto (para onde o resultado volta).</param>
 public sealed record NewTaskInfo(string RepoPath, string Title, string Intent, string Criteria, string? Model,
-    ReviewerKind Reviewer = ReviewerKind.Codex, string? CodexModel = null, ExecutorKind Executor = ExecutorKind.Claude);
+    ReviewerKind Reviewer = ReviewerKind.Codex, string? CodexModel = null, ExecutorKind Executor = ExecutorKind.Claude,
+    VersioningMode Versioning = VersioningMode.Git, string? Subject = null, string? SubjectFolder = null);
 
 /// <summary>Registro salvo no Histórico (%LOCALAPPDATA%\NXPilot\tasks\&lt;id&gt;.json).</summary>
 public sealed record TaskRecord(
@@ -40,7 +45,7 @@ public sealed partial class TaskSession(NewTaskInfo info, string id) : Observabl
     public string Title => Info.Title;
     public DateTime CreatedAt { get; init; } = DateTime.Now;
 
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(StateLabel), nameof(CanApprove), nameof(IsRunning), nameof(CanDiscard), nameof(IsFinished))]
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(StateLabel), nameof(CanApprove), nameof(IsRunning), nameof(CanDiscard), nameof(IsFinished), nameof(CanApplyToFolder), nameof(CanResume), nameof(CanFixFindings))]
     private TaskState _state = TaskState.Preparing;
 
     [ObservableProperty] private string? _worktree;
@@ -53,7 +58,29 @@ public sealed partial class TaskSession(NewTaskInfo info, string id) : Observabl
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasPowerBi))] private NXPilot.Integrations.PowerBiProject? _powerBi;
     public bool HasPowerBi => PowerBi != null;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(CostLabel))] private decimal _costUsd;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(StateLabel))] private VerificationResult? _verification;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(StateLabel), nameof(CanFixFindings))] private VerificationResult? _verification;
+
+    /// <summary>Quando a etapa que está rodando começou (planejar, executar, corrigir, verificar); nulo parada.</summary>
+    public DateTime? RunningSince { get; private set; }
+
+    /// <summary>Cronômetro da etapa em andamento ("03:12"), atualizado a cada segundo pelo ViewModel.</summary>
+    [ObservableProperty] private string _elapsedText = "";
+
+    partial void OnStateChanged(TaskState value)
+    {
+        if (IsRunning) RunningSince ??= DateTime.Now;
+        else { RunningSince = null; ElapsedText = ""; }
+    }
+
+    public void Tick()
+    {
+        if (RunningSince is not { } since) return;
+        var e = DateTime.Now - since;
+        ElapsedText = e.TotalHours >= 1 ? e.ToString(@"h\:mm\:ss") : e.ToString(@"mm\:ss");
+    }
+
+    /// <summary>Executando a correção dos achados (não uma fase do plano).</summary>
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(StateLabel))] private bool _fixingFindings;
 
     /// <summary>Fases do plano e o status de cada uma ("Pendente", "Rodando", "Concluido").</summary>
     public List<PlannedPhase> Phases { get; set; } = new();
@@ -65,6 +92,14 @@ public sealed partial class TaskSession(NewTaskInfo info, string id) : Observabl
     public bool CanApprove => State == TaskState.AwaitingApproval;
     public bool CanDiscard => State == TaskState.AwaitingApproval;
     public bool IsRunning => State is TaskState.Preparing or TaskState.Planning or TaskState.Executing or TaskState.Verifying;
+    /// <summary>Interrompida ou falhou, com o worktree ainda lá: dá para continuar de onde parou.</summary>
+    public bool CanResume => State is TaskState.Stopped or TaskState.Failed && Worktree is { } wt && System.IO.Directory.Exists(wt);
+
+    /// <summary>Concluída, mas a verificação não aprovou: dá para devolver os achados ao executor.</summary>
+    public bool CanFixFindings => State == TaskState.Done && Verification is { Approved: false, Findings.Count: > 0 } && Worktree is { } wt && System.IO.Directory.Exists(wt);
+
+    /// <summary>Modo local: o resultado só chega à pasta original quando você manda aplicar.</summary>
+    public bool CanApplyToFolder => Info.Versioning == VersioningMode.Local && State == TaskState.Done;
     public bool IsFinished => State is TaskState.Done or TaskState.Failed or TaskState.Discarded or TaskState.Stopped;
 
     public string CostLabel => CostUsd > 0 ? T($"custo informado pelos agentes: US$ {CostUsd:0.00}", $"cost reported by the agents: US$ {CostUsd:0.00}", $"costo informado por los agentes: US$ {CostUsd:0.00}") : "";
@@ -74,6 +109,7 @@ public sealed partial class TaskSession(NewTaskInfo info, string id) : Observabl
         TaskState.Preparing => T("Preparando o worktree…", "Preparing the worktree…", "Preparando el worktree…"),
         TaskState.Planning => T($"{(Info.Executor == ExecutorKind.Codex ? "Codex" : "Claude Code")} está planejando (somente leitura)…", $"{(Info.Executor == ExecutorKind.Codex ? "Codex" : "Claude Code")} is planning (read-only)…", $"{(Info.Executor == ExecutorKind.Codex ? "Codex" : "Claude Code")} está planificando (solo lectura)…"),
         TaskState.AwaitingApproval => T($"Plano pronto ({Phases.Count} fase(s)) — aguardando a sua aprovação", $"Plan ready ({Phases.Count} phase(s)) — waiting for your approval", $"Plan listo ({Phases.Count} fase(s)) — esperando su aprobación"),
+        TaskState.Executing when FixingFindings => T("Analisando e corrigindo os achados da verificação — ações passam pelo gate", "Analyzing and fixing the verification findings — actions go through the gate", "Analizando y corrigiendo los hallazgos de la verificación — las acciones pasan por el gate"),
         TaskState.Executing => T($"Executando a fase {PhaseStatus.IndexOf("Rodando") + 1} de {Phases.Count} — ações passam pelo gate", $"Running phase {PhaseStatus.IndexOf("Rodando") + 1} of {Phases.Count} — actions go through the gate", $"Ejecutando la fase {PhaseStatus.IndexOf("Rodando") + 1} de {Phases.Count} — las acciones pasan por el gate"),
         TaskState.Verifying => T("Revisando o diff em sessão nova (somente leitura)…", "Reviewing the diff in a new session (read-only)…", "Revisando el diff en una sesión nueva (solo lectura)…"),
         TaskState.Done when Verification is { Approved: false } => T("Execução concluída; revisão não aprovada — veja os detalhes", "Execution complete; review not approved — see details", "Ejecución completada; revisión no aprobada — vea los detalles"),

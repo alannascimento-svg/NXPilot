@@ -13,6 +13,31 @@ public sealed record AgentItem(string Name, string Status, string Task, string E
 
 public sealed record ArtifactItem(string Glyph, string Title, string Subtitle);
 
+/// <summary>
+/// Arquivo que a tarefa criou ou alterou. "Abrir" só para documentos (docx, pdf, planilha,
+/// imagem, texto…): abrir um .py/.bat/.ps1 pelo Windows executaria o script.
+/// </summary>
+public sealed record ResultFile(string RelativePath, string FullPath)
+{
+    private static readonly string[] Documents = [".docx", ".doc", ".xlsx", ".xls", ".pptx", ".pdf", ".csv", ".txt", ".md", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".json", ".xml", ".log", ".pbip"];
+    private static readonly string[] Reports = [".docx", ".doc", ".xlsx", ".xls", ".pptx", ".pdf", ".csv", ".png", ".jpg", ".jpeg"];
+
+    public string Extension => System.IO.Path.GetExtension(FullPath).ToLowerInvariant();
+    public bool CanOpen => Documents.Contains(Extension);
+
+    /// <summary>Entregáveis (relatório, planilha, PDF, imagem) aparecem primeiro e em destaque.</summary>
+    public bool IsDeliverable => Reports.Contains(Extension);
+
+    public string Glyph => Extension switch
+    {
+        ".docx" or ".doc" or ".pdf" or ".md" or ".txt" => "📄",
+        ".xlsx" or ".xls" or ".csv" => "📊",
+        ".pptx" => "📽",
+        ".png" or ".jpg" or ".jpeg" or ".gif" or ".bmp" or ".svg" => "🖼",
+        _ => "⚙",
+    };
+}
+
 public sealed record FileChangeItem(string Path, string Kind, string Description);
 
 public sealed record PhaseItem(int Number, string Title, string Status, string Agent, double Progress, IReadOnlyList<FileChangeItem> Files)
@@ -52,7 +77,14 @@ public sealed partial class DecisionItem(string agent, string action, string con
     /// </summary>
     public TaskCompletionSource<bool>? Response { get; init; }
 
-    [ObservableProperty] private RiskLevel? _level;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanUseTaskRules))] private RiskLevel? _level;
+
+    /// <summary>Scripts que o comando vai rodar (.py, .ps1…) — botão "Ver script" para ler antes de aprovar.</summary>
+    public IReadOnlyList<string> Scripts { get; init; } = [];
+    public bool HasScripts => Scripts.Count > 0;
+
+    /// <summary>"Aprovar semelhantes" e "aprovar médio e baixo" só aparecem fora do risco ALTO.</summary>
+    public bool CanUseTaskRules => Level is RiskLevel.Baixo or RiskLevel.Medio;
     [ObservableProperty] private string _riskDetail = NxText.T("aguardando classificador…", "waiting for the classifier…", "esperando al clasificador…");
 }
 
