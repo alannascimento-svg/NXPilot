@@ -10,11 +10,8 @@
 
 ### Novidades
 
-**🌐 Espanhol (ES)**
+**🟠 Ícone e atalho**
 
-- O NXPilot e o NXPilot-Setup agora têm interface em **português, inglês e espanhol**. A troca é no seletor **PT / EN / ES**, ao vivo, sem reiniciar.
-- Num Windows em espanhol, o app e o Setup já abrem em espanhol na primeira vez.
-- Os planos, os prompts das fases e os motivos do gate também saem em espanhol.
-- O site do GitHub tem README em inglês, português e espanhol, com links diretos para baixar o Setup e a atualização.
-
-> A licença oficial continua em português ([LICENSE.txt](https://github.com/nexusxdata/NXPilot/blob/main/LICENSE.txt)), com tradução completa para o inglês ([LICENSE.en.txt](https://github.com/nexusxdata/NXPilot/blob/main/LICENSE.en.txt)).
+- O NXPilot ganhou ícone próprio: o "NX" da família Nexus XData (o mesmo do NXProject), em **laranja**. Aparece no atalho, na barra de tarefas e no Setup.
+- O Setup cria o atalho **NXPilot** na área de trabalho pela API do próprio Windows, sem rodar script, então o antivírus não bloqueia. Na atualização, o atalho antigo é substituído.
+- Se mesmo assim não der para criar o atalho, o Setup avisa, em vez de dizer que criou.

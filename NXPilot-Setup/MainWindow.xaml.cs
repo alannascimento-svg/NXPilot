@@ -158,10 +158,14 @@ public partial class MainWindow : Window
             if (missing.Count > 0)
                 throw new InvalidOperationException(T("instalação incompleta, faltam: ", "incomplete installation, missing: ", "instalación incompleta, faltan: ") + string.Join(", ", missing));
 
-            CreateDesktopShortcut(InstalledExe);
+            var shortcut = DesktopShortcut.Create(InstalledExe, "NXPilot");
             Step1Progress.Value = 100;
             RefreshStep1();
-            Step1StatusText.Text += T(" Atalho criado na área de trabalho.", " Desktop shortcut created.", " Acceso directo creado en el escritorio.") + updateNote;
+            Step1StatusText.Text += (shortcut != null
+                ? T(" Atalho criado na área de trabalho.", " Desktop shortcut created.", " Acceso directo creado en el escritorio.")
+                : T(" Não deu para criar o atalho na área de trabalho: abra pelo botão Abrir NXPilot ou pela pasta do app.",
+                    " Could not create the desktop shortcut: use the Open NXPilot button or the app folder.",
+                    " No se pudo crear el acceso directo en el escritorio: use el botón Abrir NXPilot o la carpeta de la aplicación.")) + updateNote;
         }
         catch (Exception ex)
         {
@@ -244,35 +248,6 @@ public partial class MainWindow : Window
         catch { /* em uso: fica para a próxima atualização */ }
         try { File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "NXAgentic.lnk")); }
         catch { /* sem atalho antigo */ }
-    }
-
-    private static void CreateDesktopShortcut(string exePath)
-    {
-        try
-        {
-            var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-            var lnk = Path.Combine(desktop, "NXPilot.lnk");
-            var dir = Path.GetDirectoryName(exePath) ?? "";
-            static string Esc(string s) => s.Replace("'", "''");
-            var script = $$"""
-                $ws = New-Object -ComObject WScript.Shell
-                $sc = $ws.CreateShortcut('{{Esc(lnk)}}')
-                $sc.TargetPath = '{{Esc(exePath)}}'
-                $sc.WorkingDirectory = '{{Esc(dir)}}'
-                $sc.IconLocation = '{{Esc(exePath)}},0'
-                $sc.Save()
-                """;
-            var ps1 = Path.Combine(Path.GetTempPath(), $"nxpilot_shortcut_{Guid.NewGuid():N}.ps1");
-            File.WriteAllText(ps1, script);
-            using var proc = Process.Start(new ProcessStartInfo("powershell.exe", $"-NoProfile -ExecutionPolicy Bypass -File \"{ps1}\"")
-            {
-                UseShellExecute = false,
-                CreateNoWindow = true
-            });
-            proc?.WaitForExit(10_000);
-            File.Delete(ps1);
-        }
-        catch { /* atalho é conveniência */ }
     }
 
     // ------------------------------------------------------------------ Passo 2: ONNX

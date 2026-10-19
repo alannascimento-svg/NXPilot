@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <!-- O "NX" do NXProject em laranja: mesma família, cor própria do NXPilot (IA). -->
+    <ApplicationIcon>..\NXPilot.Desktop\Assets\icon.ico</ApplicationIcon>
     <AssemblyName>NXPilot-Setup</AssemblyName>
     <RootNamespace>NXPilot.Setup</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
