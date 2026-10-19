@@ -45,7 +45,7 @@ public static class RiskBenchmark
         var sw = Stopwatch.StartNew();
         try
         {
-            progress?.Report($"{classifier.Name}: " + NxText.T("carregando…", "loading…"));
+            progress?.Report($"{classifier.Name}: " + NxText.T("carregando…", "loading…", "cargando…"));
             await classifier.InitializeAsync(ct);
             var load = sw.Elapsed;
 

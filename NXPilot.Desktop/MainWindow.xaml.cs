@@ -26,7 +26,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         FitToWorkArea();
-        LanguageBox.SelectedIndex = NxText.IsEnglish ? 1 : 0;
+        LanguageBox.SelectedIndex = NxText.IsSpanish ? 2 : NxText.IsEnglish ? 1 : 0;
         Closing += OnClosing;
         Tour.Ended += OnLessonEnded;
         Vm.Notifications.Raised += _ => FlashIfAway();
@@ -93,7 +93,7 @@ public partial class MainWindow : Window
     {
         if (Vm.CurrentTask is { IsRunning: true })
         {
-            MessageBox.Show(this, NxText.T("Já há uma tarefa em andamento. Interrompa ou espere terminar.", "A task is already running. Stop it or wait for it to finish."),
+            MessageBox.Show(this, NxText.T("Já há uma tarefa em andamento. Interrompa ou espere terminar.", "A task is already running. Stop it or wait for it to finish.", "Ya hay una tarea en curso. Interrúmpala o espere a que termine."),
                 "NXPilot", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
@@ -116,22 +116,28 @@ public partial class MainWindow : Window
     {
         var (title, body) = ((sender as FrameworkElement)?.Tag as string) switch
         {
-            "nova" => (NxText.T("Nova tarefa — em construção", "New task — under construction"),
+            "nova" => (NxText.T("Nova tarefa — em construção", "New task — under construction", "Nueva tarea — en construcción"),
                 NxText.T("Vai abrir o assistente de tarefa: você descreve a intenção e os critérios de aceite (ou escolhe uma Story do Azure DevOps), " +
                          "o Claude Code gera a spec e o plano em fases, e você aprova antes de qualquer agente começar.\n\n" +
                          "Depende do adaptador real do Claude Code (próximo passo do projeto). Hoje os agentes e fases da tela são dados de exemplo.",
                          "It will open the task wizard: you describe the intent and acceptance criteria (or pick an Azure DevOps Story), " +
                          "Claude Code generates the spec and the phased plan, and you approve it before any agent starts.\n\n" +
-                         "It depends on the real Claude Code adapter (the project's next step). Today the agents and phases on screen are sample data.")),
-            "historico" => (NxText.T("Histórico — em construção", "History — under construction"),
+                         "It depends on the real Claude Code adapter (the project's next step). Today the agents and phases on screen are sample data.",
+                         "Abrirá el asistente de tareas: usted describe la intención y los criterios de aceptación (o elige una Story de Azure DevOps), " +
+                         "Claude Code genera la spec y el plan por fases, y usted lo aprueba antes de que cualquier agente comience.\n\n" +
+                         "Depende del adaptador real de Claude Code (próximo paso del proyecto). Hoy los agentes y fases de la pantalla son datos de ejemplo.")),
+            "historico" => (NxText.T("Histórico — em construção", "History — under construction", "Historial — en construcción"),
                 NxText.T("Vai listar as tarefas anteriores com o log de auditoria de cada uma. Depende do registro de eventos em SQLite.",
-                         "It will list previous tasks with each one's audit log. It depends on the SQLite event log.")),
-            "notificacoes" => (NxText.T("Notificações — em construção", "Notifications — under construction"),
+                         "It will list previous tasks with each one's audit log. It depends on the SQLite event log.",
+                         "Listará las tareas anteriores con el registro de auditoría de cada una. Depende del registro de eventos en SQLite.")),
+            "notificacoes" => (NxText.T("Notificações — em construção", "Notifications — under construction", "Notificaciones — en construcción"),
                 NxText.T("Vai juntar decisões pendentes, fases concluídas e mensagens prioritárias dos Canais, inclusive com a janela minimizada.",
-                         "It will gather pending decisions, finished phases and priority messages from Channels, even with the window minimized.")),
-            _ => (NxText.T("Work items — em construção", "Work items — under construction"),
+                         "It will gather pending decisions, finished phases and priority messages from Channels, even with the window minimized.",
+                         "Reunirá decisiones pendientes, fases concluidas y mensajes prioritarios de los Canales, incluso con la ventana minimizada.")),
+            _ => (NxText.T("Work items — em construção", "Work items — under construction", "Work items — en construcción"),
                 NxText.T("Vai trazer as Stories do Azure DevOps como origem das tarefas, reaproveitando a integração TFS do NXProject (edição comercial).",
-                         "It will bring Azure DevOps Stories in as task sources, reusing the NXProject TFS integration (commercial edition).")),
+                         "It will bring Azure DevOps Stories in as task sources, reusing the NXProject TFS integration (commercial edition).",
+                         "Traerá las Stories de Azure DevOps como origen de las tareas, reutilizando la integración TFS de NXProject (edición comercial).")),
         };
         MessageBox.Show(this, body, title, MessageBoxButton.OK, MessageBoxImage.Information);
     }
@@ -346,15 +352,17 @@ public partial class MainWindow : Window
         MainTabs.SelectedIndex = 0;
         var executor = Enum.TryParse<ExecutorKind>(Environment.GetEnvironmentVariable("NXPILOT_DEMO_EXECUTOR"), out var ex) ? ex : ExecutorKind.Claude;
         var info = Environment.GetEnvironmentVariable("NXPILOT_DEMO_PBIP") == "1"
-            ? new NewTaskInfo(repo, NxText.T("Medida Total Vendas", "Total Sales measure"),
+            ? new NewTaskInfo(repo, NxText.T("Medida Total Vendas", "Total Sales measure", "Medida Total Ventas"),
                 NxText.T("No modelo semântico do projeto Power BI, criar a medida Total Vendas = SUM(Vendas[Valor]) na tabela Vendas, com formato de moeda.",
-                         "In the Power BI project semantic model, create the measure Total Sales = SUM(Vendas[Valor]) in the Vendas table, currency formatted."),
-                NxText.T("A medida existe no TMDL da tabela Vendas; nenhum JSON do relatório quebra; nada mais muda.", "The measure exists in the Vendas table TMDL; no report JSON breaks; nothing else changes."),
+                         "In the Power BI project semantic model, create the measure Total Sales = SUM(Vendas[Valor]) in the Vendas table, currency formatted.",
+                         "En el modelo semántico del proyecto Power BI, crear la medida Total Ventas = SUM(Vendas[Valor]) en la tabla Vendas, con formato de moneda."),
+                NxText.T("A medida existe no TMDL da tabela Vendas; nenhum JSON do relatório quebra; nada mais muda.", "The measure exists in the Vendas table TMDL; no report JSON breaks; nothing else changes.", "La medida existe en el TMDL de la tabla Vendas; ningún JSON del informe se rompe; nada más cambia."),
                 "haiku", ReviewerKind.Codex, Environment.GetEnvironmentVariable("NXPILOT_CODEX_MODEL"), executor)
-            : new NewTaskInfo(repo, NxText.T("Saudação e contador", "Greeting and counter"),
+            : new NewTaskInfo(repo, NxText.T("Saudação e contador", "Greeting and counter", "Saludo y contador"),
                 NxText.T("Fase 1: criar saudacao.txt com a linha Olá, NXPilot!. Fase 2: criar contar.ps1 que imprime quantas linhas saudacao.txt tem.",
-                         "Phase 1: create saudacao.txt with the line Hello, NXPilot!. Phase 2: create contar.ps1 that prints how many lines saudacao.txt has."),
-                NxText.T("Os dois arquivos existem; contar.ps1 imprime 1; nada mais muda.", "Both files exist; contar.ps1 prints 1; nothing else changes."),
+                         "Phase 1: create saudacao.txt with the line Hello, NXPilot!. Phase 2: create contar.ps1 that prints how many lines saudacao.txt has.",
+                         "Fase 1: crear saudacao.txt con la línea ¡Hola, NXPilot!. Fase 2: crear contar.ps1 que imprima cuántas líneas tiene saudacao.txt."),
+                NxText.T("Os dois arquivos existem; contar.ps1 imprime 1; nada mais muda.", "Both files exist; contar.ps1 prints 1; nothing else changes.", "Los dos archivos existen; contar.ps1 imprime 1; nada más cambia."),
                 "haiku", ReviewerKind.Codex, Environment.GetEnvironmentVariable("NXPILOT_CODEX_MODEL"), executor);
         await Vm.StartTaskAsync(info);
         await Task.Delay(500);

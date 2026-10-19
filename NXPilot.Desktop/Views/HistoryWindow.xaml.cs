@@ -39,7 +39,7 @@ public partial class HistoryWindow : Window
         {
             var label = TaskSession.FromRecord(r).StateLabel;
             var findings = r.Verification is { } v
-                ? T($"{v.Findings.Count(f => f.Severity == "Critico")} crít. · {v.Findings.Count} total", $"{v.Findings.Count(f => f.Severity == "Critico")} crit. · {v.Findings.Count} total")
+                ? T($"{v.Findings.Count(f => f.Severity == "Critico")} crít. · {v.Findings.Count} total", $"{v.Findings.Count(f => f.Severity == "Critico")} crit. · {v.Findings.Count} total", $"{v.Findings.Count(f => f.Severity == "Critico")} crít. · {v.Findings.Count} total")
                 : "—";
             return new Row(r, r.CreatedAt.ToString("dd/MM HH:mm"), r.Info.Title, label, findings,
                 r.CostUsd > 0 ? $"US$ {r.CostUsd:0.00}" : "—", r.Info.RepoPath);
@@ -60,8 +60,8 @@ public partial class HistoryWindow : Window
         WorktreeButton.IsEnabled = worktreeExists;
         RemoveButton.IsEnabled = r != null && !_taskRunning;
         StatusText.Text = _taskRunning
-            ? T("Há uma tarefa em andamento: termine ou interrompa para abrir outra.", "A task is running: finish or stop it to open another one.")
-            : r == null ? "" : worktreeExists ? $"{r.Branch} · {r.Worktree}" : T("O worktree desta tarefa não existe mais.", "This task's worktree no longer exists.");
+            ? T("Há uma tarefa em andamento: termine ou interrompa para abrir outra.", "A task is running: finish or stop it to open another one.", "Hay una tarea en ejecución: termínela o interrúmpala para abrir otra.")
+            : r == null ? "" : worktreeExists ? $"{r.Branch} · {r.Worktree}" : T("O worktree desta tarefa não existe mais.", "This task's worktree no longer exists.", "El worktree de esta tarea ya no existe.");
     }
 
     private void OnOpenClick(object sender, RoutedEventArgs e)
@@ -81,7 +81,8 @@ public partial class HistoryWindow : Window
     {
         if (Selected is not { } r) return;
         var ask = T($"Remover a tarefa \"{r.Info.Title}\"?\n\nIsso apaga o worktree, o branch {r.Branch} e o registro do Histórico. O código que não foi juntado ao seu repositório se perde. Não dá para desfazer.",
-                    $"Remove the task \"{r.Info.Title}\"?\n\nThis deletes the worktree, the branch {r.Branch} and the History record. Code not merged into your repository is lost. This cannot be undone.");
+                    $"Remove the task \"{r.Info.Title}\"?\n\nThis deletes the worktree, the branch {r.Branch} and the History record. Code not merged into your repository is lost. This cannot be undone.",
+                    $"¿Eliminar la tarea \"{r.Info.Title}\"?\n\nEsto borra el worktree, la rama {r.Branch} y el registro del Historial. El código no integrado en su repositorio se pierde. No se puede deshacer.");
         if (MessageBox.Show(this, ask, "NXPilot", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
         try
         {
@@ -92,7 +93,7 @@ public partial class HistoryWindow : Window
         }
         catch (Exception ex)
         {
-            StatusText.Text = T("Não foi possível remover: ", "Could not remove: ") + ex.Message;
+            StatusText.Text = T("Não foi possível remover: ", "Could not remove: ", "No se pudo eliminar: ") + ex.Message;
         }
     }
 }

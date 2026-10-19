@@ -23,21 +23,23 @@ public partial class WorkItemsWindow : Window
     public WorkItemsWindow()
     {
         InitializeComponent();
-        Title = Heading.Text = T("Work items · Azure DevOps", "Work items · Azure DevOps");
+        Title = Heading.Text = T("Work items · Azure DevOps", "Work items · Azure DevOps", "Work items · Azure DevOps");
         SubHeading.Text = _connection == null
             ? T("Conexão não encontrada. Configure o Azure DevOps no NXProject (organização, projeto e PAT) — o NXPilot usa a mesma conexão.",
-                "Connection not found. Set up Azure DevOps in NXProject (organization, project and PAT) — NXPilot uses the same connection.")
+                "Connection not found. Set up Azure DevOps in NXProject (organization, project and PAT) — NXPilot uses the same connection.",
+                "Conexión no encontrada. Configure Azure DevOps en NXProject (organización, proyecto y PAT) — NXPilot usa la misma conexión.")
             : T($"Itens abertos atribuídos a você em {_connection.Project} · conexão do NXProject, somente leitura.",
-                $"Open items assigned to you in {_connection.Project} · NXProject connection, read-only.");
+                $"Open items assigned to you in {_connection.Project} · NXProject connection, read-only.",
+                $"Elementos abiertos asignados a usted en {_connection.Project} · conexión de NXProject, solo lectura.");
         ColId.Header = "ID";
-        ColType.Header = T("Tipo", "Type");
-        ColTitle.Header = T("Título", "Title");
-        ColState.Header = T("Estado", "State");
-        DetailCriteriaLabel.Text = T("CRITÉRIOS DE ACEITE", "ACCEPTANCE CRITERIA");
-        RefreshButton.Content = T("Atualizar", "Refresh");
-        OpenWebButton.Content = T("Abrir no DevOps", "Open in DevOps");
-        CreateButton.Content = T("Criar tarefa a partir deste item ▶", "Create task from this item ▶");
-        CloseButton.Content = T("Fechar", "Close");
+        ColType.Header = T("Tipo", "Type", "Tipo");
+        ColTitle.Header = T("Título", "Title", "Título");
+        ColState.Header = T("Estado", "State", "Estado");
+        DetailCriteriaLabel.Text = T("CRITÉRIOS DE ACEITE", "ACCEPTANCE CRITERIA", "CRITERIOS DE ACEPTACIÓN");
+        RefreshButton.Content = T("Atualizar", "Refresh", "Actualizar");
+        OpenWebButton.Content = T("Abrir no DevOps", "Open in DevOps", "Abrir en DevOps");
+        CreateButton.Content = T("Criar tarefa a partir deste item ▶", "Create task from this item ▶", "Crear tarea a partir de este elemento ▶");
+        CloseButton.Content = T("Fechar", "Close", "Cerrar");
         Loaded += async (_, _) => await LoadAsync();
     }
 
@@ -45,13 +47,13 @@ public partial class WorkItemsWindow : Window
     {
         CreateButton.IsEnabled = OpenWebButton.IsEnabled = false;
         if (_connection == null) { RefreshButton.IsEnabled = false; return; }
-        StatusText.Text = T("Consultando o Azure DevOps…", "Querying Azure DevOps…");
+        StatusText.Text = T("Consultando o Azure DevOps…", "Querying Azure DevOps…", "Consultando Azure DevOps…");
         try
         {
             using var client = new AzureDevOpsClient(_connection);
             var items = await client.MyOpenWorkItemsAsync();
             Grid.ItemsSource = items;
-            StatusText.Text = T($"{items.Count} item(ns).", $"{items.Count} item(s).");
+            StatusText.Text = T($"{items.Count} item(ns).", $"{items.Count} item(s).", $"{items.Count} elemento(s).");
             if (items.Count > 0) Grid.SelectedIndex = 0;
         }
         catch (Exception ex) { StatusText.Text = ex.Message; }
@@ -62,8 +64,8 @@ public partial class WorkItemsWindow : Window
         var w = Grid.SelectedItem as WorkItem;
         CreateButton.IsEnabled = OpenWebButton.IsEnabled = w != null;
         DetailTitle.Text = w == null ? "" : $"#{w.Id} · {w.Title}";
-        DetailDescription.Text = w == null ? "" : w.Description.Length > 0 ? w.Description : T("(sem descrição)", "(no description)");
-        DetailCriteria.Text = w == null ? "" : w.AcceptanceCriteria.Length > 0 ? w.AcceptanceCriteria : T("(sem critérios de aceite)", "(no acceptance criteria)");
+        DetailDescription.Text = w == null ? "" : w.Description.Length > 0 ? w.Description : T("(sem descrição)", "(no description)", "(sin descripción)");
+        DetailCriteria.Text = w == null ? "" : w.AcceptanceCriteria.Length > 0 ? w.AcceptanceCriteria : T("(sem critérios de aceite)", "(no acceptance criteria)", "(sin criterios de aceptación)");
     }
 
     private async void OnRefreshClick(object sender, RoutedEventArgs e) => await LoadAsync();

@@ -54,6 +54,7 @@
                               SelectionChanged="OnLanguageChanged" ToolTip="Idioma / Language">
                         <ComboBoxItem Content="PT" Tag="pt-BR"/>
                         <ComboBoxItem Content="EN" Tag="en-US"/>
+                        <ComboBoxItem Content="ES" Tag="es-ES"/>
                     </ComboBox>
                     <Button x:Name="HelpButton" Content="{DynamicResource Main_Ajuda}" Click="OnHelpClick" Margin="8,0,0,0"
                             Style="{StaticResource SubtleButton}" ToolTip="{DynamicResource Main_LicoesGuiadasSobreO}"/>
@@ -475,7 +476,7 @@
                                     </Grid>
                                     <TextBlock Text="{DynamicResource Main_VerifyTokenColeNo}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>
                                     <DockPanel>
-                                        <Button DockPanel.Dock="Right" Content="Copiar" Command="{Binding CopyVerifyTokenCommand}" Style="{StaticResource SubtleButton}" Padding="8,3" Margin="6,0,0,0"/>
+                                        <Button DockPanel.Dock="Right" Content="{DynamicResource Main_Copiar}" Command="{Binding CopyVerifyTokenCommand}" Style="{StaticResource SubtleButton}" Padding="8,3" Margin="6,0,0,0"/>
                                         <TextBox Text="{Binding VerifyToken, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="4,3"/>
                                     </DockPanel>
                                     <TextBlock Text="{DynamicResource Main_AMetaSoEntrega}" Style="{StaticResource Muted}" Margin="0,8,0,2"/>

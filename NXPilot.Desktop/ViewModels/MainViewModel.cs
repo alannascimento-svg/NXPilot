@@ -41,7 +41,7 @@ public sealed partial class MainViewModel : ObservableObject
     public NotificationCenter Notifications { get; } = new();
     public ChannelsViewModel Channels { get; }
 
-    public string TaskTitle => CurrentTask?.Title ?? T("Story #4521 · Orquestrador de agentes com DecisionGate (exemplo)", "Story #4521 · Agent orchestrator with DecisionGate (sample)");
+    public string TaskTitle => CurrentTask?.Title ?? T("Story #4521 · Orquestrador de agentes com DecisionGate (exemplo)", "Story #4521 · Agent orchestrator with DecisionGate (sample)", "Story #4521 · Orquestador de agentes con DecisionGate (ejemplo)");
 
     public ObservableCollection<AgentItem> Agents { get; } = new();
     public ObservableCollection<ArtifactItem> Artifacts { get; } = new();
@@ -135,7 +135,7 @@ public sealed partial class MainViewModel : ObservableObject
     public void StopAllAgents()
     {
         foreach (var a in Agents.Where(a => a.Status is "Rodando" or "Revisando").ToList())
-            AddLog(a.Name, T("encerrado", "stopped"), T($"{a.Task} — interrompido ao fechar o NXPilot", $"{a.Task} — stopped when NXPilot closed"));
+            AddLog(a.Name, T("encerrado", "stopped", "finalizado"), T($"{a.Task} — interrompido ao fechar o NXPilot", $"{a.Task} — stopped when NXPilot closed", $"{a.Task} — detenido al cerrar NXPilot"));
         _taskCts?.Cancel(); // agente real: mata o processo do Claude (e os filhos)
         // Pedidos parados no gate: nega, para o hook não ficar esperando um app que fechou.
         foreach (var d in PendingDecisions.ToList()) d.Response?.TrySetResult(false);
@@ -154,8 +154,8 @@ public sealed partial class MainViewModel : ObservableObject
         var task = new TaskSession(info, DateTime.Now.ToString("yyyyMMdd-HHmmss"));
         ShowTask(task);
         Artifacts.Add(new ArtifactItem("📄", "Spec · " + info.Title, Trim(info.Intent, 80)));
-        SetAgent(ExecutorName, "Rodando", T("planejando", "planning"));
-        AddLog(T("Você", "You"), T("tarefa", "task"), T($"Nova tarefa: {info.Title} ({info.RepoPath})", $"New task: {info.Title} ({info.RepoPath})"));
+        SetAgent(ExecutorName, "Rodando", T("planejando", "planning", "planificando"));
+        AddLog(T("Você", "You", "Usted"), T("tarefa", "task", "tarea"), T($"Nova tarefa: {info.Title} ({info.RepoPath})", $"New task: {info.Title} ({info.RepoPath})", $"Nueva tarea: {info.Title} ({info.RepoPath})"));
 
         try
         {
@@ -174,7 +174,7 @@ public sealed partial class MainViewModel : ObservableObject
         task.State = TaskState.Planning;
         Persist();
         task.PowerBi = NXPilot.Integrations.PowerBiProject.Detect(task.Worktree!);
-        if (task.PowerBi is { } pbi) AddLog("Power BI", "info", T($"Projeto PBIP detectado: {pbi.Name} — o agente edita TMDL/PBIR como código.", $"PBIP project detected: {pbi.Name} — the agent edits TMDL/PBIR as code."));
+        if (task.PowerBi is { } pbi) AddLog("Power BI", "info", T($"Projeto PBIP detectado: {pbi.Name} — o agente edita TMDL/PBIR como código.", $"PBIP project detected: {pbi.Name} — the agent edits TMDL/PBIR as code.", $"Proyecto PBIP detectado: {pbi.Name} — el agente edita TMDL/PBIR como código."));
         var adapter = NewExecutor(task);
         var planPrompt = await Planner.PlanPromptAsync(new PlanRequest(info.Title, info.Intent, info.Criteria, task.PowerBi?.Guidance(task.Worktree!)));
         var plan = await RunAgentAsync(task, adapter, new AgentRequest(planPrompt, task.Worktree!, AgentMode.Plan,
@@ -187,9 +187,9 @@ public sealed partial class MainViewModel : ObservableObject
         task.PlanText = outcome.HumanPlan;
         task.State = TaskState.AwaitingApproval;
         RenderPhases(task);
-        Artifacts.Add(new ArtifactItem("🗺", T($"Plano do agente · {task.Phases.Count} fase(s)", $"Agent plan · {task.Phases.Count} phase(s)"), T("aguardando aprovação", "awaiting approval")));
-        SetAgent(ExecutorName, "Aguardando", T("plano pronto — aguardando você", "plan ready — waiting for you"));
-        Notifications.Notify(NotificationKind.Task, T("Plano pronto para aprovar", "Plan ready for approval"), T($"{task.Title} · {task.Phases.Count} fase(s)", $"{task.Title} · {task.Phases.Count} phase(s)"));
+        Artifacts.Add(new ArtifactItem("🗺", T($"Plano do agente · {task.Phases.Count} fase(s)", $"Agent plan · {task.Phases.Count} phase(s)", $"Plan del agente · {task.Phases.Count} fase(s)"), T("aguardando aprovação", "awaiting approval", "esperando aprobación")));
+        SetAgent(ExecutorName, "Aguardando", T("plano pronto — aguardando você", "plan ready — waiting for you", "plan listo — esperando por usted"));
+        Notifications.Notify(NotificationKind.Task, T("Plano pronto para aprovar", "Plan ready for approval", "Plan listo para aprobar"), T($"{task.Title} · {task.Phases.Count} fase(s)", $"{task.Title} · {task.Phases.Count} phase(s)", $"{task.Title} · {task.Phases.Count} fase(s)"));
         Persist();
     }
 
@@ -202,8 +202,8 @@ public sealed partial class MainViewModel : ObservableObject
     private async Task ApprovePlan()
     {
         if (CurrentTask is not { CanApprove: true } task) return;
-        AddLog(T("Você", "You"), T("aprovado", "approved"), T($"Plano aprovado: {task.Title}", $"Plan approved: {task.Title}"));
-        ReplacePlanArtifact(T("aprovado por você", "approved by you"));
+        AddLog(T("Você", "You", "Usted"), T("aprovado", "approved", "aprobado"), T($"Plano aprovado: {task.Title}", $"Plan approved: {task.Title}", $"Plan aprobado: {task.Title}"));
+        ReplacePlanArtifact(T("aprovado por você", "approved by you", "aprobado por usted"));
         task.State = TaskState.Executing;
         var executor = _executor ?? NewExecutor(task);
 
@@ -212,7 +212,7 @@ public sealed partial class MainViewModel : ObservableObject
             task.PhaseStatus[phase.Number - 1] = "Rodando";
             task.RefreshTexts();
             RenderPhases(task);
-            SetAgent(ExecutorName, "Rodando", T($"fase {phase.Number}/{task.Phases.Count}: {phase.Title}", $"phase {phase.Number}/{task.Phases.Count}: {phase.Title}"));
+            SetAgent(ExecutorName, "Rodando", T($"fase {phase.Number}/{task.Phases.Count}: {phase.Title}", $"phase {phase.Number}/{task.Phases.Count}: {phase.Title}", $"fase {phase.Number}/{task.Phases.Count}: {phase.Title}"));
             Persist();
 
             var phasePrompt = await Planner.PhasePromptAsync(phase, task.Phases.Count);
@@ -220,24 +220,25 @@ public sealed partial class MainViewModel : ObservableObject
                 task.Info.Executor == ExecutorKind.Codex ? task.Info.CodexModel : task.Info.Model));
             if (task.State != TaskState.Executing) { RenderPhases(task); return; }
 
-            var committed = await GitWorktree.CommitAllAsync(task.Worktree!, $"NXPilot · {T("Fase", "Phase")} {phase.Number}: {phase.Title}");
+            var committed = await GitWorktree.CommitAllAsync(task.Worktree!, $"NXPilot · {T("Fase", "Phase", "Fase")} {phase.Number}: {phase.Title}");
             task.PhaseStatus[phase.Number - 1] = "Concluido";
-            AddLog(ExecutorName, T("fase", "phase"), T($"Fase {phase.Number} concluída{(committed ? " (commit no worktree)" : " (sem alterações)")}: {Trim(summary, 160)}",
-                $"Phase {phase.Number} done{(committed ? " (committed in the worktree)" : " (no changes)")}: {Trim(summary, 160)}"));
+            AddLog(ExecutorName, T("fase", "phase", "fase"), T($"Fase {phase.Number} concluída{(committed ? " (commit no worktree)" : " (sem alterações)")}: {Trim(summary, 160)}",
+                $"Phase {phase.Number} done{(committed ? " (committed in the worktree)" : " (no changes)")}: {Trim(summary, 160)}",
+                $"Fase {phase.Number} completada{(committed ? " (commit en el worktree)" : " (sin cambios)")}: {Trim(summary, 160)}"));
         }
         RenderPhases(task);
 
         var diff = await GitWorktree.DiffAsync(task.Worktree!, task.BaseCommit);
         RenderDiff(diff);
         var files = diff.Split('\n').Count(l => l.StartsWith("diff --git"));
-        Artifacts.Add(new ArtifactItem("✔", T("Resultado da execução", "Execution result"), T($"{files} arquivo(s) alterado(s) · branch {task.Branch}", $"{files} file(s) changed · branch {task.Branch}")));
+        Artifacts.Add(new ArtifactItem("✔", T("Resultado da execução", "Execution result", "Resultado de la ejecución"), T($"{files} arquivo(s) alterado(s) · branch {task.Branch}", $"{files} file(s) changed · branch {task.Branch}", $"{files} archivo(s) modificado(s) · branch {task.Branch}")));
 
         await VerifyAsync(task, diff);
         task.State = TaskState.Done;
         EndExecutor();
-        SetAgent(ExecutorName, "Concluido", T("concluída", "done"));
+        SetAgent(ExecutorName, "Concluido", T("concluída", "done", "completada"));
         Notifications.Notify(task.Verification is { Approved: false } ? NotificationKind.Failure : NotificationKind.Task,
-            T("Tarefa concluída", "Task finished"), $"{task.Title} · {task.StateLabel}");
+            T("Tarefa concluída", "Task finished", "Tarea completada"), $"{task.Title} · {task.StateLabel}");
         Persist();
     }
 
@@ -250,7 +251,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (task.Info.Reviewer == ReviewerKind.None || diff.Trim().Length == 0)
         {
-            AddLog("Gate", "info", T("Verificação cruzada desligada ou sem alterações para revisar.", "Cross-verification off or nothing to review."));
+            AddLog("Gate", "info", T("Verificação cruzada desligada ou sem alterações para revisar.", "Cross-verification off or nothing to review.", "Verificación cruzada desactivada o sin cambios para revisar."));
             return;
         }
         task.State = TaskState.Verifying;
@@ -259,7 +260,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (ChooseReviewer(task) is not { } choice)
         {
-            AddLog("Gate", T("aviso", "warning"), T("Nenhum agente instalado para revisar — verificação pulada.", "No agent installed to review — verification skipped."));
+            AddLog("Gate", T("aviso", "warning", "aviso"), T("Nenhum agente instalado para revisar — verificação pulada.", "No agent installed to review — verification skipped.", "Ningún agente instalado para revisar — verificación omitida."));
             return;
         }
         // Os dois revisores rodam SOMENTE LEITURA numa sessão nova (Codex: sandbox read-only; Claude: modo plan).
@@ -268,9 +269,10 @@ public sealed partial class MainViewModel : ObservableObject
             : NewClaude();
         if (choice.SameAsExecutor)
             AddLog("Gate", "info", T($"Só o {reviewer.Name} está instalado — ele revisa numa sessão nova, somente leitura (com os dois agentes a revisão é cruzada).",
-                $"Only {reviewer.Name} is installed — it reviews in a new read-only session (with both agents the review is cross-checked)."));
+                $"Only {reviewer.Name} is installed — it reviews in a new read-only session (with both agents the review is cross-checked).",
+                $"Solo {reviewer.Name} está instalado — revisa en una sesión nueva, de solo lectura (con los dos agentes la revisión es cruzada)."));
 
-        SetAgent(reviewer.Name, "Revisando", T("verificação cruzada (somente leitura)", "cross-verification (read-only)"));
+        SetAgent(reviewer.Name, "Revisando", T("verificação cruzada (somente leitura)", "cross-verification (read-only)", "verificación cruzada (solo lectura)"));
         var answer = await RunAgentAsync(task, reviewer, new AgentRequest(prompt, task.Worktree!, AgentMode.Plan,
             Model: reviewer is CodexAdapter ? task.Info.CodexModel : task.Info.Model), failTask: false);
 
@@ -279,9 +281,10 @@ public sealed partial class MainViewModel : ObservableObject
             result = result with { Approved = false, Findings = pbiFindings.Concat(result.Findings).ToList() };
         task.Verification = result;
         RenderVerification(result);
-        AddLog(reviewer.Name, T("verificação", "verification"),
+        AddLog(reviewer.Name, T("verificação", "verification", "verificación"),
             T($"{(result.Approved ? "aprovado" : "NÃO aprovado")} · {result.Findings.Count(f => f.Severity == "Critico")} crítico(s), {result.Findings.Count(f => f.Severity == "Maior")} maior(es), {result.Findings.Count(f => f.Severity == "Menor")} menor(es) · {Trim(result.Summary, 160)}",
-              $"{(result.Approved ? "approved" : "NOT approved")} · {result.Findings.Count(f => f.Severity == "Critico")} critical, {result.Findings.Count(f => f.Severity == "Maior")} major, {result.Findings.Count(f => f.Severity == "Menor")} minor · {Trim(result.Summary, 160)}"));
+              $"{(result.Approved ? "approved" : "NOT approved")} · {result.Findings.Count(f => f.Severity == "Critico")} critical, {result.Findings.Count(f => f.Severity == "Maior")} major, {result.Findings.Count(f => f.Severity == "Menor")} minor · {Trim(result.Summary, 160)}",
+              $"{(result.Approved ? "aprobado" : "NO aprobado")} · {result.Findings.Count(f => f.Severity == "Critico")} crítico(s), {result.Findings.Count(f => f.Severity == "Maior")} mayor(es), {result.Findings.Count(f => f.Severity == "Menor")} menor(es) · {Trim(result.Summary, 160)}"));
     }
 
     [RelayCommand]
@@ -290,9 +293,9 @@ public sealed partial class MainViewModel : ObservableObject
         if (CurrentTask is not { CanDiscard: true } task) return;
         task.State = TaskState.Discarded;
         EndExecutor();
-        ReplacePlanArtifact(T("descartado", "discarded"));
-        SetAgent(ExecutorName, "Concluido", T("plano descartado", "plan discarded"));
-        AddLog(T("Você", "You"), T("descartado", "discarded"), task.Title);
+        ReplacePlanArtifact(T("descartado", "discarded", "descartado"));
+        SetAgent(ExecutorName, "Concluido", T("plano descartado", "plan discarded", "plan descartado"));
+        AddLog(T("Você", "You", "Usted"), T("descartado", "discarded", "descartado"), task.Title);
         Persist();
     }
 
@@ -303,8 +306,8 @@ public sealed partial class MainViewModel : ObservableObject
         _taskCts?.Cancel();
         task.State = TaskState.Stopped;
         EndExecutor();
-        SetAgent(ExecutorName, "Concluido", T("interrompida", "stopped"));
-        AddLog(T("Você", "You"), T("interrompido", "stopped"), task.Title);
+        SetAgent(ExecutorName, "Concluido", T("interrompida", "stopped", "detenida"));
+        AddLog(T("Você", "You", "Usted"), T("interrompido", "stopped", "detenido"), task.Title);
         Persist();
     }
 
@@ -314,15 +317,15 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (CurrentTask?.PowerBi is not { } pbi) return;
         var png = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NXPilot", "captures", $"{CurrentTask.Id}-{DateTime.Now:HHmmss}.png");
-        AddLog("Power BI", "info", T($"Abrindo {pbi.Name} no Power BI Desktop…", $"Opening {pbi.Name} in Power BI Desktop…"));
+        AddLog("Power BI", "info", T($"Abrindo {pbi.Name} no Power BI Desktop…", $"Opening {pbi.Name} in Power BI Desktop…", $"Abriendo {pbi.Name} en Power BI Desktop…"));
         try
         {
             await Services.PowerBiDesktop.OpenAndCaptureAsync(pbi.PbipPath, png);
-            Artifacts.Add(new ArtifactItem("📸", T("Captura do Power BI", "Power BI capture"), png));
-            AddLog("Power BI", T("captura", "capture"), png);
+            Artifacts.Add(new ArtifactItem("📸", T("Captura do Power BI", "Power BI capture", "Captura de Power BI"), png));
+            AddLog("Power BI", T("captura", "capture", "captura"), png);
             Process.Start(new ProcessStartInfo(png) { UseShellExecute = true });
         }
-        catch (Exception ex) { AddLog("Power BI", T("erro", "error"), ex.Message); Notifications.Notify(NotificationKind.Failure, "Power BI", ex.Message); }
+        catch (Exception ex) { AddLog("Power BI", T("erro", "error", "error"), ex.Message); Notifications.Notify(NotificationKind.Failure, "Power BI", ex.Message); }
     }
 
     [RelayCommand]
@@ -343,14 +346,14 @@ public sealed partial class MainViewModel : ObservableObject
         Log.Clear();
         foreach (var entry in task.Log.OrderByDescending(l => l.Time)) Log.Add(entry);
         Artifacts.Add(new ArtifactItem("📄", "Spec · " + task.Title, Trim(task.Info.Intent, 80)));
-        if (task.Phases.Count > 0) Artifacts.Add(new ArtifactItem("🗺", T($"Plano do agente · {task.Phases.Count} fase(s)", $"Agent plan · {task.Phases.Count} phase(s)"), task.StateLabel));
+        if (task.Phases.Count > 0) Artifacts.Add(new ArtifactItem("🗺", T($"Plano do agente · {task.Phases.Count} fase(s)", $"Agent plan · {task.Phases.Count} phase(s)", $"Plan del agente · {task.Phases.Count} fase(s)"), task.StateLabel));
         RenderPhases(task);
         if (task.Verification is { } v) RenderVerification(v);
         SetAgent(ExecutorName, "Concluido", task.StateLabel);
         if (task.Worktree is { } wt && Directory.Exists(wt))
             RenderDiff(await GitWorktree.DiffAsync(wt, task.BaseCommit));
         else
-            AppendTerminal(T("(o worktree desta tarefa não existe mais)", "(this task's worktree no longer exists)"));
+            AppendTerminal(T("(o worktree desta tarefa não existe mais)", "(this task's worktree no longer exists)", "(el worktree de esta tarea ya no existe)"));
     }
 
     /// <summary>Limpa a tela de exemplo/tarefa anterior e passa a mostrar esta tarefa.</summary>
@@ -388,12 +391,12 @@ public sealed partial class MainViewModel : ObservableObject
                     case AgentEventKind.Stderr: AppendTerminal("[aviso] " + ev.Text); break;
                     case AgentEventKind.Result:
                         if (ev.Text.Length > 0) finalText = ev.Text;
-                        AppendTerminal("[ok] " + T("resultado recebido", "result received"));
+                        AppendTerminal("[ok] " + T("resultado recebido", "result received", "resultado recibido"));
                         break;
                     case AgentEventKind.Error:
                         AppendTerminal("[erro] " + ev.Text);
                         if (failTask && task.State is TaskState.Planning or TaskState.Executing) Fail(task, ev.Text);
-                        else AddLog(adapter.Name, T("erro", "error"), ev.Text);
+                        else AddLog(adapter.Name, T("erro", "error", "error"), ev.Text);
                         break;
                 }
             }
@@ -401,7 +404,7 @@ public sealed partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             if (failTask) Fail(task, ex.Message);
-            else AddLog(adapter.Name, T("erro", "error"), ex.Message);
+            else AddLog(adapter.Name, T("erro", "error", "error"), ex.Message);
         }
         return finalText;
     }
@@ -422,7 +425,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private IAgentPlanner CreatePlanner()
     {
-        var planner = IntelligenceModule.CreatePlanner(msg => _ = OnUi(() => AddLog("Planner", T("aviso", "warning"), msg)), out var status);
+        var planner = IntelligenceModule.CreatePlanner(msg => _ = OnUi(() => AddLog("Planner", T("aviso", "warning", "aviso"), msg)), out var status);
         AddLog("Planner", "info", status);
         return planner;
     }
@@ -457,20 +460,20 @@ public sealed partial class MainViewModel : ObservableObject
         var context = GateContextRules.Evaluate(req, worktree);
         if (context == GateContextDecision.AllowPlanFile)
         {
-            await OnUi(() => AddLog("Gate", T("auto-aprovado", "auto-approved"), T($"{req.Action} (arquivo de plano do Claude)", $"{req.Action} (Claude plan file)")));
-            return new GateResponse(true, T("arquivo de plano do Claude", "Claude plan file"));
+            await OnUi(() => AddLog("Gate", T("auto-aprovado", "auto-approved", "auto-aprobado"), T($"{req.Action} (arquivo de plano do Claude)", $"{req.Action} (Claude plan file)", $"{req.Action} (archivo de plan de Claude)")));
+            return new GateResponse(true, T("arquivo de plano do Claude", "Claude plan file", "archivo de plan de Claude"));
         }
 
         var r = await Task.Run(() => _gate.ClassifyAsync(req.Action));
         if (context == GateContextDecision.ForceHigh)
-            r = r with { Level = RiskLevel.Alto, Confidence = 1, Reason = T("escreve FORA do worktree da tarefa", "writes OUTSIDE the task worktree") };
+            r = r with { Level = RiskLevel.Alto, Confidence = 1, Reason = T("escreve FORA do worktree da tarefa", "writes OUTSIDE the task worktree", "escribe FUERA del worktree de la tarea") };
 
         if (DecisionGate.Decide(r) == GateOutcome.AutoApprove)
         {
             await OnUi(() =>
             {
                 AutoApprovedCount++;
-                AddLog("Gate", T("auto-aprovado", "auto-approved"), $"{agent}: {req.Action} ({r.Level}, {r.Confidence:P0})");
+                AddLog("Gate", T("auto-aprovado", "auto-approved", "auto-aprobado"), $"{agent}: {req.Action} ({r.Level}, {r.Confidence:P0})");
             });
             return new GateResponse(true, $"{r.Level}: {r.Reason}");
         }
@@ -483,21 +486,21 @@ public sealed partial class MainViewModel : ObservableObject
             d.Level = r.Level;
             d.RiskDetail = $"{r.Confidence:P0} · {AiLabViewModel.ShortEngine(r.Engine)} · {BenchmarkRow.FormatMs(r.Elapsed.TotalMilliseconds)}" + (r.Reason != null ? $"\n{r.Reason}" : "");
             PendingDecisions.Insert(0, d);
-            AddLog(agent, T("pedido", "request"), $"{req.Action} → {r.Level}");
-            Notifications.Notify(NotificationKind.Decision, T($"Decisão pendente · risco {r.Level}", $"Pending decision · {r.Level} risk"), $"{agent}: {req.Action}");
+            AddLog(agent, T("pedido", "request", "solicitud"), $"{req.Action} → {r.Level}");
+            Notifications.Notify(NotificationKind.Decision, T($"Decisão pendente · risco {r.Level}", $"Pending decision · {r.Level} risk", $"Decisión pendiente · riesgo {r.Level}"), $"{agent}: {req.Action}");
         });
         var allowed = await response.Task;
         return new GateResponse(allowed, allowed
-            ? T("aprovado pelo usuário no NXPilot", "approved by the user in NXPilot")
-            : T("NEGADO pelo usuário no NXPilot — não execute esta ação; ajuste o plano ou pergunte.", "DENIED by the user in NXPilot — do not run this action; adjust the plan or ask."));
+            ? T("aprovado pelo usuário no NXPilot", "approved by the user in NXPilot", "aprobado por el usuario en NXPilot")
+            : T("NEGADO pelo usuário no NXPilot — não execute esta ação; ajuste o plano ou pergunte.", "DENIED by the user in NXPilot — do not run this action; adjust the plan or ask.", "DENEGADO por el usuario en NXPilot — no ejecute esta acción; ajuste el plan o pregunte."));
     }
 
     private void Fail(TaskSession task, string message)
     {
         task.State = TaskState.Failed;
-        SetAgent(ExecutorName, "Concluido", T("falhou", "failed"));
-        Notifications.Notify(NotificationKind.Failure, T("Tarefa falhou", "Task failed"), $"{task.Title} · {Trim(message, 160)}");
-        AddLog(ExecutorName, T("erro", "error"), message);
+        SetAgent(ExecutorName, "Concluido", T("falhou", "failed", "falló"));
+        Notifications.Notify(NotificationKind.Failure, T("Tarefa falhou", "Task failed", "La tarea falló"), $"{task.Title} · {Trim(message, 160)}");
+        AddLog(ExecutorName, T("erro", "error", "error"), message);
         EndExecutor();
         Persist();
     }
@@ -519,7 +522,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         var selected = SelectedPhase?.Number;
         Phases.Clear();
-        string Kind(string change) => change switch { "new" => T("novo", "new"), "delete" => T("remover", "delete"), _ => T("alterar", "change") };
+        string Kind(string change) => change switch { "new" => T("novo", "new", "nuevo"), "delete" => T("remover", "delete", "eliminar"), _ => T("alterar", "change", "modificar") };
         foreach (var p in task.Phases)
         {
             var status = task.PhaseStatus.ElementAtOrDefault(p.Number - 1) ?? "Pendente";
@@ -529,7 +532,7 @@ public sealed partial class MainViewModel : ObservableObject
         if (task.Info.Reviewer != ReviewerKind.None)
         {
             var vStatus = task.Verification != null ? "Concluido" : task.State == TaskState.Verifying ? "Rodando" : "Pendente";
-            Phases.Add(new PhaseItem(task.Phases.Count + 1, T("Verificação cruzada", "Cross-verification"), vStatus,
+            Phases.Add(new PhaseItem(task.Phases.Count + 1, T("Verificação cruzada", "Cross-verification", "Verificación cruzada"), vStatus,
                 ChooseReviewer(task)?.Reviewer == AgentKind.Codex ? "Codex" : "Claude Code", vStatus == "Concluido" ? 1 : vStatus == "Rodando" ? 0.5 : 0, Array.Empty<FileChangeItem>()));
         }
         SelectedPhase = Phases.FirstOrDefault(p => p.Number == selected) ?? Phases.FirstOrDefault(p => p.Status == "Rodando") ?? Phases.FirstOrDefault();
@@ -557,8 +560,8 @@ public sealed partial class MainViewModel : ObservableObject
     public bool ShowVerification => CurrentTask == null || CurrentTask.Verification != null;
 
     public string VerificationTitle => CurrentTask?.Verification is { } v
-        ? T($"VERIFICAÇÃO · {v.Reviewer.ToUpperInvariant()}", $"VERIFICATION · {v.Reviewer.ToUpperInvariant()}")
-        : T("VERIFICAÇÃO · FASE 1", "VERIFICATION · PHASE 1");
+        ? T($"VERIFICAÇÃO · {v.Reviewer.ToUpperInvariant()}", $"VERIFICATION · {v.Reviewer.ToUpperInvariant()}", $"VERIFICACIÓN · {v.Reviewer.ToUpperInvariant()}")
+        : T("VERIFICAÇÃO · FASE 1", "VERIFICATION · PHASE 1", "VERIFICACIÓN · FASE 1");
 
     [ObservableProperty] private string _verificationSummary = "";
 
@@ -596,7 +599,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// </summary>
     public async Task RebuildGateAsync()
     {
-        GateStatus = T("Gate: carregando modelos…", "Gate: loading models…");
+        GateStatus = T("Gate: carregando modelos…", "Gate: loading models…", "Gate: cargando modelos…");
         GateOnnx?.Dispose();
         GateSlow?.Dispose();
         GateOnnx = null;
@@ -605,8 +608,8 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (!OnnxStore.IsInstalled)
         {
-            GateStatus = T("Gate: só Regras (baixe o modelo ONNX no Laboratório IA)", "Gate: rules only (download the ONNX model in the AI Lab)");
-            AddLog("Gate", T("aviso", "warning"), T($"Modelo ONNX ausente em {OnnxStore.Folder}; usando só regras.", $"ONNX model missing in {OnnxStore.Folder}; using rules only."));
+            GateStatus = T("Gate: só Regras (baixe o modelo ONNX no Laboratório IA)", "Gate: rules only (download the ONNX model in the AI Lab)", "Gate: solo Reglas (descargue el modelo ONNX en el Laboratorio IA)");
+            AddLog("Gate", T("aviso", "warning", "aviso"), T($"Modelo ONNX ausente em {OnnxStore.Folder}; usando só regras.", $"ONNX model missing in {OnnxStore.Folder}; using rules only.", $"Modelo ONNX ausente en {OnnxStore.Folder}; usando solo reglas."));
             await ClassifyPendingAsync();
             return;
         }
@@ -620,7 +623,7 @@ public sealed partial class MainViewModel : ObservableObject
         catch (Exception ex) when (device == OnnxDevice.DirectML)
         {
             onnx.Dispose();
-            AddLog("Gate", T("aviso", "warning"), T($"GPU (DirectML) indisponível: {ex.Message} — voltando para CPU.", $"GPU (DirectML) unavailable: {ex.Message} — falling back to CPU."));
+            AddLog("Gate", T("aviso", "warning", "aviso"), T($"GPU (DirectML) indisponível: {ex.Message} — voltando para CPU.", $"GPU (DirectML) unavailable: {ex.Message} — falling back to CPU.", $"GPU (DirectML) no disponible: {ex.Message} — volviendo a CPU."));
             Lab.ReportGpuUnavailable();
             onnx = new OnnxRiskClassifier(OnnxStore, OnnxDevice.Cpu);
             await onnx.InitializeAsync();
@@ -631,7 +634,7 @@ public sealed partial class MainViewModel : ObservableObject
         // 3º degrau (segundos para carregar o LLaMA) ficar pronto, e a cascata assume depois.
         _gate = new HybridRiskClassifier(Rules, GateOnnx);
         var provider = Lab.Provider;
-        GateStatus = $"Gate: {_gate.Name}" + (Lab.UseCascade ? T($" (preparando {AiProviderSettings.DisplayName(provider.Kind)}…)", $" (preparing {AiProviderSettings.DisplayName(provider.Kind)}…)") : "");
+        GateStatus = $"Gate: {_gate.Name}" + (Lab.UseCascade ? T($" (preparando {AiProviderSettings.DisplayName(provider.Kind)}…)", $" (preparing {AiProviderSettings.DisplayName(provider.Kind)}…)", $" (preparando {AiProviderSettings.DisplayName(provider.Kind)}…)") : "");
         await ClassifyPendingAsync();
 
         if (Lab.UseCascade)
@@ -640,7 +643,7 @@ public sealed partial class MainViewModel : ObservableObject
             IRiskClassifier slow = provider.IsRemote ? new ChatRiskClassifier(provider) : new LlamaRiskClassifier();
             if (slow is LlamaRiskClassifier { IsInstalled: false } missing)
             {
-                AddLog("Gate", T("aviso", "warning"), T($"LLaMA não instalado em {missing.Folder}; cascata desligada.", $"LLaMA not installed in {missing.Folder}; cascade off."));
+                AddLog("Gate", T("aviso", "warning", "aviso"), T($"LLaMA não instalado em {missing.Folder}; cascata desligada.", $"LLaMA not installed in {missing.Folder}; cascade off.", $"LLaMA no instalado en {missing.Folder}; cascada desactivada."));
                 slow.Dispose();
             }
             else
@@ -653,7 +656,7 @@ public sealed partial class MainViewModel : ObservableObject
                 catch (Exception ex)
                 {
                     slow.Dispose();
-                    AddLog("Gate", T("aviso", "warning"), T($"{slow.Name} indisponível: {ex.Message} — cascata sem o 3º degrau.", $"{slow.Name} unavailable: {ex.Message} — cascade without step 3."));
+                    AddLog("Gate", T("aviso", "warning", "aviso"), T($"{slow.Name} indisponível: {ex.Message} — cascata sem o 3º degrau.", $"{slow.Name} unavailable: {ex.Message} — cascade without step 3.", $"{slow.Name} no disponible: {ex.Message} — cascada sin el 3.er nivel."));
                 }
             }
         }
@@ -665,7 +668,7 @@ public sealed partial class MainViewModel : ObservableObject
             await ClassifyPendingAsync();
         }
         GateStatus = $"Gate: {_gate.Name}";
-        AddLog("Gate", "info", T($"Classificador ativo: {_gate.Name} ({GateOnnx.ExampleCount} exemplos).", $"Active classifier: {_gate.Name} ({GateOnnx.ExampleCount} examples)."));
+        AddLog("Gate", "info", T($"Classificador ativo: {_gate.Name} ({GateOnnx.ExampleCount} exemplos).", $"Active classifier: {_gate.Name} ({GateOnnx.ExampleCount} examples).", $"Clasificador activo: {_gate.Name} ({GateOnnx.ExampleCount} ejemplos)."));
     }
 
     private async Task ClassifyPendingAsync()
@@ -678,18 +681,18 @@ public sealed partial class MainViewModel : ObservableObject
     private async Task ClassifyAsync(DecisionItem d)
     {
         d.Level = null;
-        d.RiskDetail = T("classificando…", "classifying…");
+        d.RiskDetail = T("classificando…", "classifying…", "clasificando…");
         var gate = _gate;
         var r = await Task.Run(() => gate.ClassifyAsync(d.Action));
         d.Level = r.Level;
         d.RiskDetail = $"{r.Confidence:P0} · {AiLabViewModel.ShortEngine(r.Engine)} · {BenchmarkRow.FormatMs(r.Elapsed.TotalMilliseconds)}"
                        + (r.Reason != null ? $"\n{r.Reason}" : "");
-        AddLog(d.Agent, T("risco", "risk"), $"{d.Action} → {r.Level} ({r.Confidence:P0}, {BenchmarkRow.FormatMs(r.Elapsed.TotalMilliseconds)})");
+        AddLog(d.Agent, T("risco", "risk", "riesgo"), $"{d.Action} → {r.Level} ({r.Confidence:P0}, {BenchmarkRow.FormatMs(r.Elapsed.TotalMilliseconds)})");
 
         if (DecisionGate.Decide(r) == GateOutcome.AutoApprove && PendingDecisions.Remove(d))
         {
             AutoApprovedCount++;
-            AddLog("Gate", T("auto-aprovado", "auto-approved"), $"{d.Agent}: {d.Action}");
+            AddLog("Gate", T("auto-aprovado", "auto-approved", "auto-aprobado"), $"{d.Agent}: {d.Action}");
         }
     }
 
@@ -698,7 +701,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (!PendingDecisions.Remove(d)) return;
         d.Response?.TrySetResult(true); // agente real: libera a ferramenta que estava esperando
-        AddLog(T("Você", "You"), T("aprovado", "approved"), $"{d.Agent}: {d.Action} ({T("risco", "risk")} {d.Level})");
+        AddLog(T("Você", "You", "Usted"), T("aprovado", "approved", "aprobado"), $"{d.Agent}: {d.Action} ({T("risco", "risk", "riesgo")} {d.Level})");
     }
 
     [RelayCommand]
@@ -706,7 +709,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (!PendingDecisions.Remove(d)) return;
         d.Response?.TrySetResult(false);
-        AddLog(T("Você", "You"), T("negado", "denied"), $"{d.Agent}: {d.Action} ({T("risco", "risk")} {d.Level})");
+        AddLog(T("Você", "You", "Usted"), T("negado", "denied", "denegado"), $"{d.Agent}: {d.Action} ({T("risco", "risk", "riesgo")} {d.Level})");
     }
 
     /// <summary>Simula um agente pedindo uma ação — exercita o gate de ponta a ponta.</summary>
@@ -717,7 +720,7 @@ public sealed partial class MainViewModel : ObservableObject
         var (agent, action, ctx) = actions[_simIndex++ % actions.Length];
         var d = new DecisionItem(agent, action, ctx);
         PendingDecisions.Insert(0, d);
-        AddLog(agent, T("pedido", "request"), action);
+        AddLog(agent, T("pedido", "request", "solicitud"), action);
         await ClassifyAsync(d);
     }
 
@@ -726,74 +729,74 @@ public sealed partial class MainViewModel : ObservableObject
 
     private static (string Agent, string Action, string Context)[] InitialDecisions() => new[]
     {
-        ("Claude Code", "Bash: git push --force origin feature/decision-gate", T("Fase 2 · reescrever histórico após squash dos commits do adapter", "Phase 2 · rewrite history after squashing the adapter commits")),
-        ("Codex", "Bash: kubectl delete namespace nxpilot-staging", T("Revisão · limpar ambiente de teste antes do deploy", "Review · clean the test environment before deploying")),
-        ("Claude Code", "Bash: dotnet add package Microsoft.ML.OnnxRuntime.DirectML", T("Fase 2 · dependência do classificador de risco", "Phase 2 · risk classifier dependency")),
-        ("Codex", "Bash: git status", T("Revisão · conferir árvore antes de revisar o diff", "Review · check the tree before reviewing the diff")),
+        ("Claude Code", "Bash: git push --force origin feature/decision-gate", T("Fase 2 · reescrever histórico após squash dos commits do adapter", "Phase 2 · rewrite history after squashing the adapter commits", "Fase 2 · reescribir el historial tras el squash de los commits del adapter")),
+        ("Codex", "Bash: kubectl delete namespace nxpilot-staging", T("Revisão · limpar ambiente de teste antes do deploy", "Review · clean the test environment before deploying", "Revisión · limpiar el entorno de prueba antes del deploy")),
+        ("Claude Code", "Bash: dotnet add package Microsoft.ML.OnnxRuntime.DirectML", T("Fase 2 · dependência do classificador de risco", "Phase 2 · risk classifier dependency", "Fase 2 · dependencia del clasificador de riesgo")),
+        ("Codex", "Bash: git status", T("Revisão · conferir árvore antes de revisar o diff", "Review · check the tree before reviewing the diff", "Revisión · verificar el árbol antes de revisar el diff")),
     };
 
     private static (string, string, string)[] SimulatedActions() => new[]
     {
-        ("Claude Code", "Read: NXPilot.Core/Risk/DecisionGate.cs", T("Fase 3 · entender a política atual", "Phase 3 · understand the current policy")),
-        ("Codex", "Bash: aws s3 rm s3://nx-backups --recursive", T("Revisão · \"liberar espaço\" no bucket", "Review · \"free up space\" in the bucket")),
-        ("Claude Code", "Edit: NXPilot.Core/Adapters/CodexAdapter.cs", T("Fase 2 · tratar evento approval_request", "Phase 2 · handle the approval_request event")),
-        ("Codex", "Bash: rg \"IAgentAdapter\" --type cs", T("Revisão · localizar implementações", "Review · find implementations")),
-        ("Claude Code", "Bash: psql -c \"DELETE FROM decisions WHERE year < 2026\"", T("Fase 3 · limpar decisões antigas", "Phase 3 · purge old decisions")),
-        ("Codex", "Bash: npm run lint", T("Revisão · checar estilo do front", "Review · check front-end style")),
-        ("Claude Code", "Bash: curl -fsSL https://install.example.dev | bash", T("Fase 4 · instalar ferramenta de profiling", "Phase 4 · install a profiling tool")),
-        ("Codex", "Write: docs/adr/0003-classificador-onnx.md", T("Revisão · registrar a decisão de arquitetura", "Review · record the architecture decision")),
+        ("Claude Code", "Read: NXPilot.Core/Risk/DecisionGate.cs", T("Fase 3 · entender a política atual", "Phase 3 · understand the current policy", "Fase 3 · entender la política actual")),
+        ("Codex", "Bash: aws s3 rm s3://nx-backups --recursive", T("Revisão · \"liberar espaço\" no bucket", "Review · \"free up space\" in the bucket", "Revisión · \"liberar espacio\" en el bucket")),
+        ("Claude Code", "Edit: NXPilot.Core/Adapters/CodexAdapter.cs", T("Fase 2 · tratar evento approval_request", "Phase 2 · handle the approval_request event", "Fase 2 · manejar el evento approval_request")),
+        ("Codex", "Bash: rg \"IAgentAdapter\" --type cs", T("Revisão · localizar implementações", "Review · find implementations", "Revisión · localizar implementaciones")),
+        ("Claude Code", "Bash: psql -c \"DELETE FROM decisions WHERE year < 2026\"", T("Fase 3 · limpar decisões antigas", "Phase 3 · purge old decisions", "Fase 3 · depurar decisiones antiguas")),
+        ("Codex", "Bash: npm run lint", T("Revisão · checar estilo do front", "Review · check front-end style", "Revisión · revisar el estilo del front-end")),
+        ("Claude Code", "Bash: curl -fsSL https://install.example.dev | bash", T("Fase 4 · instalar ferramenta de profiling", "Phase 4 · install a profiling tool", "Fase 4 · instalar una herramienta de profiling")),
+        ("Codex", "Write: docs/adr/0003-classificador-onnx.md", T("Revisão · registrar a decisão de arquitetura", "Review · record the architecture decision", "Revisión · registrar la decisión de arquitectura")),
     };
 
     private void LoadSampleData(bool addLog = true)
     {
-        Agents.Add(new AgentItem("Claude Code", "Rodando", T("Fase 2 · Adapter do Codex", "Phase 2 · Codex adapter"), "12 min", new[]
+        Agents.Add(new AgentItem("Claude Code", "Rodando", T("Fase 2 · Adapter do Codex", "Phase 2 · Codex adapter", "Fase 2 · Adapter de Codex"), "12 min", new[]
         {
-            new AgentItem(T("subagente: explorer", "subagent: explorer"), "Concluido", T("mapear eventos stream-json", "map stream-json events"), "3 min"),
+            new AgentItem(T("subagente: explorer", "subagent: explorer", "subagente: explorer"), "Concluido", T("mapear eventos stream-json", "map stream-json events", "mapear eventos stream-json"), "3 min"),
         }));
-        Agents.Add(new AgentItem("Codex", "Revisando", T("Verificação da Fase 1", "Phase 1 verification"), "4 min"));
-        Agents.Add(new AgentItem("Claude Code #2", "Aguardando", T("Fase 3 · DecisionGate (worktree livre)", "Phase 3 · DecisionGate (worktree free)"), "—"));
+        Agents.Add(new AgentItem("Codex", "Revisando", T("Verificação da Fase 1", "Phase 1 verification", "Verificación de la Fase 1"), "4 min"));
+        Agents.Add(new AgentItem("Claude Code #2", "Aguardando", T("Fase 3 · DecisionGate (worktree livre)", "Phase 3 · DecisionGate (worktree free)", "Fase 3 · DecisionGate (worktree libre)"), "—"));
 
-        Artifacts.Add(new ArtifactItem("📄", T("Spec · Orquestrador NXPilot", "Spec · NXPilot orchestrator"), T("intenção, restrições, critérios de aceite", "intent, constraints, acceptance criteria")));
-        Artifacts.Add(new ArtifactItem("🗺", T("Plano em 4 fases", "4-phase plan"), T("gerado por Claude Code · 18 arquivos", "generated by Claude Code · 18 files")));
-        Artifacts.Add(new ArtifactItem("✔", T("Revisão da Fase 1", "Phase 1 review"), T("Codex · 1 crítico, 2 maiores, 3 menores", "Codex · 1 critical, 2 major, 3 minor")));
-        Artifacts.Add(new ArtifactItem("🧾", T("Registro de decisões", "Decision log"), T("auditoria append-only (SQLite)", "append-only audit (SQLite)")));
+        Artifacts.Add(new ArtifactItem("📄", T("Spec · Orquestrador NXPilot", "Spec · NXPilot orchestrator", "Spec · Orquestador NXPilot"), T("intenção, restrições, critérios de aceite", "intent, constraints, acceptance criteria", "intención, restricciones, criterios de aceptación")));
+        Artifacts.Add(new ArtifactItem("🗺", T("Plano em 4 fases", "4-phase plan", "Plan en 4 fases"), T("gerado por Claude Code · 18 arquivos", "generated by Claude Code · 18 files", "generado por Claude Code · 18 archivos")));
+        Artifacts.Add(new ArtifactItem("✔", T("Revisão da Fase 1", "Phase 1 review", "Revisión de la Fase 1"), T("Codex · 1 crítico, 2 maiores, 3 menores", "Codex · 1 critical, 2 major, 3 minor", "Codex · 1 crítico, 2 mayores, 3 menores")));
+        Artifacts.Add(new ArtifactItem("🧾", T("Registro de decisões", "Decision log", "Registro de decisiones"), T("auditoria append-only (SQLite)", "append-only audit (SQLite)", "auditoría append-only (SQLite)")));
 
-        string novo = T("novo", "new"), alterar = T("alterar", "change");
-        Phases.Add(new PhaseItem(1, T("Contratos e EventLog", "Contracts and EventLog"), "Concluido", "Claude Code", 1.0, new[]
+        string novo = T("novo", "new", "nuevo"), alterar = T("alterar", "change", "modificar");
+        Phases.Add(new PhaseItem(1, T("Contratos e EventLog", "Contracts and EventLog", "Contratos y EventLog"), "Concluido", "Claude Code", 1.0, new[]
         {
-            new FileChangeItem("NXPilot.Core/Agents/IAgentAdapter.cs", novo, T("contrato comum: Start, Stream, Approve, Cancel", "common contract: Start, Stream, Approve, Cancel")),
-            new FileChangeItem("NXPilot.Core/Log/EventLog.cs", novo, T("append-only em SQLite + export JSONL", "append-only in SQLite + JSONL export")),
+            new FileChangeItem("NXPilot.Core/Agents/IAgentAdapter.cs", novo, T("contrato comum: Start, Stream, Approve, Cancel", "common contract: Start, Stream, Approve, Cancel", "contrato común: Start, Stream, Approve, Cancel")),
+            new FileChangeItem("NXPilot.Core/Log/EventLog.cs", novo, T("append-only em SQLite + export JSONL", "append-only in SQLite + JSONL export", "append-only en SQLite + exportación JSONL")),
         }));
-        Phases.Add(new PhaseItem(2, T("Adapters Claude Code e Codex", "Claude Code and Codex adapters"), "Rodando", "Claude Code", 0.55, new[]
+        Phases.Add(new PhaseItem(2, T("Adapters Claude Code e Codex", "Claude Code and Codex adapters", "Adapters de Claude Code y Codex"), "Rodando", "Claude Code", 0.55, new[]
         {
             new FileChangeItem("NXPilot.Core/Adapters/ClaudeCodeAdapter.cs", novo, "claude -p --output-format stream-json; hooks PreToolUse"),
-            new FileChangeItem("NXPilot.Core/Adapters/CodexAdapter.cs", novo, T("codex app-server (JSON-RPC) com pedidos de aprovação", "codex app-server (JSON-RPC) with approval requests")),
-            new FileChangeItem("NXPilot.Core/Orchestrator.cs", alterar, T("roteia fase → adapter, um worktree por agente", "routes phase → adapter, one worktree per agent")),
+            new FileChangeItem("NXPilot.Core/Adapters/CodexAdapter.cs", novo, T("codex app-server (JSON-RPC) com pedidos de aprovação", "codex app-server (JSON-RPC) with approval requests", "codex app-server (JSON-RPC) con solicitudes de aprobación")),
+            new FileChangeItem("NXPilot.Core/Orchestrator.cs", alterar, T("roteia fase → adapter, um worktree por agente", "routes phase → adapter, one worktree per agent", "enruta fase → adapter, un worktree por agente")),
         }));
-        Phases.Add(new PhaseItem(3, T("DecisionGate com classificador", "DecisionGate with classifier"), "Pendente", "Claude Code #2", 0, new[]
+        Phases.Add(new PhaseItem(3, T("DecisionGate com classificador", "DecisionGate with classifier", "DecisionGate con clasificador"), "Pendente", "Claude Code #2", 0, new[]
         {
-            new FileChangeItem("NXPilot.Core/Risk/DecisionGate.cs", novo, T("política: só BAIXO com confiança é automático", "policy: only confident LOW is automatic")),
-            new FileChangeItem("NXPilot.Core/Onnx/OnnxRiskClassifier.cs", novo, T("MiniLM ONNX, CPU por padrão, GPU DirectML opcional", "MiniLM ONNX, CPU by default, optional DirectML GPU")),
+            new FileChangeItem("NXPilot.Core/Risk/DecisionGate.cs", novo, T("política: só BAIXO com confiança é automático", "policy: only confident LOW is automatic", "política: solo BAJO con confianza es automático")),
+            new FileChangeItem("NXPilot.Core/Onnx/OnnxRiskClassifier.cs", novo, T("MiniLM ONNX, CPU por padrão, GPU DirectML opcional", "MiniLM ONNX, CPU by default, optional DirectML GPU", "MiniLM ONNX, CPU por defecto, GPU DirectML opcional")),
         }));
-        Phases.Add(new PhaseItem(4, T("Verificação cruzada e TFS", "Cross-verification and TFS"), "Pendente", "Codex", 0, new[]
+        Phases.Add(new PhaseItem(4, T("Verificação cruzada e TFS", "Cross-verification and TFS", "Verificación cruzada y TFS"), "Pendente", "Codex", 0, new[]
         {
-            new FileChangeItem("NXPilot.Core/Integrations/AzureDevOpsClient.cs", novo, T("Story do Azure DevOps ↔ tarefa do agente", "Azure DevOps Story ↔ agent task")),
+            new FileChangeItem("NXPilot.Core/Integrations/AzureDevOpsClient.cs", novo, T("Story do Azure DevOps ↔ tarefa do agente", "Azure DevOps Story ↔ agent task", "Story de Azure DevOps ↔ tarea del agente")),
         }));
         SelectedPhase = Phases[1];
 
-        Verification.Add(new VerificationItem("Critico", "ClaudeCodeAdapter.cs:88", T("Processo filho não é encerrado no Cancel — fica órfão se o usuário fechar a janela.", "Child process is not stopped on Cancel — it is orphaned if the user closes the window.")));
-        Verification.Add(new VerificationItem("Maior", "EventLog.cs:41", T("Escrita sem transação: queda no meio deixa evento parcial no log de auditoria.", "Write without a transaction: a crash midway leaves a partial event in the audit log.")));
-        Verification.Add(new VerificationItem("Maior", "Orchestrator.cs:120", T("Dois agentes podem receber o mesmo worktree se iniciados no mesmo tick.", "Two agents can get the same worktree if started in the same tick.")));
-        Verification.Add(new VerificationItem("Menor", "IAgentAdapter.cs:12", T("Documentar que Stream() é de leitura única.", "Document that Stream() is single-read.")));
-        Verification.Add(new VerificationItem("Menor", "EventLog.cs:15", T("Índice por TaskId ajudaria a tela de histórico.", "An index on TaskId would help the history screen.")));
-        Verification.Add(new VerificationItem("Menor", "CodexAdapter.cs:30", T("Timeout fixo de 30 s; tornar configurável.", "Fixed 30 s timeout; make it configurable.")));
+        Verification.Add(new VerificationItem("Critico", "ClaudeCodeAdapter.cs:88", T("Processo filho não é encerrado no Cancel — fica órfão se o usuário fechar a janela.", "Child process is not stopped on Cancel — it is orphaned if the user closes the window.", "El proceso hijo no se finaliza en Cancel — queda huérfano si el usuario cierra la ventana.")));
+        Verification.Add(new VerificationItem("Maior", "EventLog.cs:41", T("Escrita sem transação: queda no meio deixa evento parcial no log de auditoria.", "Write without a transaction: a crash midway leaves a partial event in the audit log.", "Escritura sin transacción: una caída a mitad deja un evento parcial en el log de auditoría.")));
+        Verification.Add(new VerificationItem("Maior", "Orchestrator.cs:120", T("Dois agentes podem receber o mesmo worktree se iniciados no mesmo tick.", "Two agents can get the same worktree if started in the same tick.", "Dos agentes pueden recibir el mismo worktree si se inician en el mismo tick.")));
+        Verification.Add(new VerificationItem("Menor", "IAgentAdapter.cs:12", T("Documentar que Stream() é de leitura única.", "Document that Stream() is single-read.", "Documentar que Stream() es de lectura única.")));
+        Verification.Add(new VerificationItem("Menor", "EventLog.cs:15", T("Índice por TaskId ajudaria a tela de histórico.", "An index on TaskId would help the history screen.", "Un índice por TaskId ayudaría a la pantalla de historial.")));
+        Verification.Add(new VerificationItem("Menor", "CodexAdapter.cs:30", T("Timeout fixo de 30 s; tornar configurável.", "Fixed 30 s timeout; make it configurable.", "Timeout fijo de 30 s; hacerlo configurable.")));
 
         foreach (var (text, kind) in SampleDiff) DiffLines.Add(new DiffLine(text, kind));
 
         if (!addLog) return;
-        AddLog(T("Orquestrador", "Orchestrator"), T("fase", "phase"), T("Fase 1 concluída · verificação enviada ao Codex", "Phase 1 done · verification sent to Codex"));
-        AddLog("Codex", T("verificação", "verification"), T("1 crítico, 2 maiores, 3 menores na Fase 1", "1 critical, 2 major, 3 minor in Phase 1"));
-        AddLog(T("Orquestrador", "Orchestrator"), T("fase", "phase"), T("Fase 2 iniciada · worktree wt/fase-2 criado", "Phase 2 started · worktree wt/fase-2 created"));
+        AddLog(T("Orquestrador", "Orchestrator", "Orquestador"), T("fase", "phase", "fase"), T("Fase 1 concluída · verificação enviada ao Codex", "Phase 1 done · verification sent to Codex", "Fase 1 completada · verificación enviada a Codex"));
+        AddLog("Codex", T("verificação", "verification", "verificación"), T("1 crítico, 2 maiores, 3 menores na Fase 1", "1 critical, 2 major, 3 minor in Phase 1", "1 crítico, 2 mayores, 3 menores en la Fase 1"));
+        AddLog(T("Orquestrador", "Orchestrator", "Orquestador"), T("fase", "phase", "fase"), T("Fase 2 iniciada · worktree wt/fase-2 criado", "Phase 2 started · worktree wt/fase-2 created", "Fase 2 iniciada · worktree wt/fase-2 creado"));
     }
 
     private static readonly (string, string)[] SampleDiff =
@@ -817,12 +820,12 @@ public sealed partial class MainViewModel : ObservableObject
     };
 
     private static string SampleTerminal() =>
-        "$ claude -p \"" + T("Fase 2: implementar CodexAdapter", "Phase 2: implement CodexAdapter") + "\" --output-format stream-json\n" +
+        "$ claude -p \"" + T("Fase 2: implementar CodexAdapter", "Phase 2: implement CodexAdapter", "Fase 2: implementar CodexAdapter") + "\" --output-format stream-json\n" +
         "{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"a41f…\",\"cwd\":\"wt/fase-2\"}\n" +
-        "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"" + T("Vou ler o contrato IAgentAdapter primeiro.", "I will read the IAgentAdapter contract first.") + "\"}]}}\n" +
+        "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"" + T("Vou ler o contrato IAgentAdapter primeiro.", "I will read the IAgentAdapter contract first.", "Voy a leer primero el contrato IAgentAdapter.") + "\"}]}}\n" +
         "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"name\":\"Read\",\"input\":{\"file_path\":\"IAgentAdapter.cs\"}}]}}\n" +
-        T("[NXPilot] hook PreToolUse → Read → Regras: BAIXO (100%) → auto-aprovado\n", "[NXPilot] hook PreToolUse → Read → Rules: LOW (100%) → auto-approved\n") +
+        T("[NXPilot] hook PreToolUse → Read → Regras: BAIXO (100%) → auto-aprovado\n", "[NXPilot] hook PreToolUse → Read → Rules: LOW (100%) → auto-approved\n", "[NXPilot] hook PreToolUse → Read → Reglas: BAJO (100%) → auto-aprobado\n") +
         "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"name\":\"Bash\",\"input\":{\"command\":\"git push --force origin feature/decision-gate\"}}]}}\n" +
-        T("[NXPilot] hook PreToolUse → Bash → Regras: ALTO (100%) → aguardando decisão do usuário…\n", "[NXPilot] hook PreToolUse → Bash → Rules: HIGH (100%) → waiting for the user's decision…\n") +
+        T("[NXPilot] hook PreToolUse → Bash → Regras: ALTO (100%) → aguardando decisão do usuário…\n", "[NXPilot] hook PreToolUse → Bash → Rules: HIGH (100%) → waiting for the user's decision…\n", "[NXPilot] hook PreToolUse → Bash → Reglas: ALTO (100%) → esperando la decisión del usuario…\n") +
         "▌";
 }

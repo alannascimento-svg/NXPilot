@@ -56,7 +56,7 @@ public static class GatePipe
                 var line = await reader.ReadLineAsync(ct);
                 var request = line == null ? null : JsonSerializer.Deserialize<GateRequest>(line);
                 response = request == null
-                    ? new GateResponse(false, NxText.T("pedido vazio", "empty request"))
+                    ? new GateResponse(false, NxText.T("pedido vazio", "empty request", "solicitud vacía"))
                     : await decide(request);
             }
             catch (Exception ex) { response = new GateResponse(false, "NXPilot: " + ex.Message); }
@@ -91,7 +91,7 @@ public static class GatePipe
                 root.TryGetProperty("session_id", out var s) ? s.GetString() : null);
 
             if (string.IsNullOrEmpty(pipeName))
-                decision = new GateResponse(false, NxText.T("NXPilot não está escutando (hook fora do app).", "NXPilot is not listening (hook outside the app)."));
+                decision = new GateResponse(false, NxText.T("NXPilot não está escutando (hook fora do app).", "NXPilot is not listening (hook outside the app).", "NXPilot no está escuchando (hook fuera de la aplicación)."));
             else
             {
                 await using var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
@@ -102,7 +102,7 @@ public static class GatePipe
                 using var reader = new StreamReader(client, Encoding.UTF8);
                 var line = await reader.ReadLineAsync();
                 decision = line == null
-                    ? new GateResponse(false, NxText.T("sem resposta do NXPilot", "no answer from NXPilot"))
+                    ? new GateResponse(false, NxText.T("sem resposta do NXPilot", "no answer from NXPilot", "sin respuesta de NXPilot"))
                     : JsonSerializer.Deserialize<GateResponse>(line) ?? new GateResponse(false, "?");
             }
         }

@@ -36,13 +36,20 @@ public static class TaskPlanning
         "Analyze the repository and propose a concise implementation plan, split into small phases " +
         "(1 to 4 phases; each phase must leave the project working). Do not change anything now.\n\n" +
         "Write the plan for a person to read and, AT THE END, include a ```json block exactly in this format:\n" +
-        "{\"phases\":[{\"title\":\"...\",\"files\":[{\"path\":\"relative/path\",\"change\":\"new|modify|delete\",\"why\":\"...\"}]}]}");
+        "{\"phases\":[{\"title\":\"...\",\"files\":[{\"path\":\"relative/path\",\"change\":\"new|modify|delete\",\"why\":\"...\"}]}]}",
+        $"Tarea: {title}\n\nIntención:\n{intent}\n\nCriterios de aceptación:\n{criteria}\n\n" +
+        "Analice el repositorio y proponga un plan de implementación objetivo, dividido en fases pequeñas " +
+        "(de 1 a 4 fases; cada fase debe dejar el proyecto funcionando). No modifique nada ahora.\n\n" +
+        "Escriba el plan para que una persona lo lea y, AL FINAL, incluya un bloque ```json exactamente en este formato:\n" +
+        "{\"phases\":[{\"title\":\"...\",\"files\":[{\"path\":\"ruta/relativa\",\"change\":\"new|modify|delete\",\"why\":\"...\"}]}]}");
 
     public static string PhasePrompt(PlannedPhase phase, int total) => NxText.T(
         $"Plano aprovado. Execute agora SOMENTE a Fase {phase.Number} de {total}: {phase.Title}. " +
         "Trabalhe só dentro deste diretório e não avance para a próxima fase. Ao terminar, resuma o que mudou.",
         $"Plan approved. Execute ONLY Phase {phase.Number} of {total} now: {phase.Title}. " +
-        "Work only inside this directory and do not move on to the next phase. When done, summarize what changed.");
+        "Work only inside this directory and do not move on to the next phase. When done, summarize what changed.",
+        $"Plan aprobado. Ejecute ahora SOLO la Fase {phase.Number} de {total}: {phase.Title}. " +
+        "Trabaje solo dentro de este directorio y no avance a la siguiente fase. Al terminar, resuma lo que cambió.");
 
     /// <summary>Fases do bloco ```json no fim do plano; sem bloco válido, uma fase única.</summary>
     public static IReadOnlyList<PlannedPhase> ParsePhases(string planText)
@@ -59,13 +66,13 @@ public static class TaskPlanning
                     if (p.TryGetProperty("files", out var fs) && fs.ValueKind == JsonValueKind.Array)
                         foreach (var f in fs.EnumerateArray())
                             files.Add(new PlannedFile(Str(f, "path") ?? "?", Str(f, "change") ?? "modify", Str(f, "why") ?? ""));
-                    phases.Add(new PlannedPhase(phases.Count + 1, Str(p, "title") ?? NxText.T($"Fase {phases.Count + 1}", $"Phase {phases.Count + 1}"), files));
+                    phases.Add(new PlannedPhase(phases.Count + 1, Str(p, "title") ?? NxText.T($"Fase {phases.Count + 1}", $"Phase {phases.Count + 1}", $"Fase {phases.Count + 1}"), files));
                 }
                 if (phases.Count > 0) return phases;
             }
         }
         catch (Exception) { /* JSON fora do formato: cai na fase única */ }
-        return new[] { new PlannedPhase(1, NxText.T("Executar o plano", "Execute the plan"), Array.Empty<PlannedFile>()) };
+        return new[] { new PlannedPhase(1, NxText.T("Executar o plano", "Execute the plan", "Ejecutar el plan"), Array.Empty<PlannedFile>()) };
     }
 
     /// <summary>O plano para a pessoa, sem o bloco JSON técnico do final.</summary>
@@ -104,7 +111,13 @@ public static class TaskPlanning
         "Severity: critical = breakage, data loss, security or unmet acceptance criterion; major = real defect or relevant deviation from the plan; minor = improvement.\n" +
         "approved = true only if there is no critical finding. Write summary and message in English.\n" +
         "Reply ONLY with JSON: {\"approved\":bool,\"summary\":\"...\",\"findings\":[{\"severity\":\"critical|major|minor\",\"file\":\"...\",\"line\":number or null,\"message\":\"...\"}]}\n\n" +
-        $"TASK: {title}\n\nACCEPTANCE CRITERIA:\n{criteria}\n\nAPPROVED PLAN:\n{Trim(plan, 6000)}\n\nDIFF:\n{Trim(diff, 30000)}");
+        $"TASK: {title}\n\nACCEPTANCE CRITERIA:\n{criteria}\n\nAPPROVED PLAN:\n{Trim(plan, 6000)}\n\nDIFF:\n{Trim(diff, 30000)}",
+        "Usted es el REVISOR de un cambio hecho por otro agente de código. No ejecute comandos: todo lo que necesita está abajo.\n" +
+        "Compare el diff con el plan aprobado y con los criterios de aceptación. Señale errores, riesgos, cambios fuera del plan y criterios no cumplidos.\n" +
+        "Gravedad: critical = rotura, pérdida de datos, seguridad o criterio de aceptación no cumplido; major = defecto real o desviación relevante del plan; minor = mejora.\n" +
+        "approved = true solo si no hay ningún hallazgo critical. Escriba summary y message en español.\n" +
+        "Responda SOLO con JSON: {\"approved\":bool,\"summary\":\"...\",\"findings\":[{\"severity\":\"critical|major|minor\",\"file\":\"...\",\"line\":número o null,\"message\":\"...\"}]}\n\n" +
+        $"TAREA: {title}\n\nCRITERIOS DE ACEPTACIÓN:\n{criteria}\n\nPLAN APROBADO:\n{Trim(plan, 6000)}\n\nDIFF:\n{Trim(diff, 30000)}");
 
     public static VerificationResult ParseVerification(string text, string reviewer)
     {
@@ -129,7 +142,7 @@ public static class TaskPlanning
             }
         }
         catch (Exception) { /* resposta fora do formato */ }
-        return new VerificationResult(false, NxText.T("O revisor não devolveu o JSON esperado; leia a resposta no Terminal.", "The reviewer did not return the expected JSON; read the answer in the Terminal."),
+        return new VerificationResult(false, NxText.T("O revisor não devolveu o JSON esperado; leia a resposta no Terminal.", "The reviewer did not return the expected JSON; read the answer in the Terminal.", "El revisor no devolvió el JSON esperado; lea la respuesta en la Terminal."),
             new[] { new Finding("Maior", "", null, Trim(text, 400)) }, reviewer);
     }
 

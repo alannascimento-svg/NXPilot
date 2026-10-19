@@ -44,10 +44,10 @@ public partial class NewTaskWindow : Window
         // já seleciona o último usado ou, na primeira vez, o que existe na máquina.
         _claudeInstalled = ReviewerChoice.IsInstalled(AgentKind.Claude);
         _codexInstalled = ReviewerChoice.IsInstalled(AgentKind.Codex);
-        var notInstalled = T(" — não instalado", " — not installed");
+        var notInstalled = T(" — não instalado", " — not installed", " — no instalado");
         AgentClaudeItem.Content = "Claude Code" + (_claudeInstalled ? "" : notInstalled);
         AgentCodexItem.Content = "Codex" + (_codexInstalled ? "" : notInstalled);
-        AgentNXAgenticItem.Content = "NXAgentic" + T(" — em construção", " — under construction");
+        AgentNXAgenticItem.Content = "NXAgentic" + T(" — em construção", " — under construction", " — en construcción");
         Select(AgentBox, s.Executor ?? (!_claudeInstalled && _codexInstalled ? nameof(ExecutorKind.Codex) : nameof(ExecutorKind.Claude)));
         UpdateAgentHint();
 
@@ -65,16 +65,17 @@ public partial class NewTaskWindow : Window
     private async Task LoadCodexModelsAsync()
     {
         var tested = string.Join(", ", NXPilot.Agents.CodexAppServerAdapter.TestedModels);
-        CodexModelHint.Text = T("Consultando os modelos da sua conta no Codex…", "Querying your account's Codex models…");
+        CodexModelHint.Text = T("Consultando os modelos da sua conta no Codex…", "Querying your account's Codex models…", "Consultando los modelos de Codex de su cuenta…");
         var models = await NXPilot.Agents.CodexAppServerAdapter.ListModelsAsync();
         var typed = CodexModelBox.Text;
         CodexModelBox.ItemsSource = models.Select(m => m.Id).ToList();
         if (typed.Length == 0)
             CodexModelBox.Text = models.FirstOrDefault(m => m.Tested)?.Id ?? models.FirstOrDefault(m => m.IsDefault)?.Id ?? "";
         CodexModelHint.Text = models.Count == 0
-            ? T($"Não deu para listar (Codex instalado e logado?). Testado com o NXPilot: {tested}.", $"Could not list models (is Codex installed and signed in?). Tested with NXPilot: {tested}.")
+            ? T($"Não deu para listar (Codex instalado e logado?). Testado com o NXPilot: {tested}.", $"Could not list models (is Codex installed and signed in?). Tested with NXPilot: {tested}.", $"No se pudieron listar los modelos (¿Codex está instalado y con sesión iniciada?). Probado con NXPilot: {tested}.")
             : T($"{models.Count} modelo(s) da sua conta · testado com o NXPilot: {string.Join(", ", models.Where(m => m.Tested).Select(m => m.Id + " ✓").DefaultIfEmpty(tested + " (não está na sua lista)"))}",
-                $"{models.Count} model(s) on your account · tested with NXPilot: {string.Join(", ", models.Where(m => m.Tested).Select(m => m.Id + " ✓").DefaultIfEmpty(tested + " (not on your list)"))}");
+                $"{models.Count} model(s) on your account · tested with NXPilot: {string.Join(", ", models.Where(m => m.Tested).Select(m => m.Id + " ✓").DefaultIfEmpty(tested + " (not on your list)"))}",
+                $"{models.Count} modelo(s) en su cuenta · probado con NXPilot: {string.Join(", ", models.Where(m => m.Tested).Select(m => m.Id + " ✓").DefaultIfEmpty(tested + " (no está en su lista)"))}");
     }
 
     private readonly bool _claudeInstalled, _codexInstalled;
@@ -84,7 +85,8 @@ public partial class NewTaskWindow : Window
 
     private static string NXAgenticUnderConstruction => T(
         "O NXAgentic (edição comercial da Nexus XData) está em construção e ainda não executa tarefas. Por enquanto, escolha o Claude Code ou o Codex.",
-        "NXAgentic (Nexus XData's commercial edition) is under construction and cannot run tasks yet. For now, choose Claude Code or Codex.");
+        "NXAgentic (Nexus XData's commercial edition) is under construction and cannot run tasks yet. For now, choose Claude Code or Codex.",
+        "NXAgentic (la edición comercial de Nexus XData) está en construcción y aún no ejecuta tareas. Por ahora, elija Claude Code o Codex.");
 
     private ExecutorKind SelectedExecutor =>
         Enum.TryParse<ExecutorKind>((AgentBox.SelectedItem as ComboBoxItem)?.Tag as string, out var kind) ? kind : ExecutorKind.Claude;
@@ -99,10 +101,12 @@ public partial class NewTaskWindow : Window
         var codex = SelectedExecutor == ExecutorKind.Codex;
         var name = codex ? "Codex" : "Claude Code";
         var hint = T($"O {name} executa sob o mesmo gate: cada comando e arquivo passa pela cascata e pelas suas decisões.",
-                     $"{name} runs under the same gate: every command and file goes through the cascade and your decisions.");
+                     $"{name} runs under the same gate: every command and file goes through the cascade and your decisions.",
+                     $"{name} se ejecuta bajo el mismo gate: cada comando y archivo pasa por la cascada y por sus decisiones.");
         if (_claudeInstalled != _codexInstalled)
             hint += " " + T($"Só o {(_codexInstalled ? "Codex" : "Claude Code")} está instalado: a revisão será dele mesmo, numa sessão nova e somente leitura.",
-                            $"Only {(_codexInstalled ? "Codex" : "Claude Code")} is installed: it reviews itself, in a new read-only session.");
+                            $"Only {(_codexInstalled ? "Codex" : "Claude Code")} is installed: it reviews itself, in a new read-only session.",
+                            $"Solo {(_codexInstalled ? "Codex" : "Claude Code")} está instalado: se revisará a sí mismo, en una sesión nueva y de solo lectura.");
         AgentHint.Text = hint;
     }
 
@@ -114,7 +118,7 @@ public partial class NewTaskWindow : Window
 
     private void OnBrowseClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog { Title = T("Repositório git da tarefa", "Git repository for the task") };
+        var dialog = new OpenFolderDialog { Title = T("Repositório git da tarefa", "Git repository for the task", "Repositorio git de la tarea") };
         if (Directory.Exists(RepoBox.Text)) dialog.InitialDirectory = RepoBox.Text;
         if (dialog.ShowDialog(this) == true) RepoBox.Text = dialog.FolderName;
     }
@@ -129,16 +133,18 @@ public partial class NewTaskWindow : Window
         else if (executor == ExecutorKind.Codex ? !_codexInstalled : !_claudeInstalled)
             error = executor == ExecutorKind.Codex
                 ? T("O Codex não foi encontrado nesta máquina (PATH, NXProject ou extensão do VS Code). Instale e faça login, ou escolha o Claude Code.",
-                    "Codex was not found on this machine (PATH, NXProject or VS Code extension). Install it and sign in, or choose Claude Code.")
+                    "Codex was not found on this machine (PATH, NXProject or VS Code extension). Install it and sign in, or choose Claude Code.",
+                    "Codex no se encontró en esta máquina (PATH, NXProject o extensión de VS Code). Instálelo e inicie sesión, o elija Claude Code.")
                 : T("O Claude Code não foi encontrado nesta máquina. Instale e faça login, ou escolha o Codex.",
-                    "Claude Code was not found on this machine. Install it and sign in, or choose Codex.");
-        else if (!Directory.Exists(repo)) error = T("Escolha a pasta de um repositório git.", "Choose a git repository folder.");
+                    "Claude Code was not found on this machine. Install it and sign in, or choose Codex.",
+                    "Claude Code no se encontró en esta máquina. Instálelo e inicie sesión, o elija Codex.");
+        else if (!Directory.Exists(repo)) error = T("Escolha a pasta de um repositório git.", "Choose a git repository folder.", "Elija la carpeta de un repositorio git.");
         else if (!Directory.Exists(Path.Combine(repo, ".git")) && !File.Exists(Path.Combine(repo, ".git")))
-            error = T("A pasta não tem .git — escolha a raiz de um repositório git.", "The folder has no .git — choose the root of a git repository.");
-        else if (TitleBox.Text.Trim().Length == 0) error = T("Dê um título à tarefa.", "Give the task a title.");
-        else if (IntentBox.Text.Trim().Length < 10) error = T("Descreva a intenção (o que deve ser feito).", "Describe the intent (what should be done).");
+            error = T("A pasta não tem .git — escolha a raiz de um repositório git.", "The folder has no .git — choose the root of a git repository.", "La carpeta no tiene .git — elija la raíz de un repositorio git.");
+        else if (TitleBox.Text.Trim().Length == 0) error = T("Dê um título à tarefa.", "Give the task a title.", "Dé un título a la tarea.");
+        else if (IntentBox.Text.Trim().Length < 10) error = T("Descreva a intenção (o que deve ser feito).", "Describe the intent (what should be done).", "Describa la intención (qué se debe hacer).");
         else if (executor == ExecutorKind.Codex && CodexModelBox.Text.Trim().Length == 0)
-            error = T("Com o Codex executando, informe o modelo do Codex (ex.: gpt-5.6-terra).", "With Codex executing, set the Codex model (e.g. gpt-5.6-terra).");
+            error = T("Com o Codex executando, informe o modelo do Codex (ex.: gpt-5.6-terra).", "With Codex executing, set the Codex model (e.g. gpt-5.6-terra).", "Con Codex como ejecutor, defina el modelo de Codex (p. ej., gpt-5.6-terra).");
 
         if (error != null)
         {
@@ -159,7 +165,7 @@ public partial class NewTaskWindow : Window
         });
 
         Result = new NewTaskInfo(repo, TitleBox.Text.Trim(), IntentBox.Text.Trim(),
-            CriteriaBox.Text.Trim().Length > 0 ? CriteriaBox.Text.Trim() : T("(não informados)", "(not provided)"),
+            CriteriaBox.Text.Trim().Length > 0 ? CriteriaBox.Text.Trim() : T("(não informados)", "(not provided)", "(no informado)"),
             model.Length > 0 ? model : null, reviewer, codexModel.Length > 0 ? codexModel : null, executor);
         DialogResult = true;
     }

@@ -73,16 +73,16 @@ public partial class TourOverlay : UserControl
 
         var last = index == _lesson.Steps.Count - 1;
         LessonTitle.Text = _lesson.Title.ToUpperInvariant();
-        StepCounter.Text = T($"Passo {index + 1} de {_lesson.Steps.Count}", $"Step {index + 1} of {_lesson.Steps.Count}");
+        StepCounter.Text = T($"Passo {index + 1} de {_lesson.Steps.Count}", $"Step {index + 1} of {_lesson.Steps.Count}", $"Paso {index + 1} de {_lesson.Steps.Count}");
         StepTitle.Text = step.Title;
         StepBody.Text = step.Body;
         TryButton.Content = "▶  " + step.TryLabel;
         TryButton.Visibility = step.Try != null ? Visibility.Visible : Visibility.Collapsed;
         TryButton.IsEnabled = true;
-        TryDone.Text = T("✓ Feito — veja o resultado na área destacada.", "✓ Done — see the result in the highlighted area.");
+        TryDone.Text = T("✓ Feito — veja o resultado na área destacada.", "✓ Done — see the result in the highlighted area.", "✓ Hecho — vea el resultado en el área resaltada.");
         TryDone.Visibility = Visibility.Collapsed;
         BackButton.IsEnabled = index > 0;
-        NextButton.Content = last ? T("Concluir lição ✓", "Finish lesson ✓") : T("Próximo →", "Next →");
+        NextButton.Content = last ? T("Concluir lição ✓", "Finish lesson ✓", "Finalizar lección ✓") : T("Próximo →", "Next →", "Siguiente →");
         Dots.ItemsSource = Enumerable.Range(0, _lesson.Steps.Count)
             .Select(i => i == index ? DotCurrent : i < index ? DotDone : DotTodo).ToList();
 
@@ -152,7 +152,7 @@ public partial class TourOverlay : UserControl
         }
         catch (Exception ex)
         {
-            TryDone.Text = T("Não deu certo: ", "It did not work: ") + ex.Message;
+            TryDone.Text = T("Não deu certo: ", "It did not work: ", "No funcionó: ") + ex.Message;
             TryDone.Visibility = Visibility.Visible;
         }
         finally { TryButton.IsEnabled = true; Layout(); }

@@ -63,10 +63,10 @@ public sealed class RiskLabelConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
-        RiskLevel.Alto => NxText.T("RISCO ALTO", "HIGH RISK"),
-        RiskLevel.Medio => NxText.T("RISCO MÉDIO", "MEDIUM RISK"),
-        RiskLevel.Baixo => NxText.T("RISCO BAIXO", "LOW RISK"),
-        _ => NxText.T("classificando…", "classifying…")
+        RiskLevel.Alto => NxText.T("RISCO ALTO", "HIGH RISK", "RIESGO ALTO"),
+        RiskLevel.Medio => NxText.T("RISCO MÉDIO", "MEDIUM RISK", "RIESGO MEDIO"),
+        RiskLevel.Baixo => NxText.T("RISCO BAIXO", "LOW RISK", "RIESGO BAJO"),
+        _ => NxText.T("classificando…", "classifying…", "clasificando…")
     };
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => Binding.DoNothing;
@@ -77,9 +77,9 @@ public sealed class RiskWordConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
-        RiskLevel.Alto => NxText.T("ALTO", "HIGH"),
-        RiskLevel.Medio => NxText.T("MÉDIO", "MEDIUM"),
-        RiskLevel.Baixo => NxText.T("BAIXO", "LOW"),
+        RiskLevel.Alto => NxText.T("ALTO", "HIGH", "ALTO"),
+        RiskLevel.Medio => NxText.T("MÉDIO", "MEDIUM", "MEDIO"),
+        RiskLevel.Baixo => NxText.T("BAIXO", "LOW", "BAJO"),
         _ => value?.ToString() ?? ""
     };
 

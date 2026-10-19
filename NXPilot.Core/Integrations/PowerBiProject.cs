@@ -64,7 +64,15 @@ public sealed record PowerBiProject(string PbipPath, string? SemanticModelDir, s
         "- Report (pages and visuals): edit the PBIR JSON in *.Report/definition/ (pages/<id>/page.json, pages/<id>/visuals/<id>/visual.json). " +
         "Every JSON must stay valid — Power BI Desktop will not open the project with broken JSON.\n" +
         "- Do not change cache.abf, .pbi/, localSettings.json or binary files.\n" +
-        "- DAX: use the exact table and column names that exist in the TMDL; explain each new measure in the plan.");
+        "- DAX: use the exact table and column names that exist in the TMDL; explain each new measure in the plan.",
+        $"\n\nEste repositorio contiene un proyecto de Power BI en formato PBIP: {Path.GetRelativePath(repoRoot, PbipPath)}.\n" +
+        "Reglas para modificar Power BI como código:\n" +
+        "- Modelo semántico (tablas, columnas, medidas DAX, relaciones): edite los archivos TMDL en *.SemanticModel/definition/ " +
+        "(p. ej.: tables/<Tabla>.tmdl, relationships.tmdl). Mantenga la indentación con TAB del TMDL.\n" +
+        "- Informe (páginas y objetos visuales): edite los JSON del PBIR en *.Report/definition/ (pages/<id>/page.json, pages/<id>/visuals/<id>/visual.json). " +
+        "Todo JSON debe seguir siendo válido: Power BI Desktop no abre el proyecto con JSON dañado.\n" +
+        "- No modifique cache.abf, .pbi/, localSettings.json ni archivos binarios.\n" +
+        "- DAX: use los nombres exactos de tablas y columnas que existen en el TMDL; explique cada medida nueva en el plan.");
 
     /// <summary>
     /// Validação automática depois da execução: todo JSON alterado do projeto (PBIR, .pbip,
@@ -88,7 +96,7 @@ public sealed record PowerBiProject(string PbipPath, string? SemanticModelDir, s
             catch (JsonException ex)
             {
                 findings.Add(new Finding("Critico", rel, (int?)ex.LineNumber + 1,
-                    NxText.T($"JSON inválido — o Power BI Desktop não vai abrir o projeto: {ex.Message}", $"Invalid JSON — Power BI Desktop will not open the project: {ex.Message}")));
+                    NxText.T($"JSON inválido — o Power BI Desktop não vai abrir o projeto: {ex.Message}", $"Invalid JSON — Power BI Desktop will not open the project: {ex.Message}", $"JSON no válido — Power BI Desktop no abrirá el proyecto: {ex.Message}")));
             }
         }
         return findings;

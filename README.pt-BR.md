@@ -1,4 +1,4 @@
-🌐 **Português** | [Read in English](README.md)
+🌐 **Português** | [Read in English](README.md) | [Leer en español](README.es.md)
 
 ---
 
@@ -20,7 +20,7 @@ registra tudo para auditoria e **pede a sua decisão** antes de qualquer ação 
 
 Também: histórico de tarefas, notificações, work items do Azure DevOps (somente leitura), projetos Power BI (PBIP)
 editados como código, leitura e monitoramento de janelas de apps (cliques só por processo aprovado), IA local (LLaMA) ou
-provedores (GitHub Copilot/Models, Azure OpenAI, Microsoft 365, OpenRouter), interface em português e inglês.
+provedores (GitHub Copilot/Models, Azure OpenAI, Microsoft 365, OpenRouter), interface em português, inglês e espanhol.
 
 ### 🧩 Extensões (prévia)
 

@@ -34,7 +34,7 @@ public partial class ReadAppWindow : Window
         foreach (var w in ui.ListWindows(allowedOnly: false).OrderBy(w => w.ProcessName))
             AppsBox.Items.Add(new ComboBoxItem
             {
-                Content = $"{w.ProcessName} — {w.Title}{(w.Minimized ? T("  (minimizado)", "  (minimized)") : "")}",
+                Content = $"{w.ProcessName} — {w.Title}{(w.Minimized ? T("  (minimizado)", "  (minimized)", "  (minimizada)") : "")}",
                 Tag = w,
             });
         if (AppsBox.Items.Count > 0) AppsBox.SelectedIndex = 0;
@@ -44,9 +44,9 @@ public partial class ReadAppWindow : Window
     private void LoadActions()
     {
         ActionBox.Items.Clear();
-        ActionBox.Items.Add(new ComboBoxItem { Content = T("Só avisar (nenhuma ação)", "Only alert (no action)") });
+        ActionBox.Items.Add(new ComboBoxItem { Content = T("Só avisar (nenhuma ação)", "Only alert (no action)", "Solo avisar (sin acción)") });
         foreach (var p in Services.UiProcessStore.Load().Where(p => p.IsApproved))
-            ActionBox.Items.Add(new ComboBoxItem { Content = T($"Executar o processo \"{p.Name}\" ({p.ProcessName})", $"Run process \"{p.Name}\" ({p.ProcessName})"), Tag = p });
+            ActionBox.Items.Add(new ComboBoxItem { Content = T($"Executar o processo \"{p.Name}\" ({p.ProcessName})", $"Run process \"{p.Name}\" ({p.ProcessName})", $"Ejecutar el proceso \"{p.Name}\" ({p.ProcessName})"), Tag = p });
         ActionBox.SelectedIndex = 0;
     }
 
@@ -61,14 +61,14 @@ public partial class ReadAppWindow : Window
     {
         if (Selected is not { } w) return;
         ReadButton.IsEnabled = false;
-        Status(T("Lendo…", "Reading…"), Brushes.DimGray);
+        Status(T("Lendo…", "Reading…", "Leyendo…"), Brushes.DimGray);
         try
         {
             var text = await Task.Run(() => { using var ui = For(w); return ui.ReadText(w); });
             TextBox.Text = text;
             Status(text.Length == 0
-                ? T("O app não expôs texto pela acessibilidade (comum em imagens, PDF escaneado e áreas remotas).", "The app exposed no text through accessibility (common for images, scanned PDFs and remote desktops).")
-                : T($"{text.Length} caracteres lidos de {w.ProcessName}. Revise antes de usar.", $"{text.Length} characters read from {w.ProcessName}. Review before using."),
+                ? T("O app não expôs texto pela acessibilidade (comum em imagens, PDF escaneado e áreas remotas).", "The app exposed no text through accessibility (common for images, scanned PDFs and remote desktops).", "La app no expuso texto por accesibilidad (común en imágenes, PDF escaneados y escritorios remotos).")
+                : T($"{text.Length} caracteres lidos de {w.ProcessName}. Revise antes de usar.", $"{text.Length} characters read from {w.ProcessName}. Review before using.", $"{text.Length} caracteres leídos de {w.ProcessName}. Revise antes de usar."),
                 text.Length == 0 ? Brushes.DarkOrange : Brushes.Green);
         }
         catch (Exception ex) { Status(ex.Message, Brushes.Firebrick); }
@@ -90,23 +90,25 @@ public partial class ReadAppWindow : Window
         catch (ArgumentOutOfRangeException ex) { Status(ex.Message.Split(" (")[0], Brushes.Firebrick); return; }
 
         var action = (ActionBox.SelectedItem as ComboBoxItem)?.Tag as UiProcess;
-        var where = options.Origin != null ? T($" na área \"{options.Origin}\"", $" in the \"{options.Origin}\" area") : "";
+        var where = options.Origin != null ? T($" na área \"{options.Origin}\"", $" in the \"{options.Origin}\" area", $" en el área \"{options.Origin}\"") : "";
         var what = options.Keywords.Count > 0
-            ? T($"avisando quando aparecer{where}: {string.Join(", ", options.Keywords)}", $"alerting when it shows{where}: {string.Join(", ", options.Keywords)}")
-            : T($"avisando a cada linha nova{where}", $"alerting on every new line{where}");
+            ? T($"avisando quando aparecer{where}: {string.Join(", ", options.Keywords)}", $"alerting when it shows{where}: {string.Join(", ", options.Keywords)}", $"avisando cuando aparezca{where}: {string.Join(", ", options.Keywords)}")
+            : T($"avisando a cada linha nova{where}", $"alerting on every new line{where}", $"avisando en cada línea nueva{where}");
         var then = action != null
             ? T($"\n\nAo disparar, executa o processo aprovado \"{action.Name}\" (no máximo 1 vez por leitura; exclusões pedem confirmação).",
-                $"\n\nWhen it fires, runs the approved process \"{action.Name}\" (at most once per read; deletions ask for confirmation).")
+                $"\n\nWhen it fires, runs the approved process \"{action.Name}\" (at most once per read; deletions ask for confirmation).",
+                $"\n\nAl dispararse, ejecuta el proceso aprobado \"{action.Name}\" (como máximo una vez por lectura; las eliminaciones piden confirmación).")
             : "";
         var confirm = T($"Monitorar {w.ProcessName} a cada {options.Interval.TotalSeconds:F0} s por {options.Duration.TotalMinutes:F0} min, {what}? Só leitura; para sozinho no fim do tempo.{then}",
-                        $"Monitor {w.ProcessName} every {options.Interval.TotalSeconds:F0} s for {options.Duration.TotalMinutes:F0} min, {what}? Read-only; stops by itself when time is up.{then}");
+                        $"Monitor {w.ProcessName} every {options.Interval.TotalSeconds:F0} s for {options.Duration.TotalMinutes:F0} min, {what}? Read-only; stops by itself when time is up.{then}",
+                        $"¿Monitorear {w.ProcessName} cada {options.Interval.TotalSeconds:F0} s durante {options.Duration.TotalMinutes:F0} min, {what}? Solo lectura; se detiene solo al acabar el tiempo.{then}");
         if (MessageBox.Show(this, confirm, "NXPilot", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
 
         _monitor = new CancellationTokenSource();
-        MonitorButton.Content = T("Parar", "Stop");
+        MonitorButton.Content = T("Parar", "Stop", "Detener");
         MonitorLog.Items.Clear();
         var until = DateTime.Now + options.Duration;
-        Status(T($"Monitorando até {until:HH:mm}…", $"Monitoring until {until:HH:mm}…"), Brushes.DimGray);
+        Status(T($"Monitorando até {until:HH:mm}…", $"Monitoring until {until:HH:mm}…", $"Monitoreando hasta las {until:HH:mm}…"), Brushes.DimGray);
         try
         {
             using var ui = For(w);
@@ -126,19 +128,19 @@ public partial class ReadAppWindow : Window
                 else
                     MonitorLog.Items.Insert(0, new ListBoxItem
                     {
-                        Content = $"{r.At:HH:mm:ss}  #{r.Number}  " + (!r.OriginVisible ? T("origem não está na tela — aguardando", "origin is not on screen — waiting")
-                            : r.Number == 1 ? T("primeira leitura (estado inicial)", "first read (initial state)") : T("nada novo", "nothing new")),
+                        Content = $"{r.At:HH:mm:ss}  #{r.Number}  " + (!r.OriginVisible ? T("origem não está na tela — aguardando", "origin is not on screen — waiting", "el origen no está en pantalla — esperando")
+                            : r.Number == 1 ? T("primeira leitura (estado inicial)", "first read (initial state)", "primera lectura (estado inicial)") : T("nada novo", "nothing new", "nada nuevo")),
                         Foreground = Brushes.Gray,
                     });
             }), _monitor.Token);
-            Status(T("Monitor encerrado.", "Monitor finished."), Brushes.DimGray);
+            Status(T("Monitor encerrado.", "Monitor finished.", "Monitoreo concluido."), Brushes.DimGray);
         }
         catch (Exception ex) { Status(ex.Message, Brushes.Firebrick); }
         finally
         {
             _monitor?.Dispose();
             _monitor = null;
-            MonitorButton.Content = T("Iniciar", "Start");
+            MonitorButton.Content = T("Iniciar", "Start", "Iniciar");
         }
     }
 
@@ -150,9 +152,9 @@ public partial class ReadAppWindow : Window
         _acting = true;
         try
         {
-            MonitorLog.Items.Insert(0, T($"▶ Executando o processo \"{process.Name}\"…", $"▶ Running process \"{process.Name}\"…"));
+            MonitorLog.Items.Insert(0, T($"▶ Executando o processo \"{process.Name}\"…", $"▶ Running process \"{process.Name}\"…", $"▶ Ejecutando el proceso \"{process.Name}\"…"));
             var results = await ProcessesWindow.RunAsync(this, process, line => MonitorLog.Items.Insert(0, "   " + line), _monitor?.Token ?? CancellationToken.None);
-            MonitorLog.Items.Insert(0, results.All(x => x.Ok) ? T("✓ Processo concluído.", "✓ Process finished.") : T("✗ Processo interrompido.", "✗ Process interrupted."));
+            MonitorLog.Items.Insert(0, results.All(x => x.Ok) ? T("✓ Processo concluído.", "✓ Process finished.", "✓ Proceso concluido.") : T("✗ Processo interrompido.", "✗ Process interrupted.", "✗ Proceso interrumpido."));
         }
         catch (Exception ex) { MonitorLog.Items.Insert(0, "✗ " + ex.Message); }
         finally { _acting = false; }
@@ -160,7 +162,7 @@ public partial class ReadAppWindow : Window
 
     private void OnCopyClick(object sender, RoutedEventArgs e)
     {
-        try { Clipboard.SetText(TextBox.Text); Status(T("Copiado.", "Copied."), Brushes.Green); }
+        try { Clipboard.SetText(TextBox.Text); Status(T("Copiado.", "Copied.", "Copiado."), Brushes.Green); }
         catch { /* área de transferência ocupada */ }
     }
 

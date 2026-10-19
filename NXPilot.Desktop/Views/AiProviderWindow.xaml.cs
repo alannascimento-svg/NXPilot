@@ -58,20 +58,20 @@ public partial class AiProviderWindow : Window
 
         KeyLabel.Text = kind switch
         {
-            AiProviderKind.GitHubCopilot => T("Token do GitHub (fine-grained, permissão \"models\")", "GitHub token (fine-grained, \"models\" permission)"),
-            AiProviderKind.AzureOpenAI => T("Chave do Azure OpenAI (header api-key)", "Azure OpenAI key (api-key header)"),
-            AiProviderKind.OpenRouter => T("Chave do OpenRouter", "OpenRouter key"),
+            AiProviderKind.GitHubCopilot => T("Token do GitHub (fine-grained, permissão \"models\")", "GitHub token (fine-grained, \"models\" permission)", "Token de GitHub (fine-grained, permiso \"models\")"),
+            AiProviderKind.AzureOpenAI => T("Chave do Azure OpenAI (header api-key)", "Azure OpenAI key (api-key header)", "Clave de Azure OpenAI (encabezado api-key)"),
+            AiProviderKind.OpenRouter => T("Chave do OpenRouter", "OpenRouter key", "Clave de OpenRouter"),
             _ => ""
         };
-        KeyState.Text = _s.ApiKey.Length > 0 && kind == _s.Kind ? T("Chave salva (cifrada). Deixe em branco para manter.", "Key saved (encrypted). Leave blank to keep it.") : "";
+        KeyState.Text = _s.ApiKey.Length > 0 && kind == _s.Kind ? T("Chave salva (cifrada). Deixe em branco para manter.", "Key saved (encrypted). Leave blank to keep it.", "Clave guardada (cifrada). Déjelo en blanco para mantenerla.") : "";
 
         ProviderHint.Text = kind switch
         {
-            AiProviderKind.LocalLlama => T("Roda na máquina, sem enviar nada. É a IA Local compartilhada com o NXProject.", "Runs on this machine, sends nothing. It is the Local AI shared with NXProject."),
-            AiProviderKind.GitHubCopilot => T("Usa os modelos do GitHub (GitHub Models) com o token da sua conta Copilot.", "Uses GitHub models (GitHub Models) with your Copilot account token."),
-            AiProviderKind.AzureOpenAI => T("O deployment de Azure OpenAI da empresa: URL completa com api-version.", "Your company Azure OpenAI deployment: full URL with api-version."),
-            AiProviderKind.Microsoft365 => T("Azure OpenAI com o login corporativo (Entra ID) — a TI informa Tenant, Client ID e o endpoint.", "Azure OpenAI with corporate sign-in (Entra ID) — IT provides the Tenant, Client ID and endpoint."),
-            AiProviderKind.OpenRouter => T("Vários modelos com uma chave só, inclusive gratuitos (openrouter/free).", "Many models with a single key, free ones included (openrouter/free)."),
+            AiProviderKind.LocalLlama => T("Roda na máquina, sem enviar nada. É a IA Local compartilhada com o NXProject.", "Runs on this machine, sends nothing. It is the Local AI shared with NXProject.", "Se ejecuta en esta máquina, no envía nada. Es la IA Local compartida con NXProject."),
+            AiProviderKind.GitHubCopilot => T("Usa os modelos do GitHub (GitHub Models) com o token da sua conta Copilot.", "Uses GitHub models (GitHub Models) with your Copilot account token.", "Usa los modelos de GitHub (GitHub Models) con el token de su cuenta de Copilot."),
+            AiProviderKind.AzureOpenAI => T("O deployment de Azure OpenAI da empresa: URL completa com api-version.", "Your company Azure OpenAI deployment: full URL with api-version.", "El deployment de Azure OpenAI de su empresa: URL completa con api-version."),
+            AiProviderKind.Microsoft365 => T("Azure OpenAI com o login corporativo (Entra ID) — a TI informa Tenant, Client ID e o endpoint.", "Azure OpenAI with corporate sign-in (Entra ID) — IT provides the Tenant, Client ID and endpoint.", "Azure OpenAI con inicio de sesión corporativo (Entra ID) — TI proporciona el Tenant, el Client ID y el endpoint."),
+            AiProviderKind.OpenRouter => T("Vários modelos com uma chave só, inclusive gratuitos (openrouter/free).", "Many models with a single key, free ones included (openrouter/free).", "Muchos modelos con una sola clave, incluidos gratuitos (openrouter/free)."),
             _ => ""
         };
 
@@ -99,14 +99,14 @@ public partial class AiProviderWindow : Window
     private async void OnTestClick(object sender, RoutedEventArgs e)
     {
         TestButton.IsEnabled = false;
-        Status(T("Testando…", "Testing…"), Brushes.DimGray);
+        Status(T("Testando…", "Testing…", "Probando…"), Brushes.DimGray);
         try
         {
             using var client = new ChatRiskClassifier(Collect());
             await client.InitializeAsync();
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var r = await client.ClassifyAsync("Bash: git push --force origin main");
-            Status(T($"Conectado. Classificou um push forçado como {r.Level} em {sw.ElapsedMilliseconds} ms ({r.Reason}).", $"Connected. It classified a forced push as {r.Level} in {sw.ElapsedMilliseconds} ms ({r.Reason})."),
+            Status(T($"Conectado. Classificou um push forçado como {r.Level} em {sw.ElapsedMilliseconds} ms ({r.Reason}).", $"Connected. It classified a forced push as {r.Level} in {sw.ElapsedMilliseconds} ms ({r.Reason}).", $"Conectado. Clasificó un push forzado como {r.Level} en {sw.ElapsedMilliseconds} ms ({r.Reason})."),
                 r.Level == Risk.RiskLevel.Alto ? Brushes.Green : Brushes.DarkOrange);
         }
         catch (Exception ex) { Status(ex.Message, Brushes.Firebrick); }
@@ -119,10 +119,10 @@ public partial class AiProviderWindow : Window
         try
         {
             var prompt = await EntraAuthService.StartLoginAsync(TenantBox.Text, ClientBox.Text, ScopeBox.Text);
-            LoginCode.Text = T($"Código: {prompt.UserCode} — digite em {prompt.VerificationUri} (a página já foi aberta no navegador).", $"Code: {prompt.UserCode} — enter it at {prompt.VerificationUri} (the page was opened in your browser).");
+            LoginCode.Text = T($"Código: {prompt.UserCode} — digite em {prompt.VerificationUri} (a página já foi aberta no navegador).", $"Code: {prompt.UserCode} — enter it at {prompt.VerificationUri} (the page was opened in your browser).", $"Código: {prompt.UserCode} — ingréselo en {prompt.VerificationUri} (la página se abrió en su navegador).");
             var token = await EntraAuthService.CompleteLoginAsync(prompt, TenantBox.Text, ClientBox.Text, ScopeBox.Text);
             LoginCode.Text = "";
-            Status(T($"Conectado como {token.Account}.", $"Signed in as {token.Account}."), Brushes.Green);
+            Status(T($"Conectado como {token.Account}.", $"Signed in as {token.Account}.", $"Sesión iniciada como {token.Account}."), Brushes.Green);
             ShowSession();
         }
         catch (Exception ex) { Status(ex.Message, Brushes.Firebrick); }
@@ -139,8 +139,8 @@ public partial class AiProviderWindow : Window
     {
         var s = EntraAuthService.GetCurrentSession();
         SessionText.Text = s is { } x
-            ? T($"Conta conectada: {x.Account} · token até {x.ExpiresAtUtc.ToLocalTime():dd/MM HH:mm} (renova sozinho)", $"Signed-in account: {x.Account} · token until {x.ExpiresAtUtc.ToLocalTime():MM/dd HH:mm} (renews automatically)")
-            : T("Nenhuma conta conectada.", "No account signed in.");
+            ? T($"Conta conectada: {x.Account} · token até {x.ExpiresAtUtc.ToLocalTime():dd/MM HH:mm} (renova sozinho)", $"Signed-in account: {x.Account} · token until {x.ExpiresAtUtc.ToLocalTime():MM/dd HH:mm} (renews automatically)", $"Cuenta conectada: {x.Account} · token hasta {x.ExpiresAtUtc.ToLocalTime():dd/MM HH:mm} (se renueva automáticamente)")
+            : T("Nenhuma conta conectada.", "No account signed in.", "Ninguna cuenta conectada.");
     }
 
     private void OnSaveClick(object sender, RoutedEventArgs e)
@@ -158,7 +158,7 @@ public partial class AiProviderWindow : Window
             _s.Save();
             DialogResult = true;
         }
-        catch (Exception ex) { Status(T("Não salvou: ", "Not saved: ") + ex.Message, Brushes.Firebrick); }
+        catch (Exception ex) { Status(T("Não salvou: ", "Not saved: ", "No se guardó: ") + ex.Message, Brushes.Firebrick); }
     }
 
     private void Status(string text, Brush color)

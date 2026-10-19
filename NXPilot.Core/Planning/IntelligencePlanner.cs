@@ -63,7 +63,8 @@ public sealed class IntelligencePlanner(IIntelligenceTransport transport, Action
         catch (Exception ex)
         {
             log?.Invoke(NxText.T($"NXAgentic Intelligence indisponível em \"{op}\" ({ex.Message}) — usando o planejador Basic.",
-                                 $"NXAgentic Intelligence unavailable for \"{op}\" ({ex.Message}) — using the Basic planner."));
+                                 $"NXAgentic Intelligence unavailable for \"{op}\" ({ex.Message}) — using the Basic planner.",
+                                 $"NXAgentic Intelligence no disponible en \"{op}\" ({ex.Message}) — usando el planificador Basic."));
             return await fallback();
         }
     }

@@ -22,17 +22,19 @@ public partial class CloseDialog : Window
     {
         InitializeComponent();
         Title = "NXPilot";
-        Heading.Text = T("Fechar o NXPilot?", "Close NXPilot?");
+        Heading.Text = T("Fechar o NXPilot?", "Close NXPilot?", "¿Cerrar NXPilot?");
         Body.Text = runningAgents == 1
-            ? T("Há 1 agente em execução.", "1 agent is running.")
-            : T($"Há {runningAgents} agentes em execução.", $"{runningAgents} agents are running.");
-        MinimizeButton.Content = T("Minimizar — os agentes continuam", "Minimize — agents keep running");
+            ? T("Há 1 agente em execução.", "1 agent is running.", "Hay 1 agente en ejecución.")
+            : T($"Há {runningAgents} agentes em execução.", $"{runningAgents} agents are running.", $"Hay {runningAgents} agentes en ejecución.");
+        MinimizeButton.Content = T("Minimizar — os agentes continuam", "Minimize — agents keep running", "Minimizar — los agentes siguen en ejecución");
         MinimizeHint.Text = T("A janela vai para a barra de tarefas; as decisões pendentes esperam por você.",
-                              "The window goes to the taskbar; pending decisions wait for you.");
-        ExitButton.Content = T("Finalizar os agentes e sair", "Stop the agents and exit");
+                              "The window goes to the taskbar; pending decisions wait for you.",
+                              "La ventana va a la barra de tareas; las decisiones pendientes lo esperan.");
+        ExitButton.Content = T("Finalizar os agentes e sair", "Stop the agents and exit", "Detener los agentes y salir");
         ExitHint.Text = T("Cada agente é encerrado e registrado no log; o trabalho fica no worktree para retomar depois.",
-                          "Each agent is stopped and logged; the work stays in its worktree to resume later.");
-        CancelButton.Content = T("Cancelar", "Cancel");
+                          "Each agent is stopped and logged; the work stays in its worktree to resume later.",
+                          "Cada agente se detiene y queda registrado; el trabajo permanece en su worktree para retomarlo después.");
+        CancelButton.Content = T("Cancelar", "Cancel", "Cancelar");
     }
 
     private void OnMinimize(object sender, RoutedEventArgs e)

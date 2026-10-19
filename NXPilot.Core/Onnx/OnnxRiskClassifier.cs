@@ -94,7 +94,7 @@ public sealed class OnnxRiskClassifier(OnnxModelStore store, OnnxDevice device, 
         var confidence = exp[0] / exp.Sum();
         var best = scores[0];
         return Task.FromResult(new RiskResult(best.Level, confidence, Name,
-            NxText.T($"mais parecido com: {best.Nearest}", $"closest to: {best.Nearest}"), sw.Elapsed));
+            NxText.T($"mais parecido com: {best.Nearest}", $"closest to: {best.Nearest}", $"más parecido a: {best.Nearest}"), sw.Elapsed));
     }
 
     /// <summary>Tokeniza, roda o MiniLM e faz mean pooling + normalização L2.</summary>

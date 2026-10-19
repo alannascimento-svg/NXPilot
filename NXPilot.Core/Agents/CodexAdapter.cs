@@ -52,14 +52,15 @@ public sealed class CodexAdapter(string? model = null, string? executablePath = 
     {
         if (ExecutablePath == null)
         {
-            yield return new AgentEvent(AgentEventKind.Error, NxText.T("Codex não encontrado no Windows.", "Codex not found on Windows."), IsError: true);
+            yield return new AgentEvent(AgentEventKind.Error, NxText.T("Codex não encontrado no Windows.", "Codex not found on Windows.", "Codex no se encontró en Windows."), IsError: true);
             yield break;
         }
         if (request.Mode != AgentMode.Plan)
         {
             yield return new AgentEvent(AgentEventKind.Error, NxText.T(
                 "O Codex roda só em modo somente leitura no NXPilot (revisão). Execução com escrita virá pelo protocolo de aprovação.",
-                "In NXPilot, Codex only runs read-only (review). Execution with writes will come through the approval protocol."), IsError: true);
+                "In NXPilot, Codex only runs read-only (review). Execution with writes will come through the approval protocol.",
+                "En NXPilot, Codex solo se ejecuta en modo de solo lectura (revisión). La ejecución con escritura vendrá por el protocolo de aprobación."), IsError: true);
             yield break;
         }
 
@@ -112,7 +113,7 @@ public sealed class CodexAdapter(string? model = null, string? executablePath = 
 
         if (!sawEnd)
             yield return new AgentEvent(AgentEventKind.Error,
-                NxText.T($"Codex terminou sem resultado (código {process.ExitCode}). ", $"Codex ended without a result (exit code {process.ExitCode}). ") + stderr.Trim(), IsError: true);
+                NxText.T($"Codex terminou sem resultado (código {process.ExitCode}). ", $"Codex ended without a result (exit code {process.ExitCode}). ", $"Codex terminó sin resultado (código {process.ExitCode}). ") + stderr.Trim(), IsError: true);
     }
 }
 
@@ -170,7 +171,9 @@ public static class CodexStreamParser
             ? NxText.T("O modelo do Codex não é aceito pela sua conta ChatGPT (o config.toml pode apontar para um modelo que a conta não tem). " +
                        "Na Nova tarefa, escolha um modelo da lista \"Modelo do Codex\" — ela vem da sua conta; testado com o NXPilot: " + string.Join(", ", CodexAppServerAdapter.TestedModels) + ". Detalhe: ",
                        "This Codex model is not accepted by your ChatGPT account (config.toml may point to a model the account lacks). " +
-                       "In New task, pick a model from the \"Codex model\" list — it comes from your account; tested with NXPilot: " + string.Join(", ", CodexAppServerAdapter.TestedModels) + ". Detail: ") + raw
+                       "In New task, pick a model from the \"Codex model\" list — it comes from your account; tested with NXPilot: " + string.Join(", ", CodexAppServerAdapter.TestedModels) + ". Detail: ",
+                       "Su cuenta de ChatGPT no acepta este modelo de Codex (el config.toml puede apuntar a un modelo que la cuenta no tiene). " +
+                       "En Nueva tarea, elija un modelo de la lista \"Modelo de Codex\": proviene de su cuenta; probado con NXPilot: " + string.Join(", ", CodexAppServerAdapter.TestedModels) + ". Detalle: ") + raw
             : raw;
 
     private static string? Str(JsonElement e, string name) =>

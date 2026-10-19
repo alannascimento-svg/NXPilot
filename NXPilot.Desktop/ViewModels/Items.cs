@@ -20,9 +20,9 @@ public sealed record PhaseItem(int Number, string Title, string Status, string A
     /// <summary>Status é chave interna (cor do selo); este é o texto exibido.</summary>
     public string StatusLabel => Status switch
     {
-        "Concluido" => NxText.T("Concluído", "Done"),
-        "Rodando" => NxText.T("Rodando", "Running"),
-        "Pendente" => NxText.T("Pendente", "Pending"),
+        "Concluido" => NxText.T("Concluído", "Done", "Concluido"),
+        "Rodando" => NxText.T("Rodando", "Running", "En ejecución"),
+        "Pendente" => NxText.T("Pendente", "Pending", "Pendiente"),
         _ => Status
     };
 }
@@ -53,7 +53,7 @@ public sealed partial class DecisionItem(string agent, string action, string con
     public TaskCompletionSource<bool>? Response { get; init; }
 
     [ObservableProperty] private RiskLevel? _level;
-    [ObservableProperty] private string _riskDetail = NxText.T("aguardando classificador…", "waiting for the classifier…");
+    [ObservableProperty] private string _riskDetail = NxText.T("aguardando classificador…", "waiting for the classifier…", "esperando al clasificador…");
 }
 
 public sealed record BenchmarkRow(string Engine, string Load, double AverageMs, string Average, string P95, string Accuracy,

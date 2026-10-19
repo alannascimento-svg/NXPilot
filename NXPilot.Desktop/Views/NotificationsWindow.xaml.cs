@@ -18,11 +18,12 @@ public partial class NotificationsWindow : Window
     {
         InitializeComponent();
         _center = center;
-        Title = Heading.Text = T("Notificações", "Notifications");
-        ClearButton.Content = T("Limpar", "Clear");
-        CloseButton.Content = T("Fechar", "Close");
+        Title = Heading.Text = T("Notificações", "Notifications", "Notificaciones");
+        ClearButton.Content = T("Limpar", "Clear", "Limpiar");
+        CloseButton.Content = T("Fechar", "Close", "Cerrar");
         EmptyText.Text = T("Nenhum aviso por enquanto. Decisões pendentes, planos prontos e tarefas concluídas aparecem aqui.",
-                           "No notifications yet. Pending decisions, ready plans and finished tasks show up here.");
+                           "No notifications yet. Pending decisions, ready plans and finished tasks show up here.",
+                           "Aún no hay notificaciones. Aquí aparecen decisiones pendientes, planes listos y tareas concluidas.");
         List.ItemsSource = center.Items;
         EmptyText.Visibility = center.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         Closed += (_, _) => center.MarkAllRead();

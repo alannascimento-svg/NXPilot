@@ -21,9 +21,9 @@ public sealed record MessageRow(string Time, string From, string? Text, string? 
 
     public string RelevanceLabel => Relevance switch
     {
-        MessageRelevance.Prioritario => NxText.T("Prioritário", "Priority"),
-        MessageRelevance.Relevante => NxText.T("Relevante", "Relevant"),
-        _ => NxText.T("Ignorar", "Ignore")
+        MessageRelevance.Prioritario => NxText.T("Prioritário", "Priority", "Prioritario"),
+        MessageRelevance.Relevante => NxText.T("Relevante", "Relevant", "Relevante"),
+        _ => NxText.T("Ignorar", "Ignore", "Ignorar")
     };
 }
 
@@ -57,7 +57,7 @@ public sealed partial class ChannelsViewModel : ObservableObject
     [ObservableProperty] private int _listenPort;
     [ObservableProperty] private string _prioritySenders;
     [ObservableProperty] private string _keywords;
-    [ObservableProperty] private string _status = T("Canal desligado.", "Channel off.");
+    [ObservableProperty] private string _status = T("Canal desligado.", "Channel off.", "Canal apagado.");
     [ObservableProperty] private bool _isRunning;
     [ObservableProperty] private int _priorityCount;
     [ObservableProperty] private int _relevantCount;
@@ -66,8 +66,8 @@ public sealed partial class ChannelsViewModel : ObservableObject
     public string VerifyToken => _options.VerifyToken;
     public string TunnelCommand => $"cloudflared tunnel --url http://localhost:{ListenPort}";
     public string SecretsState => _options.AccessToken.Length > 0
-        ? T("Token e App Secret salvos (cifrados no seu perfil).", "Token and App Secret saved (encrypted in your profile).")
-        : T("Token e App Secret ainda não informados.", "Token and App Secret not provided yet.");
+        ? T("Token e App Secret salvos (cifrados no seu perfil).", "Token and App Secret saved (encrypted in your profile).", "Token y App Secret guardados (cifrados en su perfil).")
+        : T("Token e App Secret ainda não informados.", "Token and App Secret not provided yet.", "Token y App Secret aún no informados.");
     public bool IsSimulator => !UseOfficialApi;
 
     partial void OnUseOfficialApiChanged(bool value) => OnPropertyChanged(nameof(IsSimulator));
@@ -91,9 +91,9 @@ public sealed partial class ChannelsViewModel : ObservableObject
         try
         {
             _options.Save();
-            Status = T("Configuração salva.", "Settings saved.");
+            Status = T("Configuração salva.", "Settings saved.", "Configuración guardada.");
         }
-        catch (Exception ex) { Status = T("Não salvou: ", "Not saved: ") + ex.Message; }
+        catch (Exception ex) { Status = T("Não salvou: ", "Not saved: ", "No se guardó: ") + ex.Message; }
         OnPropertyChanged(nameof(SecretsState));
     }
 
@@ -113,7 +113,7 @@ public sealed partial class ChannelsViewModel : ObservableObject
         {
             await _source.StartAsync();
             IsRunning = true;
-            _main.AddLog(T("Canal", "Channel"), "info", T($"{_source.Name} ligado (somente leitura).", $"{_source.Name} on (read-only)."));
+            _main.AddLog(T("Canal", "Channel", "Canal"), "info", T($"{_source.Name} ligado (somente leitura).", $"{_source.Name} on (read-only).", $"{_source.Name} encendido (solo lectura)."));
         }
         catch (Exception ex)
         {
@@ -128,7 +128,7 @@ public sealed partial class ChannelsViewModel : ObservableObject
     {
         if (_source == null) return;
         await _source.DisposeAsync();
-        _main.AddLog(T("Canal", "Channel"), "info", T($"{_source.Name} desligado.", $"{_source.Name} off."));
+        _main.AddLog(T("Canal", "Channel", "Canal"), "info", T($"{_source.Name} desligado.", $"{_source.Name} off.", $"{_source.Name} apagado."));
         _source = null;
         IsRunning = false;
     }
@@ -137,13 +137,13 @@ public sealed partial class ChannelsViewModel : ObservableObject
     private void EmitTest()
     {
         if (_source is SimulatedMessageSource sim) sim.EmitNext();
-        else Status = T("Ligue o canal no modo Simulador para receber mensagens de teste.", "Turn the channel on in Simulator mode to receive test messages.");
+        else Status = T("Ligue o canal no modo Simulador para receber mensagens de teste.", "Turn the channel on in Simulator mode to receive test messages.", "Encienda el canal en modo Simulador para recibir mensajes de prueba.");
     }
 
     [RelayCommand]
     private void CopyVerifyToken()
     {
-        try { Clipboard.SetText(VerifyToken); Status = T("Verify token copiado — cole no painel de Webhooks da Meta.", "Verify token copied — paste it in the Meta Webhooks panel."); }
+        try { Clipboard.SetText(VerifyToken); Status = T("Verify token copiado — cole no painel de Webhooks da Meta.", "Verify token copied — paste it in the Meta Webhooks panel.", "Verify token copiado — péguelo en el panel de Webhooks de Meta."); }
         catch { /* área de transferência ocupada */ }
     }
 
@@ -152,14 +152,14 @@ public sealed partial class ChannelsViewModel : ObservableObject
     {
         var triage = new RuleMessageTriage(Split(PrioritySenders), Split(Keywords)).Classify(m);
         var media = m.Media.Count == 0 ? null
-            : string.Join(", ", m.Media.Select(x => x.LocalPath != null ? T($"{x.Kind} salvo", $"{x.Kind} saved") : T($"{x.Kind} (não baixado)", $"{x.Kind} (not downloaded)")));
+            : string.Join(", ", m.Media.Select(x => x.LocalPath != null ? T($"{x.Kind} salvo", $"{x.Kind} saved", $"{x.Kind} guardado") : T($"{x.Kind} (não baixado)", $"{x.Kind} (not downloaded)", $"{x.Kind} (no descargado)")));
         Messages.Insert(0, new MessageRow(m.Timestamp.LocalDateTime.ToString("HH:mm:ss"), m.FromName, m.Text, media, triage.Relevance, triage.Reason));
 
         switch (triage.Relevance)
         {
             case MessageRelevance.Prioritario:
                 PriorityCount++;
-                _main.Notifications.Notify(NotificationKind.Message, T($"Mensagem prioritária · {m.FromName}", $"Priority message · {m.FromName}"), m.Text ?? media ?? "");
+                _main.Notifications.Notify(NotificationKind.Message, T($"Mensagem prioritária · {m.FromName}", $"Priority message · {m.FromName}", $"Mensaje prioritario · {m.FromName}"), m.Text ?? media ?? "");
                 break;
             case MessageRelevance.Relevante: RelevantCount++; break;
             default: IgnoredCount++; break;

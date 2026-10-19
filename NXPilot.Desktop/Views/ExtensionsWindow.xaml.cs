@@ -60,12 +60,13 @@ public partial class ExtensionsWindow : Window
 
     private void Refresh()
     {
-        string Saved(string value) => value.Length > 0 ? T("Salvo (cifrado). Deixe em branco para manter.", "Saved (encrypted). Leave blank to keep it.") : "";
+        string Saved(string value) => value.Length > 0 ? T("Salvo (cifrado). Deixe em branco para manter.", "Saved (encrypted). Leave blank to keep it.", "Guardado (cifrado). Déjelo en blanco para mantenerlo.") : "";
         DbTokenState.Text = Saved(_db.Token);
         GhTokenState.Text = Saved(_git.GitHubToken);
         AdoPatState.Text = _git.AzureDevOpsFromNXProject
             ? T("Usando o PAT do NXProject (não é copiado para o NXPilot). Ele precisa do escopo Code para repositórios.",
-                "Using the NXProject PAT (not copied into NXPilot). It needs the Code scope for repositories.")
+                "Using the NXProject PAT (not copied into NXPilot). It needs the Code scope for repositories.",
+                "Usando el PAT de NXProject (no se copia a NXPilot). Necesita el alcance Code para repositorios.")
             : Saved(_git.AzureDevOpsToken);
         GmailSecretState.Text = Saved(_mail.GmailClientSecret);
 
@@ -79,8 +80,8 @@ public partial class ExtensionsWindow : Window
 
         var pbi = Services.PowerBiDesktop.Locate();
         PowerBiLocation.Text = pbi != null
-            ? T($"Power BI Desktop encontrado: {pbi}", $"Power BI Desktop found: {pbi}")
-            : T("Power BI Desktop não encontrado. Instale pela Microsoft Store ou em powerbi.microsoft.com/desktop.", "Power BI Desktop not found. Install it from the Microsoft Store or powerbi.microsoft.com/desktop.");
+            ? T($"Power BI Desktop encontrado: {pbi}", $"Power BI Desktop found: {pbi}", $"Power BI Desktop encontrado: {pbi}")
+            : T("Power BI Desktop não encontrado. Instale pela Microsoft Store ou em powerbi.microsoft.com/desktop.", "Power BI Desktop not found. Install it from the Microsoft Store or powerbi.microsoft.com/desktop.", "Power BI Desktop no encontrado. Instálelo desde Microsoft Store o en powerbi.microsoft.com/desktop.");
         Dot(PowerBiDot, pbi != null);
         Dot(WindowsDot, _windows.AllowedProcesses.Count > 0);
     }
@@ -89,15 +90,16 @@ public partial class ExtensionsWindow : Window
     {
         var token = new DpapiTokenStore(provider).LoadAsync().GetAwaiter().GetResult();
         return token == null
-            ? (false, T("Não conectado.", "Not signed in."))
+            ? (false, T("Não conectado.", "Not signed in.", "Sin sesión iniciada."))
             : (true, T($"Conectado · renova sozinho{(token.RefreshToken == null ? $" (expira {token.ExpiresAt.LocalDateTime:dd/MM HH:mm})" : "")}",
-                       $"Signed in · renews automatically{(token.RefreshToken == null ? $" (expires {token.ExpiresAt.LocalDateTime:MM/dd HH:mm})" : "")}"));
+                       $"Signed in · renews automatically{(token.RefreshToken == null ? $" (expires {token.ExpiresAt.LocalDateTime:MM/dd HH:mm})" : "")}",
+                       $"Sesión iniciada · se renueva automáticamente{(token.RefreshToken == null ? $" (vence {token.ExpiresAt.LocalDateTime:dd/MM HH:mm})" : "")}"));
     }
 
     private static void Dot(Ellipse dot, bool on)
     {
         dot.Fill = on ? Brushes.SeaGreen : Brushes.Silver;
-        dot.ToolTip = on ? T("Configurada", "Configured") : T("Não configurada", "Not configured");
+        dot.ToolTip = on ? T("Configurada", "Configured", "Configurado") : T("Não configurada", "Not configured", "No configurado");
     }
 
     // ------------------------------------------------------------ o que está na tela
@@ -132,14 +134,15 @@ public partial class ExtensionsWindow : Window
     private async void OnDatabricksTestClick(object sender, RoutedEventArgs e) => await Run(DbTestButton, DbStatus, async () =>
     {
         var conn = CollectDatabricks().ToConnection();
-        if (!conn.IsComplete) return (T("Preencha host, warehouse e token.", "Fill in host, warehouse and token."), Brushes.Firebrick);
-        Status(DbStatus, T("Conectando… (warehouse parado pode levar alguns minutos para ligar)", "Connecting… (a stopped warehouse may take a few minutes to start)"), Brushes.DimGray);
+        if (!conn.IsComplete) return (T("Preencha host, warehouse e token.", "Fill in host, warehouse and token.", "Complete host, warehouse y token."), Brushes.Firebrick);
+        Status(DbStatus, T("Conectando… (warehouse parado pode levar alguns minutos para ligar)", "Connecting… (a stopped warehouse may take a few minutes to start)", "Conectando… (un warehouse detenido puede tardar unos minutos en iniciar)"), Brushes.DimGray);
         using var svc = new DatabricksSqlService(conn);
         var sw = System.Diagnostics.Stopwatch.StartNew();
         await svc.TestConnectionAsync();
         var catalogs = await svc.ListCatalogsAsync();
         return (T($"Conectado em {sw.Elapsed.TotalSeconds:F1}s. Catálogos: {string.Join(", ", catalogs.Take(8))}{(catalogs.Count > 8 ? "…" : "")}",
-                  $"Connected in {sw.Elapsed.TotalSeconds:F1}s. Catalogs: {string.Join(", ", catalogs.Take(8))}{(catalogs.Count > 8 ? "…" : "")}"), Brushes.Green);
+                  $"Connected in {sw.Elapsed.TotalSeconds:F1}s. Catalogs: {string.Join(", ", catalogs.Take(8))}{(catalogs.Count > 8 ? "…" : "")}",
+                  $"Conectado en {sw.Elapsed.TotalSeconds:F1}s. Catálogos: {string.Join(", ", catalogs.Take(8))}{(catalogs.Count > 8 ? "…" : "")}"), Brushes.Green);
     });
 
     // ------------------------------------------------------------ Git
@@ -150,11 +153,12 @@ public partial class ExtensionsWindow : Window
     private Task TestGit(Button button, GitProvider provider) => Run(button, GitStatus, async () =>
     {
         var s = CollectGit();
-        if (s.For(provider) == null) return (T($"Informe o token do {provider}.", $"Enter the {provider} token."), Brushes.Firebrick);
+        if (s.For(provider) == null) return (T($"Informe o token do {provider}.", $"Enter the {provider} token.", $"Ingrese el token de {provider}."), Brushes.Firebrick);
         var repos = await new GitRepoService(s).ListRepositoriesAsync(provider, s.AzureDevOpsOrganizationUrl);
         var names = string.Join(", ", repos.Take(6).Select(r => r.ToString()));
         return (T($"{provider}: {repos.Count} repositório(s). {names}{(repos.Count > 6 ? "…" : "")}",
-                  $"{provider}: {repos.Count} repositor{(repos.Count == 1 ? "y" : "ies")}. {names}{(repos.Count > 6 ? "…" : "")}"), Brushes.Green);
+                  $"{provider}: {repos.Count} repositor{(repos.Count == 1 ? "y" : "ies")}. {names}{(repos.Count > 6 ? "…" : "")}",
+                  $"{provider}: {repos.Count} repositorio(s). {names}{(repos.Count > 6 ? "…" : "")}"), Brushes.Green);
     });
 
     // ------------------------------------------------------------ E-mail
@@ -171,18 +175,18 @@ public partial class ExtensionsWindow : Window
         var tokens = CollectMail().Tokens(provider);
         if (tokens == null)
             return (provider == MailProvider.Outlook
-                ? T("Informe o Client ID do app no Entra ID.", "Enter the Entra ID app Client ID.")
-                : T("Informe o Client ID e o Client secret do Google Cloud.", "Enter the Google Cloud Client ID and Client secret."), Brushes.Firebrick);
-        Status(MailStatus, T("Conclua o login no navegador que foi aberto…", "Finish signing in in the browser that just opened…"), Brushes.DimGray);
+                ? T("Informe o Client ID do app no Entra ID.", "Enter the Entra ID app Client ID.", "Ingrese el Client ID de la app de Entra ID.")
+                : T("Informe o Client ID e o Client secret do Google Cloud.", "Enter the Google Cloud Client ID and Client secret.", "Ingrese el Client ID y el Client secret de Google Cloud."), Brushes.Firebrick);
+        Status(MailStatus, T("Conclua o login no navegador que foi aberto…", "Finish signing in in the browser that just opened…", "Termine de iniciar sesión en el navegador que se acaba de abrir…"), Brushes.DimGray);
         await tokens.LoginAsync();
         Refresh();
-        return (T($"{provider}: login concluído (somente leitura).", $"{provider}: signed in (read-only)."), Brushes.Green);
+        return (T($"{provider}: login concluído (somente leitura).", $"{provider}: signed in (read-only).", $"{provider}: sesión iniciada (solo lectura)."), Brushes.Green);
     });
 
     private Task TestMail(Button button, MailProvider provider) => RunMail(button, async () =>
     {
         var tokens = CollectMail().Tokens(provider);
-        if (tokens == null) return (T("Configure e entre primeiro.", "Configure and sign in first."), Brushes.Firebrick);
+        if (tokens == null) return (T("Configure e entre primeiro.", "Configure and sign in first.", "Configure e inicie sesión primero."), Brushes.Firebrick);
         using var mail = MailService.Create(provider, tokens);
         var list = await mail.ListInboxAsync(new MailQuery { Max = 5 });
         var lines = list.Select(m => $"{(m.IsRead ? "  " : "• ")}{m.ReceivedAt.LocalDateTime:dd/MM HH:mm}  {m.From}  —  {m.Subject}");
@@ -193,15 +197,15 @@ public partial class ExtensionsWindow : Window
 
     private async void OnPowerBiTestClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "Power BI Project (*.pbip)|*.pbip", Title = T("Projeto Power BI", "Power BI project") };
+        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "Power BI Project (*.pbip)|*.pbip", Title = T("Projeto Power BI", "Power BI project", "Proyecto Power BI") };
         if (dialog.ShowDialog(this) != true) return;
         PowerBiTestButton.IsEnabled = false;
-        Status(PowerBiStatus, T("Abrindo no Power BI Desktop (pode levar alguns minutos)…", "Opening in Power BI Desktop (may take a few minutes)…"), Brushes.DimGray);
+        Status(PowerBiStatus, T("Abrindo no Power BI Desktop (pode levar alguns minutos)…", "Opening in Power BI Desktop (may take a few minutes)…", "Abriendo en Power BI Desktop (puede tardar unos minutos)…"), Brushes.DimGray);
         try
         {
             var png = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"nxpilot-powerbi-{DateTime.Now:yyyyMMdd-HHmmss}.png");
             await Services.PowerBiDesktop.OpenAndCaptureAsync(dialog.FileName, png);
-            Status(PowerBiStatus, T($"Capturado: {png}", $"Captured: {png}"), Brushes.Green);
+            Status(PowerBiStatus, T($"Capturado: {png}", $"Captured: {png}", $"Capturado: {png}"), Brushes.Green);
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(png) { UseShellExecute = true });
         }
         catch (Exception ex) { Status(PowerBiStatus, ex.Message, Brushes.Firebrick); }
@@ -232,9 +236,9 @@ public partial class ExtensionsWindow : Window
                     Content = $"{(w.Allowed ? "✓" : "  ")} {w.ProcessName} — {w.Title}",
                     Tag = w,
                     Foreground = w.Allowed ? Brushes.Black : Brushes.Gray,
-                    ToolTip = w.Allowed ? null : T($"Não liberado: adicione \"{w.ProcessName}\" à lista para o NXPilot poder ver.", $"Not allowed: add \"{w.ProcessName}\" to the list so NXPilot can see it."),
+                    ToolTip = w.Allowed ? null : T($"Não liberado: adicione \"{w.ProcessName}\" à lista para o NXPilot poder ver.", $"Not allowed: add \"{w.ProcessName}\" to the list so NXPilot can see it.", $"No permitido: agregue \"{w.ProcessName}\" a la lista para que NXPilot pueda verlo."),
                 });
-            Status(WindowsStatus, T($"{WindowsList.Items.Count} janela(s). ✓ = liberada.", $"{WindowsList.Items.Count} window(s). ✓ = allowed."), Brushes.DimGray);
+            Status(WindowsStatus, T($"{WindowsList.Items.Count} janela(s). ✓ = liberada.", $"{WindowsList.Items.Count} window(s). ✓ = allowed.", $"{WindowsList.Items.Count} ventana(s). ✓ = permitida."), Brushes.DimGray);
         }
         catch (Exception ex) { Status(WindowsStatus, ex.Message, Brushes.Firebrick); }
     }
@@ -248,13 +252,13 @@ public partial class ExtensionsWindow : Window
     {
         var png = ui.Capture(w, System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"nxpilot-janela-{DateTime.Now:yyyyMMdd-HHmmss}.png"));
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(png) { UseShellExecute = true });
-        return T($"Capturado: {png}", $"Captured: {png}");
+        return T($"Capturado: {png}", $"Captured: {png}", $"Capturado: {png}");
     });
 
     private void OnWindowReadClick(object sender, RoutedEventArgs e) => WithWindow((ui, w) =>
     {
         var elements = ui.ReadElements(w);
-        return T($"{elements.Count} elemento(s) — é isto que o agente receberia:\n\n", $"{elements.Count} element(s) — this is what the agent would get:\n\n") + ui.ToAgentContext(w, elements);
+        return T($"{elements.Count} elemento(s) — é isto que o agente receberia:\n\n", $"{elements.Count} element(s) — this is what the agent would get:\n\n", $"{elements.Count} elemento(s) — esto es lo que recibiría el agente:\n\n") + ui.ToAgentContext(w, elements);
     });
 
     private void WithWindow(Func<NXPilot.WindowsUi.WindowsUiService, NXPilot.WindowsUi.WindowInfo, string> action)
@@ -280,7 +284,7 @@ public partial class ExtensionsWindow : Window
             CollectWindows().Save();
             DialogResult = true;
         }
-        catch (Exception ex) { Status(SaveStatus, T("Não salvou: ", "Not saved: ") + ex.Message, Brushes.Firebrick); }
+        catch (Exception ex) { Status(SaveStatus, T("Não salvou: ", "Not saved: ", "No se guardó: ") + ex.Message, Brushes.Firebrick); }
     }
 
     // ------------------------------------------------------------ apoio

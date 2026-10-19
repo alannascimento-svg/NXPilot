@@ -67,20 +67,20 @@ public sealed partial class TaskSession(NewTaskInfo info, string id) : Observabl
     public bool IsRunning => State is TaskState.Preparing or TaskState.Planning or TaskState.Executing or TaskState.Verifying;
     public bool IsFinished => State is TaskState.Done or TaskState.Failed or TaskState.Discarded or TaskState.Stopped;
 
-    public string CostLabel => CostUsd > 0 ? T($"custo informado pelos agentes: US$ {CostUsd:0.00}", $"cost reported by the agents: US$ {CostUsd:0.00}") : "";
+    public string CostLabel => CostUsd > 0 ? T($"custo informado pelos agentes: US$ {CostUsd:0.00}", $"cost reported by the agents: US$ {CostUsd:0.00}", $"costo informado por los agentes: US$ {CostUsd:0.00}") : "";
 
     public string StateLabel => State switch
     {
-        TaskState.Preparing => T("Preparando o worktree…", "Preparing the worktree…"),
-        TaskState.Planning => T("Claude Code está planejando (somente leitura)…", "Claude Code is planning (read-only)…"),
-        TaskState.AwaitingApproval => T($"Plano pronto ({Phases.Count} fase(s)) — aguardando a sua aprovação", $"Plan ready ({Phases.Count} phase(s)) — waiting for your approval"),
-        TaskState.Executing => T($"Executando a fase {PhaseStatus.IndexOf("Rodando") + 1} de {Phases.Count} — ações passam pelo gate", $"Running phase {PhaseStatus.IndexOf("Rodando") + 1} of {Phases.Count} — actions go through the gate"),
-        TaskState.Verifying => T("Verificação cruzada: outro agente revisa o diff (somente leitura)…", "Cross-verification: another agent reviews the diff (read-only)…"),
-        TaskState.Done when Verification is { Approved: false } v => T($"Concluída, mas a verificação apontou {v.Findings.Count(f => f.Severity == "Critico")} crítico(s) — revise antes de usar", $"Done, but verification found {v.Findings.Count(f => f.Severity == "Critico")} critical issue(s) — review before using"),
-        TaskState.Done => T("Concluída e verificada — veja o resultado na aba Diff", "Done and verified — see the result in the Diff tab"),
-        TaskState.Failed => T("Falhou — veja o Terminal e o Log", "Failed — see the Terminal and the Log"),
-        TaskState.Discarded => T("Plano descartado", "Plan discarded"),
-        TaskState.Stopped => T("Interrompida por você", "Stopped by you"),
+        TaskState.Preparing => T("Preparando o worktree…", "Preparing the worktree…", "Preparando el worktree…"),
+        TaskState.Planning => T("Claude Code está planejando (somente leitura)…", "Claude Code is planning (read-only)…", "Claude Code está planificando (solo lectura)…"),
+        TaskState.AwaitingApproval => T($"Plano pronto ({Phases.Count} fase(s)) — aguardando a sua aprovação", $"Plan ready ({Phases.Count} phase(s)) — waiting for your approval", $"Plan listo ({Phases.Count} fase(s)) — esperando su aprobación"),
+        TaskState.Executing => T($"Executando a fase {PhaseStatus.IndexOf("Rodando") + 1} de {Phases.Count} — ações passam pelo gate", $"Running phase {PhaseStatus.IndexOf("Rodando") + 1} of {Phases.Count} — actions go through the gate", $"Ejecutando la fase {PhaseStatus.IndexOf("Rodando") + 1} de {Phases.Count} — las acciones pasan por el gate"),
+        TaskState.Verifying => T("Verificação cruzada: outro agente revisa o diff (somente leitura)…", "Cross-verification: another agent reviews the diff (read-only)…", "Verificación cruzada: otro agente revisa el diff (solo lectura)…"),
+        TaskState.Done when Verification is { Approved: false } v => T($"Concluída, mas a verificação apontou {v.Findings.Count(f => f.Severity == "Critico")} crítico(s) — revise antes de usar", $"Done, but verification found {v.Findings.Count(f => f.Severity == "Critico")} critical issue(s) — review before using", $"Concluida, pero la verificación encontró {v.Findings.Count(f => f.Severity == "Critico")} problema(s) crítico(s) — revise antes de usar"),
+        TaskState.Done => T("Concluída e verificada — veja o resultado na aba Diff", "Done and verified — see the result in the Diff tab", "Concluida y verificada — vea el resultado en la pestaña Diff"),
+        TaskState.Failed => T("Falhou — veja o Terminal e o Log", "Failed — see the Terminal and the Log", "Falló — vea el Terminal y el Log"),
+        TaskState.Discarded => T("Plano descartado", "Plan discarded", "Plan descartado"),
+        TaskState.Stopped => T("Interrompida por você", "Stopped by you", "Interrumpida por usted"),
         _ => State.ToString()
     };
 

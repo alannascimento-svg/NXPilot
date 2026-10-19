@@ -15,48 +15,48 @@ namespace NXPilot.Risk;
 /// </summary>
 public sealed class RuleRiskClassifier : IRiskClassifier
 {
-    // Motivo nos dois idiomas: a lista é estática, o idioma é escolhido na hora de exibir.
-    private sealed record Rule(RiskLevel Level, Regex Pattern, string ReasonPt, string ReasonEn)
+    // Motivo nos três idiomas: a lista é estática, o idioma é escolhido na hora de exibir.
+    private sealed record Rule(RiskLevel Level, Regex Pattern, string ReasonPt, string ReasonEn, string ReasonEs)
     {
-        public string Reason => NxText.T(ReasonPt, ReasonEn);
+        public string Reason => NxText.T(ReasonPt, ReasonEn, ReasonEs);
     }
 
-    private static Rule R(RiskLevel level, string pattern, string reasonPt, string reasonEn) =>
-        new(level, new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled), reasonPt, reasonEn);
+    private static Rule R(RiskLevel level, string pattern, string reasonPt, string reasonEn, string reasonEs) =>
+        new(level, new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled), reasonPt, reasonEn, reasonEs);
 
     // Ordem importa: a primeira regra que casa vence, por isso Alto vem antes de Médio/Baixo.
     private static readonly Rule[] Rules =
     {
-        R(RiskLevel.Alto, @"\brm\s+-[a-z]*r[a-z]*f|\brm\s+-[a-z]*f[a-z]*r", "remoção recursiva forçada", "forced recursive delete"),
-        R(RiskLevel.Alto, @"Remove-Item\b.*-Recurse|\b(del|rd|rmdir)\s+/s", "remoção recursiva (Windows)", "recursive delete (Windows)"),
-        R(RiskLevel.Alto, @"git\s+push\b.*(--force|\s-f\b)", "push forçado reescreve o remoto", "forced push rewrites the remote"),
-        R(RiskLevel.Alto, @"git\s+reset\s+--hard|git\s+clean\s+-[a-z]*f", "descarta trabalho local", "discards local work"),
-        R(RiskLevel.Alto, @"\b(drop\s+(table|database)|truncate\s+table)\b", "destrói dados no banco", "destroys database data"),
-        R(RiskLevel.Alto, @"(curl|wget|iwr|Invoke-WebRequest)\b.*\|\s*(sh|bash|iex|Invoke-Expression)", "executa script baixado", "runs a downloaded script"),
-        R(RiskLevel.Alto, @"\bsudo\b|\bchmod\s+777\b|\bshutdown\b|\breg\s+delete\b", "privilégio/sistema", "privilege/system"),
-        R(RiskLevel.Alto, @"\.env\b|secrets?\.(json|ya?ml)|id_rsa", "toca segredos", "touches secrets"),
-        R(RiskLevel.Alto, @"\bnpm\s+publish\b|\bdotnet\s+nuget\s+push\b", "publica pacote", "publishes a package"),
+        R(RiskLevel.Alto, @"\brm\s+-[a-z]*r[a-z]*f|\brm\s+-[a-z]*f[a-z]*r", "remoção recursiva forçada", "forced recursive delete", "eliminación recursiva forzada"),
+        R(RiskLevel.Alto, @"Remove-Item\b.*-Recurse|\b(del|rd|rmdir)\s+/s", "remoção recursiva (Windows)", "recursive delete (Windows)", "eliminación recursiva (Windows)"),
+        R(RiskLevel.Alto, @"git\s+push\b.*(--force|\s-f\b)", "push forçado reescreve o remoto", "forced push rewrites the remote", "push forzado reescribe el remoto"),
+        R(RiskLevel.Alto, @"git\s+reset\s+--hard|git\s+clean\s+-[a-z]*f", "descarta trabalho local", "discards local work", "descarta trabajo local"),
+        R(RiskLevel.Alto, @"\b(drop\s+(table|database)|truncate\s+table)\b", "destrói dados no banco", "destroys database data", "destruye datos en la base de datos"),
+        R(RiskLevel.Alto, @"(curl|wget|iwr|Invoke-WebRequest)\b.*\|\s*(sh|bash|iex|Invoke-Expression)", "executa script baixado", "runs a downloaded script", "ejecuta un script descargado"),
+        R(RiskLevel.Alto, @"\bsudo\b|\bchmod\s+777\b|\bshutdown\b|\breg\s+delete\b", "privilégio/sistema", "privilege/system", "privilegio/sistema"),
+        R(RiskLevel.Alto, @"\.env\b|secrets?\.(json|ya?ml)|id_rsa", "toca segredos", "touches secrets", "toca secretos"),
+        R(RiskLevel.Alto, @"\bnpm\s+publish\b|\bdotnet\s+nuget\s+push\b", "publica pacote", "publishes a package", "publica un paquete"),
 
-        R(RiskLevel.Medio, @"\b(npm|pnpm|yarn)\s+(install|add|i)\b|\bpip\s+install\b|\bdotnet\s+add\b", "instala dependência", "installs a dependency"),
-        R(RiskLevel.Medio, @"git\s+(commit|push|merge|rebase)\b", "altera histórico/remoto", "changes history/remote"),
-        R(RiskLevel.Medio, @"^(Edit|Write|MultiEdit)\s*:", "escreve arquivo no worktree", "writes a file in the worktree"),
-        R(RiskLevel.Medio, @"^Delete\s*:", "remove arquivo do worktree", "deletes a file in the worktree"),
-        R(RiskLevel.Medio, @"\b(mkdir|New-Item|mv|Move-Item|cp|Copy-Item)\b", "altera arquivos", "changes files"),
+        R(RiskLevel.Medio, @"\b(npm|pnpm|yarn)\s+(install|add|i)\b|\bpip\s+install\b|\bdotnet\s+add\b", "instala dependência", "installs a dependency", "instala una dependencia"),
+        R(RiskLevel.Medio, @"git\s+(commit|push|merge|rebase)\b", "altera histórico/remoto", "changes history/remote", "modifica historial/remoto"),
+        R(RiskLevel.Medio, @"^(Edit|Write|MultiEdit)\s*:", "escreve arquivo no worktree", "writes a file in the worktree", "escribe un archivo en el worktree"),
+        R(RiskLevel.Medio, @"^Delete\s*:", "remove arquivo do worktree", "deletes a file in the worktree", "elimina un archivo del worktree"),
+        R(RiskLevel.Medio, @"\b(mkdir|New-Item|mv|Move-Item|cp|Copy-Item)\b", "altera arquivos", "changes files", "modifica archivos"),
         // Rodar script/interpretador executa código arbitrário: nunca é "só leitura".
-        R(RiskLevel.Medio, @"^(Bash|PowerShell):\s*(pwsh|powershell|bash|sh|python3?|node|ruby|perl|\.[\\/])", "executa script/programa", "runs a script/program"),
+        R(RiskLevel.Medio, @"^(Bash|PowerShell):\s*(pwsh|powershell|bash|sh|python3?|node|ruby|perl|\.[\\/])", "executa script/programa", "runs a script/program", "ejecuta un script/programa"),
 
-        R(RiskLevel.Baixo, @"^(Read|Glob|Grep|WebFetch|WebSearch)\s*:", "somente leitura", "read-only"),
-        R(RiskLevel.Baixo, @"git\s+(status|diff|log|show|blame|ls-files|rev-parse)\b", "git somente leitura", "read-only git"),
-        R(RiskLevel.Baixo, @"^(Bash|PowerShell):\s*(ls|dir|cat|pwd|echo|type|cd|Set-Location|Get-Content|Get-ChildItem|Get-Location|rg|grep)\b", "comando de leitura", "read command"),
-        R(RiskLevel.Baixo, @"^(Bash|PowerShell):\s*(head|tail|wc|sort|uniq|od|cut|tr|less|more|findstr|which|where|stat|file|tree|Select-Object|Select-String|Measure-Object|Format-\w+|Out-String)\b", "filtro de leitura", "read filter"),
-        R(RiskLevel.Baixo, @"\b(dotnet\s+(build|test)|npm\s+(test|run\s+(lint|test|build)))\b", "build/teste", "build/test"),
+        R(RiskLevel.Baixo, @"^(Read|Glob|Grep|WebFetch|WebSearch)\s*:", "somente leitura", "read-only", "solo lectura"),
+        R(RiskLevel.Baixo, @"git\s+(status|diff|log|show|blame|ls-files|rev-parse)\b", "git somente leitura", "read-only git", "git de solo lectura"),
+        R(RiskLevel.Baixo, @"^(Bash|PowerShell):\s*(ls|dir|cat|pwd|echo|type|cd|Set-Location|Get-Content|Get-ChildItem|Get-Location|rg|grep)\b", "comando de leitura", "read command", "comando de lectura"),
+        R(RiskLevel.Baixo, @"^(Bash|PowerShell):\s*(head|tail|wc|sort|uniq|od|cut|tr|less|more|findstr|which|where|stat|file|tree|Select-Object|Select-String|Measure-Object|Format-\w+|Out-String)\b", "filtro de leitura", "read filter", "filtro de lectura"),
+        R(RiskLevel.Baixo, @"\b(dotnet\s+(build|test)|npm\s+(test|run\s+(lint|test|build)))\b", "build/teste", "build/test", "build/prueba"),
     };
 
     // Separadores de comando composto (;  &&  ||  |  quebra de linha).
     private static readonly Regex Separators = new(@"\s*(?:;|&&|\|\||\||\r?\n)\s*", RegexOptions.Compiled);
     private static readonly Regex ShellPrefix = new(@"^(Bash|PowerShell):\s*", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public string Name => NxText.T("Regras", "Rules");
+    public string Name => NxText.T("Regras", "Rules", "Reglas");
 
     public Task InitializeAsync(CancellationToken ct = default) => Task.CompletedTask;
 
@@ -82,10 +82,10 @@ public sealed class RuleRiskClassifier : IRiskClassifier
                 var matched = parts.Select(p => MatchFirst(prefix.Value + p, onlyHigh: false)).ToList();
                 if (matched.Any(m => m == null))
                     return new RiskResult(RiskLevel.Medio, 0.5, Name,
-                        NxText.T("comando composto com parte não reconhecida", "compound command with an unrecognized part"), sw.Elapsed);
+                        NxText.T("comando composto com parte não reconhecida", "compound command with an unrecognized part", "comando compuesto con una parte no reconocida"), sw.Elapsed);
                 var worst = matched.MaxBy(m => m!.Level)!;
                 return new RiskResult(worst.Level, 1.0, Name,
-                    NxText.T("comando composto: ", "compound command: ") + string.Join(" + ", matched.Select(m => m!.Reason).Distinct()), sw.Elapsed);
+                    NxText.T("comando composto: ", "compound command: ", "comando compuesto: ") + string.Join(" + ", matched.Select(m => m!.Reason).Distinct()), sw.Elapsed);
             }
         }
 
@@ -99,7 +99,7 @@ public sealed class RuleRiskClassifier : IRiskClassifier
 
     /// <summary>Sem regra, chuta Médio com confiança zero (nunca aprova sozinho).</summary>
     public Task<RiskResult> ClassifyAsync(string action, CancellationToken ct = default) =>
-        Task.FromResult(TryMatch(action) ?? new RiskResult(RiskLevel.Medio, 0, Name, NxText.T("nenhuma regra casou", "no rule matched"), TimeSpan.Zero));
+        Task.FromResult(TryMatch(action) ?? new RiskResult(RiskLevel.Medio, 0, Name, NxText.T("nenhuma regra casou", "no rule matched", "ninguna regla coincidió"), TimeSpan.Zero));
 
     public void Dispose() { }
 }
@@ -107,7 +107,7 @@ public sealed class RuleRiskClassifier : IRiskClassifier
 /// <summary>Regras primeiro; o que elas não reconhecem vai para o modelo (ONNX ou LLM).</summary>
 public sealed class HybridRiskClassifier(RuleRiskClassifier rules, IRiskClassifier model) : IRiskClassifier
 {
-    public string Name => $"{NxText.T("Regras", "Rules")} + {model.Name}";
+    public string Name => $"{NxText.T("Regras", "Rules", "Reglas")} + {model.Name}";
 
     public Task InitializeAsync(CancellationToken ct = default) => model.InitializeAsync(ct);
 
@@ -129,7 +129,7 @@ public sealed class HybridRiskClassifier(RuleRiskClassifier rules, IRiskClassifi
 public sealed class CascadeRiskClassifier(RuleRiskClassifier rules, IRiskClassifier fast, IRiskClassifier slow, double threshold = 0.6)
     : IRiskClassifier
 {
-    public string Name => $"{NxText.T("Regras", "Rules")} → {fast.Name} → {Regex.Replace(slow.Name, @"\s*\(.*\)$", "")}";
+    public string Name => $"{NxText.T("Regras", "Rules", "Reglas")} → {fast.Name} → {Regex.Replace(slow.Name, @"\s*\(.*\)$", "")}";
 
     /// <summary>Quantas classificações precisaram do modelo lento.</summary>
     public int SlowCalls { get; private set; }
@@ -151,7 +151,7 @@ public sealed class CascadeRiskClassifier(RuleRiskClassifier rules, IRiskClassif
         SlowCalls++;
         var careful = await slow.ClassifyAsync(action, ct);
         return careful with { Engine = Name, Elapsed = quick.Elapsed + careful.Elapsed,
-                              Reason = NxText.T($"ONNX em dúvida ({quick.Confidence:P0}) → {careful.Reason}", $"ONNX unsure ({quick.Confidence:P0}) → {careful.Reason}") };
+                              Reason = NxText.T($"ONNX em dúvida ({quick.Confidence:P0}) → {careful.Reason}", $"ONNX unsure ({quick.Confidence:P0}) → {careful.Reason}", $"ONNX con dudas ({quick.Confidence:P0}) → {careful.Reason}") };
     }
 
     public void Dispose()

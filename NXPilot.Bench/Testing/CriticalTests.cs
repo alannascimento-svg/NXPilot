@@ -151,7 +151,7 @@ public static class CriticalTests
             AssertEqual(2, outcome.Phases.Count, "Fases pela fachada.");
             AssertEqual("Plano.", outcome.HumanPlan, "Texto para a pessoa sem o JSON.");
             AssertContains("Power BI aqui", await basic.PlanPromptAsync(new PlanRequest("T", "intenção longa", "c", "\nPower BI aqui")), "Extra entra no prompt.");
-            AssertContains(NxText.T("Fase 2", "Phase 2"), await basic.PhasePromptAsync(outcome.Phases[1], 2), "Prompt da fase.");
+            AssertContains(NxText.T("Fase 2", "Phase 2", "Fase 2"), await basic.PhasePromptAsync(outcome.Phases[1], 2), "Prompt da fase.");
         }),
         new("Intelligence: resposta válida é usada; falha ou lixo cai no Basic (nunca trava)", async () =>
         {
@@ -180,7 +180,7 @@ public static class CriticalTests
             AssertTrue(IntelligenceModule.Verify(unsigned) != null, "Exe sem assinatura deve ser recusado.");
             var microsoft = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet", "dotnet.exe");
             if (File.Exists(microsoft))
-                AssertContains(NxText.T("não é a Nexus XData", "other than Nexus XData"), IntelligenceModule.Verify(microsoft), "Assinatura válida de OUTRA empresa deve ser recusada.");
+                AssertContains(NxText.T("não é a Nexus XData", "other than Nexus XData", "que no es Nexus XData"), IntelligenceModule.Verify(microsoft), "Assinatura válida de OUTRA empresa deve ser recusada.");
             return Task.CompletedTask;
         }),
         new("Plano em fases e verificação: JSON e queda segura sem JSON", () =>

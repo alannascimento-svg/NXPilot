@@ -23,11 +23,11 @@ public static class LanguageService
 
     public static event Action? LanguageChanged;
 
-    /// <summary>Idioma salvo; sem escolha salva, segue o Windows (pt → português, senão inglês).</summary>
+    /// <summary>Idioma salvo; sem escolha salva, segue o Windows (pt → português, es → espanhol, senão inglês).</summary>
     public static string LoadPreferred()
     {
         if (AppSettings.Load().Language is { } saved) return Normalize(saved);
-        return CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "pt" ? NxText.Portuguese : NxText.English;
+        return NxText.FromSystem(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
     }
 
     public static void Apply(string languageCode, bool save = false)
@@ -62,7 +62,7 @@ public static class LanguageService
         return args.Length > 0 ? string.Format(val, args) : val;
     }
 
-    private static string Normalize(string code) => code.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? NxText.English : NxText.Portuguese;
+    private static string Normalize(string code) => NxText.Normalize(code);
 
     private static void Save(string code) => AppSettings.Update(s => s.Language = code);
 }

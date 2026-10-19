@@ -47,17 +47,19 @@ public partial class HelpWindow : Window
         var done = all.Count(l => _progress.Completed.Contains(l.Id));
         var next = _progress.NextLesson();
 
-        Heading.Text = done == 0 ? T("Bem-vindo ao NXPilot", "Welcome to NXPilot")
-            : done == all.Count ? T("Você concluiu as lições básicas", "You have completed the basic lessons")
-            : T("Continue de onde parou", "Pick up where you left off");
+        Heading.Text = done == 0 ? T("Bem-vindo ao NXPilot", "Welcome to NXPilot", "Bienvenido a NXPilot")
+            : done == all.Count ? T("Você concluiu as lições básicas", "You have completed the basic lessons", "Usted completó las lecciones básicas")
+            : T("Continue de onde parou", "Pick up where you left off", "Continúe donde lo dejó");
         SubHeading.Text = done == 0
             ? T($"{all.Count} lições curtas, direto na tela do app. Comece pela primeira — leva {all[0].Minutes} minutos.",
-                $"{all.Count} short lessons, right on the app screen. Start with the first one — it takes {all[0].Minutes} minutes.")
+                $"{all.Count} short lessons, right on the app screen. Start with the first one — it takes {all[0].Minutes} minutes.",
+                $"{all.Count} lecciones cortas, directamente en la pantalla de la aplicación. Comience por la primera — toma {all[0].Minutes} minutos.")
             : done == all.Count
-                ? T("Pode rever qualquer lição quando quiser.", "You can review any lesson whenever you want.")
-                : T($"Próxima sugerida: {next!.Title} ({next.Minutes} min).", $"Suggested next: {next!.Title} ({next.Minutes} min).");
+                ? T("Pode rever qualquer lição quando quiser.", "You can review any lesson whenever you want.", "Puede repasar cualquier lección cuando quiera.")
+                : T($"Próxima sugerida: {next!.Title} ({next.Minutes} min).", $"Suggested next: {next!.Title} ({next.Minutes} min).",
+                    $"Siguiente sugerida: {next!.Title} ({next.Minutes} min).");
 
-        ProgressText.Text = T($"{done} de {all.Count} concluídas", $"{done} of {all.Count} completed");
+        ProgressText.Text = T($"{done} de {all.Count} concluídas", $"{done} of {all.Count} completed", $"{done} de {all.Count} completadas");
         Progress.Value = (double)done / all.Count;
 
         if (justCompleted != null)
@@ -65,9 +67,9 @@ public partial class HelpWindow : Window
             DoneBanner.Visibility = Visibility.Visible;
             // Título no idioma ATUAL (a lição concluída pode ter sido feita no outro idioma).
             var doneTitle = all.FirstOrDefault(l => l.Id == justCompleted.Id)?.Title ?? justCompleted.Title;
-            DoneText.Text = T($"✓ Lição concluída: {doneTitle}", $"✓ Lesson completed: {doneTitle}");
+            DoneText.Text = T($"✓ Lição concluída: {doneTitle}", $"✓ Lesson completed: {doneTitle}", $"✓ Lección completada: {doneTitle}");
             NextLessonButton.Visibility = next != null ? Visibility.Visible : Visibility.Collapsed;
-            NextLessonButton.Content = next != null ? T($"Próxima: {next.Title} →", $"Next: {next.Title} →") : "";
+            NextLessonButton.Content = next != null ? T($"Próxima: {next.Title} →", $"Next: {next.Title} →", $"Siguiente: {next.Title} →") : "";
             NextLessonButton.Tag = next;
         }
         else DoneBanner.Visibility = Visibility.Collapsed;
@@ -77,8 +79,8 @@ public partial class HelpWindow : Window
             var isDone = _progress.Completed.Contains(l.Id);
             // Compara por Id: o catálogo é montado de novo a cada acesso (segue o idioma).
             return new LessonRow(l, isDone ? "✓" : (i + 1).ToString(), isDone ? DoneBrush : TodoBrush,
-                T($"{l.Steps.Count} passos · {l.Minutes} min", $"{l.Steps.Count} steps · {l.Minutes} min"),
-                isDone ? T("Rever", "Review") : l.Id == next?.Id ? T("Começar ▶", "Start ▶") : T("Começar", "Start"));
+                T($"{l.Steps.Count} passos · {l.Minutes} min", $"{l.Steps.Count} steps · {l.Minutes} min", $"{l.Steps.Count} pasos · {l.Minutes} min"),
+                isDone ? T("Rever", "Review", "Repasar") : l.Id == next?.Id ? T("Começar ▶", "Start ▶", "Comenzar ▶") : T("Começar", "Start", "Comenzar"));
         }).ToList();
     }
 

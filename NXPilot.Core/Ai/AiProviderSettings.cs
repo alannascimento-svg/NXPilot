@@ -63,10 +63,10 @@ public sealed class AiProviderSettings
 
     public static string DisplayName(AiProviderKind kind) => kind switch
     {
-        AiProviderKind.LocalLlama => NxText.T("IA Local (LLaMA)", "Local AI (LLaMA)"),
+        AiProviderKind.LocalLlama => NxText.T("IA Local (LLaMA)", "Local AI (LLaMA)", "IA local (LLaMA)"),
         AiProviderKind.GitHubCopilot => "GitHub Copilot",
         AiProviderKind.AzureOpenAI => "Azure OpenAI",
-        AiProviderKind.Microsoft365 => NxText.T("Microsoft 365 (conta da empresa)", "Microsoft 365 (company account)"),
+        AiProviderKind.Microsoft365 => NxText.T("Microsoft 365 (conta da empresa)", "Microsoft 365 (company account)", "Microsoft 365 (cuenta de la empresa)"),
         AiProviderKind.OpenRouter => "OpenRouter",
         _ => kind.ToString()
     };

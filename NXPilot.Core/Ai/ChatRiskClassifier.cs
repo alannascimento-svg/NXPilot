@@ -41,7 +41,7 @@ public sealed class ChatRiskClassifier(AiProviderSettings settings) : IRiskClass
         var sw = Stopwatch.StartNew();
         var answer = await CompleteAsync(RiskPrompt.System, "Ação: " + action, maxTokens: 5, ct);
         var level = RiskPrompt.Parse(answer, out var understood);
-        return new RiskResult(level, understood ? 0.85 : 0, Name, NxText.T("resposta: ", "answer: ") + $"\"{answer.Trim()}\"", sw.Elapsed);
+        return new RiskResult(level, understood ? 0.85 : 0, Name, NxText.T("resposta: ", "answer: ", "respuesta: ") + $"\"{answer.Trim()}\"", sw.Elapsed);
     }
 
     /// <summary>Chamada de chat genérica (também usada pelo botão "Testar conexão").</summary>

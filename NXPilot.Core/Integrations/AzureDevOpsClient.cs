@@ -96,7 +96,7 @@ public sealed class AzureDevOpsClient(DevOpsConnection connection) : IDisposable
         if (resp.IsSuccessStatusCode) return;
         var body = await resp.Content.ReadAsStringAsync(ct);
         throw new InvalidOperationException(resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.NonAuthoritativeInformation
-            ? NxText.T("O Azure DevOps recusou o token (expirado ou sem permissão de Work Items). Atualize o PAT no NXProject.", "Azure DevOps rejected the token (expired or without Work Items permission). Update the PAT in NXProject.")
+            ? NxText.T("O Azure DevOps recusou o token (expirado ou sem permissão de Work Items). Atualize o PAT no NXProject.", "Azure DevOps rejected the token (expired or without Work Items permission). Update the PAT in NXProject.", "Azure DevOps rechazó el token (vencido o sin permiso de Work Items). Actualice el PAT en NXProject.")
             : $"Azure DevOps {(int)resp.StatusCode}: {(body.Length > 200 ? body[..200] : body)}");
     }
 

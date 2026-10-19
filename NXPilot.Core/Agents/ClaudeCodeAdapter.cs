@@ -55,7 +55,8 @@ public sealed class ClaudeCodeAdapter(string hookCommand, string gatePipeName, s
         {
             yield return new AgentEvent(AgentEventKind.Error, NxText.T(
                 "Claude Code não encontrado no Windows. Instale com: irm https://claude.ai/install.ps1 | iex",
-                "Claude Code not found on Windows. Install it with: irm https://claude.ai/install.ps1 | iex"), IsError: true);
+                "Claude Code not found on Windows. Install it with: irm https://claude.ai/install.ps1 | iex",
+                "Claude Code no se encontró en Windows. Instálelo con: irm https://claude.ai/install.ps1 | iex"), IsError: true);
             yield break;
         }
 
@@ -108,10 +109,10 @@ public sealed class ClaudeCodeAdapter(string hookCommand, string gatePipeName, s
         TryDelete(settingsPath);
 
         if (ct.IsCancellationRequested)
-            yield return new AgentEvent(AgentEventKind.Error, NxText.T("Interrompido pelo usuário.", "Stopped by the user."), IsError: true);
+            yield return new AgentEvent(AgentEventKind.Error, NxText.T("Interrompido pelo usuário.", "Stopped by the user.", "Interrumpido por el usuario."), IsError: true);
         else if (!sawResult)
             yield return new AgentEvent(AgentEventKind.Error,
-                NxText.T($"Claude Code terminou sem resultado (código {process.ExitCode}). ", $"Claude Code ended without a result (exit code {process.ExitCode}). ")
+                NxText.T($"Claude Code terminou sem resultado (código {process.ExitCode}). ", $"Claude Code ended without a result (exit code {process.ExitCode}). ", $"Claude Code terminó sin resultado (código {process.ExitCode}). ")
                 + stderr.ToString().Trim(), IsError: true);
     }
 

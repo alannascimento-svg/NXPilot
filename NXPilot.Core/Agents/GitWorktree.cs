@@ -23,9 +23,9 @@ public static class GitWorktree
     {
         var top = (await GitAsync(repoPath, ct, "rev-parse", "--show-toplevel")).Trim();
         if (top.Length == 0)
-            throw new InvalidOperationException(NxText.T($"{repoPath} não é um repositório git.", $"{repoPath} is not a git repository."));
+            throw new InvalidOperationException(NxText.T($"{repoPath} não é um repositório git.", $"{repoPath} is not a git repository.", $"{repoPath} no es un repositorio git."));
         if ((await GitAsync(top, ct, "rev-parse", "--verify", "HEAD")).Trim().Length == 0)
-            throw new InvalidOperationException(NxText.T("O repositório não tem nenhum commit ainda.", "The repository has no commits yet."));
+            throw new InvalidOperationException(NxText.T("O repositório não tem nenhum commit ainda.", "The repository has no commits yet.", "El repositorio aún no tiene ningún commit."));
 
         var name = new DirectoryInfo(top).Name;
         var path = Path.Combine(Root, $"{name}-{taskId}");
@@ -33,7 +33,7 @@ public static class GitWorktree
         Directory.CreateDirectory(Root);
         await GitAsync(top, ct, "worktree", "add", "-b", branch, path, "HEAD");
         if (!Directory.Exists(path))
-            throw new InvalidOperationException(NxText.T("Não foi possível criar o worktree.", "Could not create the worktree."));
+            throw new InvalidOperationException(NxText.T("Não foi possível criar o worktree.", "Could not create the worktree.", "No fue posible crear el worktree."));
         return (path, branch);
     }
 

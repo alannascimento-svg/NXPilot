@@ -42,13 +42,13 @@ public static class IntelligenceModule
             var check = Verify(path);
             if (check == null)
             {
-                status = NxText.T($"NXAgentic Intelligence ativo ({path}).", $"NXAgentic Intelligence active ({path}).");
+                status = NxText.T($"NXAgentic Intelligence ativo ({path}).", $"NXAgentic Intelligence active ({path}).", $"NXAgentic Intelligence activo ({path}).");
                 return new IntelligencePlanner(new ProcessIntelligenceTransport(path), log);
             }
-            status = NxText.T($"Módulo ignorado: {path} — {check}. Usando o planejador Basic.", $"Module ignored: {path} — {check}. Using the Basic planner.");
+            status = NxText.T($"Módulo ignorado: {path} — {check}. Usando o planejador Basic.", $"Module ignored: {path} — {check}. Using the Basic planner.", $"Módulo ignorado: {path} — {check}. Usando el planificador Basic.");
             return new BasicAgentPlanner();
         }
-        status = NxText.T("Planejador Basic (NXPilot Community).", "Basic planner (NXPilot Community).");
+        status = NxText.T("Planejador Basic (NXPilot Community).", "Basic planner (NXPilot Community).", "Planificador Basic (NXPilot Community).");
         return new BasicAgentPlanner();
     }
 
@@ -57,7 +57,7 @@ public static class IntelligenceModule
     public static string? Verify(string path)
     {
         var trust = WinTrust.Verify(path);
-        if (trust != 0) return NxText.T($"assinatura inválida ou ausente (0x{trust:X8})", $"invalid or missing signature (0x{trust:X8})");
+        if (trust != 0) return NxText.T($"assinatura inválida ou ausente (0x{trust:X8})", $"invalid or missing signature (0x{trust:X8})", $"firma no válida o ausente (0x{trust:X8})");
         try
         {
 #pragma warning disable SYSLIB0057 // a API nova (X509CertificateLoader) não lê o certificado de um exe assinado
@@ -65,7 +65,7 @@ public static class IntelligenceModule
 #pragma warning restore SYSLIB0057
             return TrustedThumbprints.Contains(cert.Thumbprint, StringComparer.OrdinalIgnoreCase)
                 ? null
-                : NxText.T($"assinado por quem não é a Nexus XData ({cert.Subject})", $"signed by someone other than Nexus XData ({cert.Subject})");
+                : NxText.T($"assinado por quem não é a Nexus XData ({cert.Subject})", $"signed by someone other than Nexus XData ({cert.Subject})", $"firmado por alguien que no es Nexus XData ({cert.Subject})");
         }
         catch (Exception ex) { return ex.Message; }
     }

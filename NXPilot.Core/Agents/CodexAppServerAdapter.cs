@@ -104,7 +104,7 @@ public sealed class CodexAppServerAdapter(Func<GateRequest, Task<GateResponse>> 
     {
         if (ExecutablePath == null)
         {
-            yield return new AgentEvent(AgentEventKind.Error, NxText.T("Codex não encontrado no Windows.", "Codex not found on Windows."), IsError: true);
+            yield return new AgentEvent(AgentEventKind.Error, NxText.T("Codex não encontrado no Windows.", "Codex not found on Windows.", "Codex no se encontró en Windows."), IsError: true);
             yield break;
         }
 
@@ -199,8 +199,8 @@ public sealed class CodexAppServerAdapter(Func<GateRequest, Task<GateResponse>> 
             }
         }
         catch { /* processo encerrado */ }
-        foreach (var p in _pending.Values) p.TrySetException(new InvalidOperationException(NxText.T("o Codex encerrou", "Codex exited")));
-        _events?.Writer.TryWrite(new AgentEvent(AgentEventKind.Error, NxText.T("O processo do Codex terminou.", "The Codex process ended."), IsError: true));
+        foreach (var p in _pending.Values) p.TrySetException(new InvalidOperationException(NxText.T("o Codex encerrou", "Codex exited", "Codex terminó")));
+        _events?.Writer.TryWrite(new AgentEvent(AgentEventKind.Error, NxText.T("O processo do Codex terminou.", "The Codex process ended.", "El proceso de Codex terminó."), IsError: true));
     }
 
     private void HandleNotification(string method, JsonNode? p)
@@ -241,7 +241,7 @@ public sealed class CodexAppServerAdapter(Func<GateRequest, Task<GateResponse>> 
                 var status = p["turn"]?["status"]?.GetValue<string>();
                 w.TryWrite(status == "completed"
                     ? new AgentEvent(AgentEventKind.Result, _lastMessage ?? "", SessionId: _threadId)
-                    : new AgentEvent(AgentEventKind.Error, NxText.T($"Turno do Codex terminou como \"{status}\". ", $"Codex turn ended as \"{status}\". ")
+                    : new AgentEvent(AgentEventKind.Error, NxText.T($"Turno do Codex terminou como \"{status}\". ", $"Codex turn ended as \"{status}\". ", $"El turno de Codex terminó como \"{status}\". ")
                         + (p["turn"]?["error"]?["message"]?.ToString() ?? ""), IsError: true));
                 break;
             case "error":
@@ -323,7 +323,7 @@ public sealed class CodexAppServerAdapter(Func<GateRequest, Task<GateResponse>> 
 
     private async Task SendAsync(JsonObject message)
     {
-        if (_process is not { HasExited: false }) throw new InvalidOperationException(NxText.T("o Codex não está rodando", "Codex is not running"));
+        if (_process is not { HasExited: false }) throw new InvalidOperationException(NxText.T("o Codex não está rodando", "Codex is not running", "Codex no se está ejecutando"));
         await _write.WaitAsync();
         try
         {
@@ -340,7 +340,7 @@ public sealed class CodexAppServerAdapter(Func<GateRequest, Task<GateResponse>> 
             if (_threadId != null) await RequestAsync("turn/interrupt", new JsonObject { ["threadId"] = _threadId }, CancellationToken.None);
         }
         catch { /* já parou */ }
-        _events?.Writer.TryWrite(new AgentEvent(AgentEventKind.Error, NxText.T("Interrompido pelo usuário.", "Stopped by the user."), IsError: true));
+        _events?.Writer.TryWrite(new AgentEvent(AgentEventKind.Error, NxText.T("Interrompido pelo usuário.", "Stopped by the user.", "Interrumpido por el usuario."), IsError: true));
     }
 
     public void Dispose()

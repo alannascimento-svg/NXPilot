@@ -1,4 +1,4 @@
-🌐 [Leia em Português](README.pt-BR.md) | **English**
+🌐 [Leia em Português](README.pt-BR.md) | **English** | [Leer en español](README.es.md)
 
 ---
 
@@ -20,7 +20,7 @@ logs everything for auditing and **asks for your decision** before any risky act
 
 Also: task history, notifications, Azure DevOps work items (read-only), Power BI projects (PBIP) edited as code,
 reading and monitoring app windows (clicks only through an approved process), local AI (LLaMA) or providers
-(GitHub Copilot/Models, Azure OpenAI, Microsoft 365, OpenRouter), user interface in Portuguese and English.
+(GitHub Copilot/Models, Azure OpenAI, Microsoft 365, OpenRouter), user interface in Portuguese, English and Spanish.
 
 ### 🧩 Extensions (preview)
 

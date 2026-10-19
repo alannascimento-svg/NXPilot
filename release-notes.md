@@ -10,19 +10,11 @@
 
 ### Novidades
 
-**🧩 Janelas do Windows (prévia)**
+**🌐 Espanhol (ES)**
 
-- **Ler um app.** Escolha qualquer app aberto, mesmo minimizado, e o NXPilot lê o texto que ele expõe pela acessibilidade do Windows. A leitura funciona em apps nativos e em páginas no navegador. O NXPilot só lê: não clica, não fecha e não digita. O texto chega ao agente como dado, nunca como instrução.
-- **Monitorar um app**, sempre com sua autorização:
-  - **Intervalo:** no mínimo **20 s**.
-  - **Tempo limite:** até 8 h; depois disso o monitor para sozinho.
-  - **Palavras-chave:** o aviso só dispara quando aparece uma **linha nova** com alguma delas. Maiúsculas e acentos não importam.
-  - **Origem (área):** só conta o texto que aparece depois de um título ou cabeçalho escolhido. Se a origem não estiver na tela, nada dispara.
-  - **Ao disparar:** pode executar um processo aprovado.
-- **Processos (clicar e digitar).**
-  - Você ou o agente monta uma sequência de passos com elementos reais do app: clicar, digitar, tecla e esperar.
-  - **Você aprova o processo inteiro.** Qualquer edição desfaz a aprovação.
-  - Na execução, se um alvo não existir ou houver mais de um igual, o processo **para**.
-  - **Passos de exclusão sempre pedem nova autorização na hora**, mesmo com o processo aprovado.
+- O NXPilot e o NXPilot-Setup agora têm interface em **português, inglês e espanhol**. A troca é no seletor **PT / EN / ES**, ao vivo, sem reiniciar.
+- Num Windows em espanhol, o app e o Setup já abrem em espanhol na primeira vez.
+- Os planos, os prompts das fases e os motivos do gate também saem em espanhol.
+- O site do GitHub tem README em inglês, português e espanhol, com links diretos para baixar o Setup e a atualização.
 
-> **Prévia:** a leitura foi testada em apps reais. Os processos de clicar e digitar e o monitor completo ainda não foram testados em apps reais. Se encontrar um problema, abra uma *issue*.
+> A licença oficial continua em português ([LICENSE.txt](https://github.com/nexusxdata/NXPilot/blob/main/LICENSE.txt)), com tradução completa para o inglês ([LICENSE.en.txt](https://github.com/nexusxdata/NXPilot/blob/main/LICENSE.en.txt)).

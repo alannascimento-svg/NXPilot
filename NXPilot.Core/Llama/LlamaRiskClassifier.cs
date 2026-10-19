@@ -37,11 +37,11 @@ public sealed class LlamaRiskClassifier(string? folder = null, string? modelPath
     {
         null => ("?", false),
         _ when file.Contains("Qwen2.5-3B", StringComparison.OrdinalIgnoreCase) || file.Contains("Qwen2.5-72B", StringComparison.OrdinalIgnoreCase)
-            => (NxText.T("Qwen Research — somente uso NÃO comercial", "Qwen Research — NON-commercial use only"), false),
+            => (NxText.T("Qwen Research — somente uso NÃO comercial", "Qwen Research — NON-commercial use only", "Qwen Research — solo uso NO comercial"), false),
         _ when file.Contains("Qwen3", StringComparison.OrdinalIgnoreCase) || file.Contains("Qwen2.5", StringComparison.OrdinalIgnoreCase)
             => ("Apache-2.0", true),
         _ when file.Contains("Phi-4", StringComparison.OrdinalIgnoreCase) => ("MIT", true),
-        _ => (NxText.T("desconhecida — confira antes de uso comercial", "unknown — check before commercial use"), false),
+        _ => (NxText.T("desconhecida — confira antes de uso comercial", "unknown — check before commercial use", "desconocida — verifíquela antes del uso comercial"), false),
     };
 
     // llama.dll só pode ser apontada uma vez por processo e NUNCA descarregada
@@ -157,7 +157,7 @@ public sealed class LlamaRiskClassifier(string? folder = null, string? modelPath
                 sb.Append(token);
 
             var level = RiskPrompt.Parse(sb.ToString(), out var understood);
-            return new RiskResult(level, understood ? 0.8 : 0, Name, NxText.T("resposta: ", "answer: ") + $"\"{sb.ToString().Trim()}\"", sw.Elapsed);
+            return new RiskResult(level, understood ? 0.8 : 0, Name, NxText.T("resposta: ", "answer: ", "respuesta: ") + $"\"{sb.ToString().Trim()}\"", sw.Elapsed);
         }
         finally { _gate.Release(); }
     }

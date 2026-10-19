@@ -15,14 +15,14 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         // Mesmo idioma do app, se já foi escolhido nele; senão, o do Windows (como no NXProject-Setup).
-        ApplyLanguage(SavedLanguage() ?? (CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "pt" ? NxText.Portuguese : NxText.English));
+        ApplyLanguage(SavedLanguage() ?? NxText.FromSystem(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName));
         base.OnStartup(e);
     }
 
     /// <summary>Troca o dicionário de textos ao vivo (DynamicResource) e o idioma do NxText.</summary>
     public static void ApplyLanguage(string code)
     {
-        code = code.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? NxText.English : NxText.Portuguese;
+        code = NxText.Normalize(code);
         NxText.Language = code;
         var resources = Current.Resources.MergedDictionaries;
         for (var i = resources.Count - 1; i >= 0; i--)

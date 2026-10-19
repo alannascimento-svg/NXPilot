@@ -38,7 +38,8 @@ public static class PowerBiDesktop
     {
         var exe = Locate() ?? throw new InvalidOperationException(NxText.T(
             "Power BI Desktop não encontrado. Instale pela Microsoft Store ou em https://powerbi.microsoft.com/desktop.",
-            "Power BI Desktop not found. Install it from the Microsoft Store or https://powerbi.microsoft.com/desktop."));
+            "Power BI Desktop not found. Install it from the Microsoft Store or https://powerbi.microsoft.com/desktop.",
+            "Power BI Desktop no encontrado. Instálelo desde Microsoft Store o en https://powerbi.microsoft.com/desktop."));
         using var ui = new WindowsUiService(WindowsUiPolicy.PowerBiOnly);
         WindowInfo window;
         try
@@ -48,7 +49,7 @@ public static class PowerBiDesktop
         }
         catch (TimeoutException)
         {
-            throw new TimeoutException(NxText.T("O Power BI Desktop não mostrou a janela do projeto em 4 minutos.", "Power BI Desktop did not show the project window within 4 minutes."));
+            throw new TimeoutException(NxText.T("O Power BI Desktop não mostrou a janela do projeto em 4 minutos.", "Power BI Desktop did not show the project window within 4 minutes.", "Power BI Desktop no mostró la ventana del proyecto en 4 minutos."));
         }
         await Task.Delay(TimeSpan.FromSeconds(10), ct); // modelo carregado → visuais renderizando
         return ui.Capture(window, png);

@@ -263,4 +263,5 @@
     <sys:String x:Key="Proc_Aprovar">Approve…</sys:String>
     <sys:String x:Key="Proc_Executar">Run</sys:String>
     <sys:String x:Key="Proc_Parar">Stop</sys:String>
+    <sys:String x:Key="Main_Copiar">Copy</sys:String>
 </ResourceDictionary>

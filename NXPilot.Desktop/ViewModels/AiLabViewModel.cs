@@ -31,7 +31,7 @@ public sealed partial class AiLabViewModel : ObservableObject
         var llama = new LlamaRiskClassifier();
         LlamaFolder = llama.Folder;
         LlamaInstalled = llama.IsInstalled;
-        _llamaModel = llama.IsInstalled ? $"{llama.ModelFile} · backend {llama.Backend} · {T("licença", "license")}: {LlamaRiskClassifier.LicenseOf(llama.ModelFile).License}" : null;
+        _llamaModel = llama.IsInstalled ? $"{llama.ModelFile} · backend {llama.Backend} · {T("licença", "license", "licencia")}: {LlamaRiskClassifier.LicenseOf(llama.ModelFile).License}" : null;
         // Textos calculados (Info, provedor) acompanham a troca de idioma.
         LanguageService.LanguageChanged += () => OnPropertyChanged(string.Empty);
         Provider = AiProviderSettings.Load();
@@ -47,7 +47,7 @@ public sealed partial class AiLabViewModel : ObservableObject
     public string ProviderName => AiProviderSettings.DisplayName(Provider.Kind);
 
     public string ProviderInfo => Provider.IsRemote
-        ? $"{ProviderName} · {(Provider.Model.Length > 0 ? Provider.Model : T("deployment da empresa", "company deployment"))} — " + T("ações em dúvida saem da máquina", "doubtful actions leave this machine")
+        ? $"{ProviderName} · {(Provider.Model.Length > 0 ? Provider.Model : T("deployment da empresa", "company deployment", "deployment de la empresa"))} — " + T("ações em dúvida saem da máquina", "doubtful actions leave this machine", "las acciones dudosas salen de esta máquina")
         : LlamaInfo;
 
     /// <summary>Há LLM para o 3º degrau: LLaMA instalado ou provedor remoto configurado.</summary>
@@ -59,19 +59,19 @@ public sealed partial class AiLabViewModel : ObservableObject
         OnPropertyChanged(nameof(ProviderName));
         OnPropertyChanged(nameof(ProviderInfo));
         OnPropertyChanged(nameof(CanCascade));
-        _main.AddLog(T("Laboratório", "Lab"), "info", T($"3º degrau da cascata: {ProviderName}.", $"Cascade step 3: {ProviderName}."));
+        _main.AddLog(T("Laboratório", "Lab", "Laboratorio"), "info", T($"3º degrau da cascata: {ProviderName}.", $"Cascade step 3: {ProviderName}.", $"Paso 3 de la cascada: {ProviderName}."));
         if (UseCascade) RebuildGate();
         else UseCascade = CanCascade; // dispara a recarga pelo OnUseCascadeChanged
     }
 
     public string OnnxFolder => _main.OnnxStore.Folder;
     public bool OnnxInstalled => _main.OnnxStore.IsInstalled;
-    public string OnnxInfo => OnnxInstalled ? "all-MiniLM-L6-v2 · 90 MB · encoder (BERT)" : T("não baixado", "not downloaded");
+    public string OnnxInfo => OnnxInstalled ? "all-MiniLM-L6-v2 · 90 MB · encoder (BERT)" : T("não baixado", "not downloaded", "no descargado");
 
     public string LlamaFolder { get; }
     public bool LlamaInstalled { get; }
     private readonly string? _llamaModel;
-    public string LlamaInfo => _llamaModel ?? T("não instalada (instale pelo NXProject → IA → Gerenciar)", "not installed (install it from NXProject → AI → Manage)");
+    public string LlamaInfo => _llamaModel ?? T("não instalada (instale pelo NXProject → IA → Gerenciar)", "not installed (install it from NXProject → AI → Manage)", "no instalada (instálela desde NXProject → IA → Administrar)");
 
     /// <summary>Gate em GPU (DirectML). Desligado por padrão: CPU funciona em qualquer máquina.</summary>
     [ObservableProperty] private bool _useGpu;
@@ -82,7 +82,7 @@ public sealed partial class AiLabViewModel : ObservableObject
     [ObservableProperty] private bool _benchLlama = true;
 
     [ObservableProperty] private bool _isBusy;
-    [ObservableProperty] private string _status = T("Pronto.", "Ready.");
+    [ObservableProperty] private string _status = T("Pronto.", "Ready.", "Listo.");
     [ObservableProperty] private string? _insight;
 
     public ObservableCollection<BenchmarkRow> Results { get; } = new();
@@ -98,9 +98,9 @@ public sealed partial class AiLabViewModel : ObservableObject
     {
         if (_suppressRebuild) return;
         IsBusy = true;
-        Status = T("Recarregando o gate…", "Reloading the gate…");
+        Status = T("Recarregando o gate…", "Reloading the gate…", "Recargando el gate…");
         try { await _main.RebuildGateAsync(); Status = _main.GateStatus; }
-        catch (Exception ex) { Status = T("Falha ao montar o gate: ", "Could not build the gate: ") + ex.Message; }
+        catch (Exception ex) { Status = T("Falha ao montar o gate: ", "Could not build the gate: ", "No se pudo montar el gate: ") + ex.Message; }
         finally { IsBusy = false; }
     }
 
@@ -122,10 +122,10 @@ public sealed partial class AiLabViewModel : ObservableObject
             await _main.OnnxStore.DownloadAsync(new Progress<string>(m => Status = m));
             OnPropertyChanged(nameof(OnnxInstalled));
             OnPropertyChanged(nameof(OnnxInfo));
-            _main.AddLog(T("Laboratório", "Lab"), "info", T($"Modelo ONNX baixado em {OnnxFolder}", $"ONNX model downloaded to {OnnxFolder}"));
+            _main.AddLog(T("Laboratório", "Lab", "Laboratorio"), "info", T($"Modelo ONNX baixado em {OnnxFolder}", $"ONNX model downloaded to {OnnxFolder}", $"Modelo ONNX descargado en {OnnxFolder}"));
             await _main.RebuildGateAsync();
         }
-        catch (Exception ex) { Status = T("Falha no download: ", "Download failed: ") + ex.Message; }
+        catch (Exception ex) { Status = T("Falha no download: ", "Download failed: ", "Falló la descarga: ") + ex.Message; }
         finally { IsBusy = false; }
     }
 
@@ -136,7 +136,7 @@ public sealed partial class AiLabViewModel : ObservableObject
     [RelayCommand]
     private async Task RunBenchmark()
     {
-        if (!OnnxInstalled) { Status = T("Baixe o modelo ONNX primeiro.", "Download the ONNX model first."); return; }
+        if (!OnnxInstalled) { Status = T("Baixe o modelo ONNX primeiro.", "Download the ONNX model first.", "Descargue primero el modelo ONNX."); return; }
         IsBusy = true;
         Results.Clear();
         Insight = null;
@@ -165,10 +165,10 @@ public sealed partial class AiLabViewModel : ObservableObject
             }
             SelectedResult = Results.FirstOrDefault(r => r.Engine.Count(c => c == '→') == 2) ?? Results.LastOrDefault(); // a cascata (independe do idioma)
             Insight = BuildInsight();
-            Status = T($"Comparação concluída · {RiskExamples.Benchmark.Count} ações que os modelos nunca viram.", $"Comparison done · {RiskExamples.Benchmark.Count} actions the models never saw.");
-            _main.AddLog(T("Laboratório", "Lab"), "benchmark", string.Join(" | ", Results.Select(r => $"{ShortEngine(r.Engine)}: {r.Average}, {r.Accuracy}")));
+            Status = T($"Comparação concluída · {RiskExamples.Benchmark.Count} ações que os modelos nunca viram.", $"Comparison done · {RiskExamples.Benchmark.Count} actions the models never saw.", $"Comparación concluida · {RiskExamples.Benchmark.Count} acciones que los modelos nunca vieron.");
+            _main.AddLog(T("Laboratório", "Lab", "Laboratorio"), "benchmark", string.Join(" | ", Results.Select(r => $"{ShortEngine(r.Engine)}: {r.Average}, {r.Accuracy}")));
         }
-        catch (Exception ex) { Status = T("Falha: ", "Failed: ") + ex.Message; }
+        catch (Exception ex) { Status = T("Falha: ", "Failed: ", "Falló: ") + ex.Message; }
         finally { IsBusy = false; }
     }
 
@@ -182,17 +182,19 @@ public sealed partial class AiLabViewModel : ObservableObject
         if (cpu != null && llm != null)
         {
             var times = llm.AverageMs / Math.Max(cpu.AverageMs, 0.01);
-            parts.Add(T($"ONNX na CPU foi {times:N0}× mais rápido que o LLaMA por ação.", $"ONNX on CPU was {times:N0}× faster than LLaMA per action."));
+            parts.Add(T($"ONNX na CPU foi {times:N0}× mais rápido que o LLaMA por ação.", $"ONNX on CPU was {times:N0}× faster than LLaMA per action.", $"ONNX en la CPU fue {times:N0}× más rápido que LLaMA por acción."));
         }
         if (gpu != null && gpu.Error != null)
-            parts.Add(T("GPU (DirectML) indisponível nesta máquina — tudo bem: o padrão é CPU.", "GPU (DirectML) unavailable on this machine — that is fine: CPU is the default."));
+            parts.Add(T("GPU (DirectML) indisponível nesta máquina — tudo bem: o padrão é CPU.", "GPU (DirectML) unavailable on this machine — that is fine: CPU is the default.", "GPU (DirectML) no disponible en esta máquina — no hay problema: el valor predeterminado es CPU."));
         else if (cpu != null && gpu != null)
             parts.Add(gpu.AverageMs > cpu.AverageMs
                 ? T($"Com um modelo deste tamanho a CPU ganhou da GPU ({cpu.Average} × {gpu.Average}): enviar dados à placa custa mais que o cálculo. GPU compensa em modelos maiores ou em lote.",
-                    $"With a model this size the CPU beat the GPU ({cpu.Average} × {gpu.Average}): sending data to the card costs more than the math. GPU pays off with larger models or batches.")
-                : T($"A GPU ganhou da CPU ({gpu.Average} × {cpu.Average}).", $"The GPU beat the CPU ({gpu.Average} × {cpu.Average})."));
+                    $"With a model this size the CPU beat the GPU ({cpu.Average} × {gpu.Average}): sending data to the card costs more than the math. GPU pays off with larger models or batches.",
+                    $"Con un modelo de este tamaño la CPU le ganó a la GPU ({cpu.Average} × {gpu.Average}): enviar datos a la tarjeta cuesta más que el cálculo. La GPU compensa con modelos más grandes o en lote.")
+                : T($"A GPU ganhou da CPU ({gpu.Average} × {cpu.Average}).", $"The GPU beat the CPU ({gpu.Average} × {cpu.Average}).", $"La GPU le ganó a la CPU ({gpu.Average} × {cpu.Average})."));
         parts.Add(T("Nenhum motor aprova sozinho o que não for BAIXO — erro de classificação vira pergunta ao usuário, não ação perigosa.",
-                  "No engine auto-approves anything that is not LOW — a classification error becomes a question to the user, not a dangerous action."));
+                  "No engine auto-approves anything that is not LOW — a classification error becomes a question to the user, not a dangerous action.",
+                  "Ningún motor aprueba por sí solo lo que no sea BAJO — un error de clasificación se convierte en una pregunta al usuario, no en una acción peligrosa."));
         return string.Join("  ", parts);
     }
 
@@ -211,8 +213,8 @@ public sealed partial class AiLabViewModel : ObservableObject
             var r = await Task.Run(() => e.ClassifyAsync(text));
             TryResults.Add(new TryRow(e.Name, r.Level, $"{r.Confidence:P0}", BenchmarkRow.FormatMs(r.Elapsed.TotalMilliseconds), r.Reason));
         }
-        if (_main.GateOnnx == null) Status = T("Só Regras: baixe o modelo ONNX para comparar.", "Rules only: download the ONNX model to compare.");
-        else if (_main.GateSlow == null) Status = T("Ligue a cascata para incluir o 3º degrau (LLM) no teste.", "Turn the cascade on to include step 3 (LLM) in the test.");
+        if (_main.GateOnnx == null) Status = T("Só Regras: baixe o modelo ONNX para comparar.", "Rules only: download the ONNX model to compare.", "Solo Reglas: descargue el modelo ONNX para comparar.");
+        else if (_main.GateSlow == null) Status = T("Ligue a cascata para incluir o 3º degrau (LLM) no teste.", "Turn the cascade on to include step 3 (LLM) in the test.", "Active la cascada para incluir el paso 3 (LLM) en la prueba.");
     }
 
     /// <summary>
@@ -226,8 +228,8 @@ public sealed partial class AiLabViewModel : ObservableObject
         var lvl = Enum.Parse<RiskLevel>(level);
         var text = TryText.Trim();
         await Task.Run(() => _main.GateOnnx.AddExample(new RiskExample(text, lvl)));
-        _main.AddLog(T("Você", "You"), T("ensinou", "taught"), T($"{text} → {lvl} ({_main.GateOnnx.ExampleCount} exemplos)", $"{text} → {lvl} ({_main.GateOnnx.ExampleCount} examples)"));
-        Status = T($"Aprendido: \"{text}\" = {lvl}. Ações parecidas agora tendem a {lvl}.", $"Learned: \"{text}\" = {lvl}. Similar actions now lean to {lvl}.");
+        _main.AddLog(T("Você", "You", "Usted"), T("ensinou", "taught", "enseñó"), T($"{text} → {lvl} ({_main.GateOnnx.ExampleCount} exemplos)", $"{text} → {lvl} ({_main.GateOnnx.ExampleCount} examples)", $"{text} → {lvl} ({_main.GateOnnx.ExampleCount} ejemplos)"));
+        Status = T($"Aprendido: \"{text}\" = {lvl}. Ações parecidas agora tendem a {lvl}.", $"Learned: \"{text}\" = {lvl}. Similar actions now lean to {lvl}.", $"Aprendido: \"{text}\" = {lvl}. Las acciones parecidas ahora tienden a {lvl}.");
         await TryClassify();
     }
 

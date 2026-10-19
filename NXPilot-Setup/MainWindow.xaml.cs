@@ -42,9 +42,9 @@ public partial class MainWindow : Window
         _agents = new NXData.AgentInstaller.AgentInstaller(_agentOptions);
         _payloadDir = ResolvePayloadDir();
         VersionRun.Text = "v" + (typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "?");
-        AppPathRun.Text = T("Pasta: ", "Folder: ") + $"{_installDir}  ";
-        OnnxPathRun.Text = T("Pasta: ", "Folder: ") + $"{_onnx.Folder}  ";
-        LanguageBox.SelectedIndex = IsEnglish ? 1 : 0;
+        AppPathRun.Text = T("Pasta: ", "Folder: ", "Carpeta: ") + $"{_installDir}  ";
+        OnnxPathRun.Text = T("Pasta: ", "Folder: ", "Carpeta: ") + $"{_onnx.Folder}  ";
+        LanguageBox.SelectedIndex = IsSpanish ? 2 : IsEnglish ? 1 : 0;
         Loaded += async (_, _) =>
         {
             RefreshAll();
@@ -75,11 +75,12 @@ public partial class MainWindow : Window
 
     private void RefreshAll()
     {
-        AppPathRun.Text = T("Pasta: ", "Folder: ") + $"{_installDir}  ";
-        OnnxPathRun.Text = T("Pasta: ", "Folder: ") + $"{_onnx.Folder}  ";
-        VersionLatestItem.Content = T("Última publicada (atualiza sozinha)", "Latest release (auto-updates)");
+        AppPathRun.Text = T("Pasta: ", "Folder: ", "Carpeta: ") + $"{_installDir}  ";
+        OnnxPathRun.Text = T("Pasta: ", "Folder: ", "Carpeta: ") + $"{_onnx.Folder}  ";
+        VersionLatestItem.Content = T("Última publicada (atualiza sozinha)", "Latest release (auto-updates)", "Última publicada (se actualiza sola)");
         VersionTestedItem.Content = T($"Testada com o NXPilot (Claude {_agentOptions.TestedClaudeVersion} · Codex {_agentOptions.TestedCodexVersion})",
-                                      $"Tested with NXPilot (Claude {_agentOptions.TestedClaudeVersion} · Codex {_agentOptions.TestedCodexVersion})");
+                                      $"Tested with NXPilot (Claude {_agentOptions.TestedClaudeVersion} · Codex {_agentOptions.TestedCodexVersion})",
+                                      $"Probada con NXPilot (Claude {_agentOptions.TestedClaudeVersion} · Codex {_agentOptions.TestedCodexVersion})");
         RefreshStep1(); RefreshStep2(); RefreshAgents(); RefreshLlama(); UpdateAgentCommands();
     }
 
@@ -106,7 +107,7 @@ public partial class MainWindow : Window
     {
         if (!PayloadPresent)
         {
-            Step1StatusText.Text = T($"Pacote do app não encontrado em {_payloadDir}. Gere o Setup com release-nxpilot-setup.ps1.", $"App package not found in {_payloadDir}. Build the Setup with release-nxpilot-setup.ps1.");
+            Step1StatusText.Text = T($"Pacote do app não encontrado em {_payloadDir}. Gere o Setup com release-nxpilot-setup.ps1.", $"App package not found in {_payloadDir}. Build the Setup with release-nxpilot-setup.ps1.", $"No se encontró el paquete de la aplicación en {_payloadDir}. Genere el Setup con release-nxpilot-setup.ps1.");
             Step1Button.IsEnabled = false;
         }
         else if (File.Exists(InstalledExe))
@@ -114,15 +115,15 @@ public partial class MainWindow : Window
             var installed = FileVersionInfo.GetVersionInfo(InstalledExe).FileVersion;
             var bundled = FileVersionInfo.GetVersionInfo(Path.Combine(_payloadDir, AppExeName)).FileVersion;
             Step1StatusText.Text = installed == bundled
-                ? T($"NXPilot {installed} já está instalado.", $"NXPilot {installed} is already installed.")
-                : T($"Instalado: {installed} · este Setup traz: {bundled}.", $"Installed: {installed} · this Setup has: {bundled}.");
-            Step1Button.Content = installed == bundled ? T("Reinstalar", "Reinstall") : T("Atualizar", "Update");
+                ? T($"NXPilot {installed} já está instalado.", $"NXPilot {installed} is already installed.", $"NXPilot {installed} ya está instalado.")
+                : T($"Instalado: {installed} · este Setup traz: {bundled}.", $"Installed: {installed} · this Setup has: {bundled}.", $"Instalado: {installed} · este Setup incluye: {bundled}.");
+            Step1Button.Content = installed == bundled ? T("Reinstalar", "Reinstall", "Reinstalar") : T("Atualizar", "Update", "Actualizar");
             OpenAppButton.Visibility = Visibility.Visible;
         }
         else
         {
-            Step1StatusText.Text = T("Copia o NXPilot (com o runtime .NET embutido) para o seu perfil e cria um atalho na área de trabalho.", "Copies NXPilot (with the .NET runtime built in) to your profile and creates a desktop shortcut.");
-            Step1Button.Content = T("Instalar", "Install");
+            Step1StatusText.Text = T("Copia o NXPilot (com o runtime .NET embutido) para o seu perfil e cria um atalho na área de trabalho.", "Copies NXPilot (with the .NET runtime built in) to your profile and creates a desktop shortcut.", "Copia NXPilot (con el runtime de .NET incluido) a su perfil y crea un acceso directo en el escritorio.");
+            Step1Button.Content = T("Instalar", "Install", "Instalar");
         }
     }
 
@@ -133,10 +134,10 @@ public partial class MainWindow : Window
         Step1Progress.Value = 0;
         try
         {
-            Step1StatusText.Text = T("Encerrando o NXPilot, se estiver aberto…", "Closing NXPilot, if it is open…");
+            Step1StatusText.Text = T("Encerrando o NXPilot, se estiver aberto…", "Closing NXPilot, if it is open…", "Cerrando NXPilot, si está abierto…");
             await Task.Run(StopRunningApp);
 
-            Step1StatusText.Text = T("Copiando arquivos…", "Copying files…");
+            Step1StatusText.Text = T("Copiando arquivos…", "Copying files…", "Copiando archivos…");
             var progress = new Progress<double>(p => Step1Progress.Value = p * 90);
             await Task.Run(() => CopyPayload(_payloadDir, _installDir, progress));
             // Exe de versões antigas (antes de se chamar NxPilot.exe). ATENÇÃO: o Windows ignora
@@ -148,24 +149,24 @@ public partial class MainWindow : Window
             // Modelo do NXProject: o Setup traz a base (runtime + bibliotecas) e um app embutido;
             // se o GitHub tiver uma versão mais nova do app (NXPilot-Release.zip), aplica por cima.
             // Sem internet, fica a versão embutida — a instalação nunca depende da rede.
-            Step1StatusText.Text = T("Procurando a versão mais nova…", "Looking for the latest version…");
+            Step1StatusText.Text = T("Procurando a versão mais nova…", "Looking for the latest version…", "Buscando la versión más reciente…");
             var updateNote = await UpdateToLatestAsync();
 
             // Sem o runtime ao lado do exe, o Windows mostra o diálogo genérico "instale o
             // .NET" — erro confuso. Falha aqui, apontando o que faltou.
             var missing = RequiredFiles.Where(f => !File.Exists(Path.Combine(_installDir, f))).ToList();
             if (missing.Count > 0)
-                throw new InvalidOperationException(T("instalação incompleta, faltam: ", "incomplete installation, missing: ") + string.Join(", ", missing));
+                throw new InvalidOperationException(T("instalação incompleta, faltam: ", "incomplete installation, missing: ", "instalación incompleta, faltan: ") + string.Join(", ", missing));
 
             CreateDesktopShortcut(InstalledExe);
             Step1Progress.Value = 100;
             RefreshStep1();
-            Step1StatusText.Text += T(" Atalho criado na área de trabalho.", " Desktop shortcut created.") + updateNote;
+            Step1StatusText.Text += T(" Atalho criado na área de trabalho.", " Desktop shortcut created.", " Acceso directo creado en el escritorio.") + updateNote;
         }
         catch (Exception ex)
         {
-            ShowError(T("Falha ao instalar: ", "Installation failed: ") + ex.Message);
-            Step1StatusText.Text = T("Instalação interrompida.", "Installation interrupted.");
+            ShowError(T("Falha ao instalar: ", "Installation failed: ", "Error al instalar: ") + ex.Message);
+            Step1StatusText.Text = T("Instalação interrompida.", "Installation interrupted.", "Instalación interrumpida.");
         }
         finally { Step1Button.IsEnabled = PayloadPresent; }
     }
@@ -182,11 +183,11 @@ public partial class MainWindow : Window
             await Task.Run(() => NXPilot.Updates.UpdateService.Apply(package, _installDir));
             NXPilot.Updates.UpdateService.CleanupOldFiles(_installDir); // o app está fechado: dá para apagar já
             try { Directory.Delete(Path.GetDirectoryName(package)!, true); } catch { }
-            return T($" Atualizado para a {latest.Tag}.", $" Updated to {latest.Tag}.");
+            return T($" Atualizado para a {latest.Tag}.", $" Updated to {latest.Tag}.", $" Actualizado a la {latest.Tag}.");
         }
         catch (Exception ex) when (ex is NXPilot.Updates.UpdateException or System.Net.Http.HttpRequestException or TaskCanceledException)
         {
-            return T(" (Sem acesso ao GitHub: instalada a versão que vem no Setup.)", " (No access to GitHub: installed the version bundled in the Setup.)");
+            return T(" (Sem acesso ao GitHub: instalada a versão que vem no Setup.)", " (No access to GitHub: installed the version bundled in the Setup.)", " (Sin acceso a GitHub: se instaló la versión incluida en el Setup.)");
         }
     }
 
@@ -279,8 +280,8 @@ public partial class MainWindow : Window
     private void RefreshStep2()
     {
         var ok = _onnx.IsInstalled;
-        Step2StatusText.Text = ok ? T("Modelo instalado.", "Model installed.") : T("Modelo ainda não baixado.", "Model not downloaded yet.");
-        Step2Button.Content = ok ? T("Já instalado", "Already installed") : T("Baixar modelo", "Download model");
+        Step2StatusText.Text = ok ? T("Modelo instalado.", "Model installed.", "Modelo instalado.") : T("Modelo ainda não baixado.", "Model not downloaded yet.", "Modelo aún no descargado.");
+        Step2Button.Content = ok ? T("Já instalado", "Already installed", "Ya instalado") : T("Baixar modelo", "Download model", "Descargar modelo");
         Step2Button.IsEnabled = !ok;
     }
 
@@ -294,9 +295,9 @@ public partial class MainWindow : Window
         }
         catch (UnauthorizedAccessException)
         {
-            ShowError(T($"Sem permissão para gravar em {_onnx.Folder}. Crie a pasta C:\\IA_LOCAL manualmente e tente de novo.", $"No permission to write to {_onnx.Folder}. Create the C:\\IA_LOCAL folder manually and try again."));
+            ShowError(T($"Sem permissão para gravar em {_onnx.Folder}. Crie a pasta C:\\IA_LOCAL manualmente e tente de novo.", $"No permission to write to {_onnx.Folder}. Create the C:\\IA_LOCAL folder manually and try again.", $"Sin permiso para escribir en {_onnx.Folder}. Cree la carpeta C:\\IA_LOCAL manualmente e intente de nuevo."));
         }
-        catch (Exception ex) { ShowError(T("Falha no download do modelo: ", "Model download failed: ") + ex.Message); }
+        catch (Exception ex) { ShowError(T("Falha no download do modelo: ", "Model download failed: ", "Error al descargar el modelo: ") + ex.Message); }
         finally { RefreshStep2(); }
     }
 
@@ -314,7 +315,7 @@ public partial class MainWindow : Window
         {
             if (NXData.AgentInstaller.AgentLocator.Find(cli, _agentOptions) is { } found)
             {
-                status.Text = T($"✓ {found.Version ?? "instalado"} ({found.Source})", $"✓ {found.Version ?? "installed"} ({SourceEn(found.Source)})");
+                status.Text = T($"✓ {found.Version ?? "instalado"} ({found.Source})", $"✓ {found.Version ?? "installed"} ({SourceEn(found.Source)})", $"✓ {found.Version ?? "instalado"} ({SourceEs(found.Source)})");
                 status.Foreground = Brushes.Green;
             }
             else _ = CheckWslAsync(name, status);
@@ -325,6 +326,13 @@ public partial class MainWindow : Window
     {
         "instalador oficial" => "official installer",
         "extensão do VS Code" => "VS Code extension",
+        _ => source,
+    };
+
+    private static string SourceEs(string source) => source switch
+    {
+        "instalador oficial" => "instalador oficial",
+        "extensão do VS Code" => "extensión de VS Code",
         _ => source,
     };
 
@@ -352,13 +360,13 @@ public partial class MainWindow : Window
         try
         {
             var r = await _agents.InstallAsync(cli, SelectedMode, SelectedVersion, new Progress<string>(m => AgentProgress.Text = m));
-            AgentProgress.Text = r.Message + (r.FellBackToLatest ? "" : T(" Entre na sua conta rodando o agente uma vez num terminal.", " Sign in by running the agent once in a terminal."));
+            AgentProgress.Text = r.Message + (r.FellBackToLatest ? "" : T(" Entre na sua conta rodando o agente uma vez num terminal.", " Sign in by running the agent once in a terminal.", " Inicie sesión ejecutando el agente una vez en una terminal."));
         }
         catch (Exception ex)
         {
             AgentProgress.Text = "";
             ShowError((cli == NXData.AgentInstaller.AgentCli.ClaudeCode ? "Claude Code: " : "Codex: ") + ex.Message +
-                      (SelectedMode == NXData.AgentInstaller.InstallMode.Script ? T(" Tente a instalação Interna.", " Try the Built-in install.") : ""));
+                      (SelectedMode == NXData.AgentInstaller.InstallMode.Script ? T(" Tente a instalação Automática.", " Try the Automatic install.", " Pruebe la instalación Automática.") : ""));
         }
         finally
         {
@@ -369,7 +377,7 @@ public partial class MainWindow : Window
 
     private async Task CheckWslAsync(string cli, TextBlock status)
     {
-        status.Text = T("verificando WSL…", "checking WSL…");
+        status.Text = T("verificando WSL…", "checking WSL…", "verificando WSL…");
         status.Foreground = Brushes.Gray;
         var found = await Task.Run(() =>
         {
@@ -395,9 +403,9 @@ public partial class MainWindow : Window
     {
         tb.Text = where switch
         {
-            Where.Windows => T("✓ instalado (Windows)", "✓ installed (Windows)"),
-            Where.Wsl => T("✓ instalado (WSL)", "✓ installed (WSL)"),
-            _ => T("não encontrado", "not found")
+            Where.Windows => T("✓ instalado (Windows)", "✓ installed (Windows)", "✓ instalado (Windows)"),
+            Where.Wsl => T("✓ instalado (WSL)", "✓ installed (WSL)", "✓ instalado (WSL)"),
+            _ => T("não encontrado", "not found", "no encontrado")
         };
         tb.Foreground = where == Where.None ? Brushes.Gray : Brushes.Green;
     }
@@ -429,9 +437,9 @@ public partial class MainWindow : Window
 
         var ok = Directory.Exists(folder) && Directory.GetFiles(folder, "*.gguf").Length > 0
                  && File.Exists(Path.Combine(folder, "llama.dll"));
-        LlamaStatus.Text = ok ? T("✓ instalada", "✓ installed") : T("não instalada", "not installed");
+        LlamaStatus.Text = ok ? T("✓ instalada", "✓ installed", "✓ instalada") : T("não instalada", "not installed", "no instalada");
         LlamaStatus.Foreground = ok ? Brushes.Green : Brushes.Gray;
-        LlamaPathText.Text = T("Pasta: ", "Folder: ") + folder;
+        LlamaPathText.Text = T("Pasta: ", "Folder: ", "Carpeta: ") + folder;
     }
 
     // ------------------------------------------------------------------ comum
@@ -443,7 +451,7 @@ public partial class MainWindow : Window
             Process.Start(new ProcessStartInfo(InstalledExe) { WorkingDirectory = _installDir, UseShellExecute = true });
             Close();
         }
-        catch (Exception ex) { ShowError(T("Não foi possível abrir o NXPilot: ", "Could not open NXPilot: ") + ex.Message); }
+        catch (Exception ex) { ShowError(T("Não foi possível abrir o NXPilot: ", "Could not open NXPilot: ", "No se pudo abrir NXPilot: ") + ex.Message); }
     }
 
     private void OnOpenAppFolder(object sender, RoutedEventArgs e) => OpenFolder(_installDir);

@@ -47,7 +47,7 @@ public partial class ProcessesWindow : Window
         AppsBox.Items.Clear();
         using var ui = new WindowsUiService(new WindowsUiPolicy([]));
         foreach (var w in ui.ListWindows(allowedOnly: false).OrderBy(w => w.ProcessName))
-            AppsBox.Items.Add(new ComboBoxItem { Content = $"{w.ProcessName} — {w.Title}{(w.Minimized ? T("  (minimizado)", "  (minimized)") : "")}", Tag = w });
+            AppsBox.Items.Add(new ComboBoxItem { Content = $"{w.ProcessName} — {w.Title}{(w.Minimized ? T("  (minimizado)", "  (minimized)", "  (minimizada)") : "")}", Tag = w });
     }
 
     private WindowInfo? SelectedApp => (AppsBox.SelectedItem as ComboBoxItem)?.Tag as WindowInfo;
@@ -58,7 +58,7 @@ public partial class ProcessesWindow : Window
     {
         _current = null;
         _steps = new List<UiStep>();
-        NameBox.Text = T("Novo processo", "New process");
+        NameBox.Text = T("Novo processo", "New process", "Nuevo proceso");
         RefreshSteps();
     }
 
@@ -78,7 +78,7 @@ public partial class ProcessesWindow : Window
     private void OnRemoveProcessClick(object sender, RoutedEventArgs e)
     {
         if (_current == null) return;
-        if (MessageBox.Show(this, T($"Remover o processo \"{_current.Name}\" do NXPilot? (Não mexe no app.)", $"Remove process \"{_current.Name}\" from NXPilot? (Does not touch the app.)"),
+        if (MessageBox.Show(this, T($"Remover o processo \"{_current.Name}\" do NXPilot? (Não mexe no app.)", $"Remove process \"{_current.Name}\" from NXPilot? (Does not touch the app.)", $"¿Quitar el proceso \"{_current.Name}\" de NXPilot? (No afecta a la app.)"),
                 "NXPilot", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
         _processes.Remove(_current);
         Services.UiProcessStore.Save(_processes);
@@ -89,7 +89,7 @@ public partial class ProcessesWindow : Window
     /// <summary>O processo como está na tela (com a aprovação anterior — que só vale se nada mudou).</summary>
     private UiProcess Draft() => new(NameBox.Text.Trim(), AppName, _steps.ToList())
     {
-        Author = _current?.Author ?? T("usuário", "user"),
+        Author = _current?.Author ?? T("usuário", "user", "usuario"),
         ApprovedHash = _current?.ApprovedHash,
         ApprovedAt = _current?.ApprovedAt,
     };
@@ -104,13 +104,13 @@ public partial class ProcessesWindow : Window
             {
                 Content = $"{i + 1}. {(s.IsDestructive ? "⚠ " : "")}{s.Describe()}",
                 Foreground = s.IsDestructive ? Brushes.Firebrick : Brushes.Black,
-                ToolTip = s.IsDestructive ? T("Exclusão: vai pedir nova autorização na hora de executar.", "Deletion: will ask again for authorization when it runs.") : null,
+                ToolTip = s.IsDestructive ? T("Exclusão: vai pedir nova autorização na hora de executar.", "Deletion: will ask again for authorization when it runs.", "Eliminación: pedirá autorización de nuevo al ejecutarse.") : null,
             });
         }
         var d = Draft();
         ApprovalText.Text = d.IsApproved
-            ? T($"✓ Aprovado em {d.ApprovedAt:dd/MM HH:mm} · escrito por: {d.Author}", $"✓ Approved on {d.ApprovedAt:MM/dd HH:mm} · written by: {d.Author}")
-            : T($"Não aprovado · escrito por: {d.Author}", $"Not approved · written by: {d.Author}");
+            ? T($"✓ Aprovado em {d.ApprovedAt:dd/MM HH:mm} · escrito por: {d.Author}", $"✓ Approved on {d.ApprovedAt:MM/dd HH:mm} · written by: {d.Author}", $"✓ Aprobado el {d.ApprovedAt:dd/MM HH:mm} · escrito por: {d.Author}")
+            : T($"Não aprovado · escrito por: {d.Author}", $"Not approved · written by: {d.Author}", $"No aprobado · escrito por: {d.Author}");
         ApprovalText.Foreground = d.IsApproved ? Brushes.Green : Brushes.DarkOrange;
     }
 
@@ -125,7 +125,7 @@ public partial class ProcessesWindow : Window
             _elements = ui.ReadElements(w, maxDepth: 12, maxItems: 1500)
                 .Where(x => x.Name.Length > 0 || x.AutomationId.Length > 0).ToList();
             OnFilterChanged(this, null!);
-            Log(T($"{_elements.Count} elemento(s) de {w.ProcessName}.", $"{_elements.Count} element(s) from {w.ProcessName}."));
+            Log(T($"{_elements.Count} elemento(s) de {w.ProcessName}.", $"{_elements.Count} element(s) from {w.ProcessName}.", $"{_elements.Count} elemento(s) de {w.ProcessName}."));
         }
         catch (Exception ex) { Log(ex.Message); }
     }
@@ -148,7 +148,7 @@ public partial class ProcessesWindow : Window
 
     private void AddStep(UiStep? step)
     {
-        if (step == null) { Log(T("Escolha um elemento na lista do meio.", "Pick an element in the middle list.")); return; }
+        if (step == null) { Log(T("Escolha um elemento na lista do meio.", "Pick an element in the middle list.", "Elija un elemento en la lista del medio.")); return; }
         _steps.Add(step);
         RefreshSteps();
     }
@@ -198,37 +198,38 @@ public partial class ProcessesWindow : Window
     private void OnSaveClick(object sender, RoutedEventArgs e)
     {
         var p = SaveDraft(Draft());
-        Log(p.IsApproved ? T("Salvo (continua aprovado).", "Saved (still approved).") : T("Salvo. Revise e aprove para poder executar.", "Saved. Review and approve it to run."));
+        Log(p.IsApproved ? T("Salvo (continua aprovado).", "Saved (still approved).", "Guardado (sigue aprobado).") : T("Salvo. Revise e aprove para poder executar.", "Saved. Review and approve it to run.", "Guardado. Revíselo y apruébelo para ejecutarlo."));
     }
 
     private void OnApproveClick(object sender, RoutedEventArgs e)
     {
         var d = Draft();
         var problems = d.Validate();
-        if (d.ProcessName.Length == 0) problems = problems.Append(T("Escolha o app.", "Pick the app.")).ToList();
+        if (d.ProcessName.Length == 0) problems = problems.Append(T("Escolha o app.", "Pick the app.", "Elija la app.")).ToList();
         if (problems.Count > 0) { Log(string.Join("\n", problems)); return; }
 
         var summary = string.Join("\n", d.Steps.Select((s, i) => $"{i + 1}. {(s.IsDestructive ? "⚠ " : "")}{s.Describe()}"));
         var warn = d.Steps.Any(s => s.IsDestructive)
-            ? T("\n\n⚠ Passos de exclusão vão pedir NOVA autorização na hora de executar.", "\n\n⚠ Deletion steps will ask for authorization AGAIN when they run.") : "";
+            ? T("\n\n⚠ Passos de exclusão vão pedir NOVA autorização na hora de executar.", "\n\n⚠ Deletion steps will ask for authorization AGAIN when they run.", "\n\n⚠ Los pasos de eliminación pedirán autorización OTRA VEZ al ejecutarse.") : "";
         var msg = T($"Aprovar o processo \"{d.Name}\" no app {d.ProcessName}?\n\n{summary}{warn}\n\nQualquer edição depois desfaz a aprovação.",
-                    $"Approve process \"{d.Name}\" in app {d.ProcessName}?\n\n{summary}{warn}\n\nAny later edit undoes the approval.");
+                    $"Approve process \"{d.Name}\" in app {d.ProcessName}?\n\n{summary}{warn}\n\nAny later edit undoes the approval.",
+                    $"¿Aprobar el proceso \"{d.Name}\" en la app {d.ProcessName}?\n\n{summary}{warn}\n\nCualquier edición posterior anula la aprobación.");
         if (MessageBox.Show(this, msg, "NXPilot", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
         SaveDraft(d.Approve());
-        Log(T("Processo aprovado.", "Process approved."));
+        Log(T("Processo aprovado.", "Process approved.", "Proceso aprobado."));
     }
 
     private async void OnRunClick(object sender, RoutedEventArgs e)
     {
         var p = Draft();
-        if (!p.IsApproved) { Log(T("Aprove o processo antes de executar (ou ele foi alterado depois da aprovação).", "Approve the process before running it (or it changed after approval).")); return; }
+        if (!p.IsApproved) { Log(T("Aprove o processo antes de executar (ou ele foi alterado depois da aprovação).", "Approve the process before running it (or it changed after approval).", "Apruebe el proceso antes de ejecutarlo (o cambió después de la aprobación).")); return; }
         _run = new CancellationTokenSource();
         RunButton.IsEnabled = false; StopButton.IsEnabled = true;
         RunLog.Clear();
         try
         {
             var results = await RunAsync(this, p, line => Log(line), _run.Token);
-            Log(results.All(r => r.Ok) ? T("✓ Processo concluído.", "✓ Process finished.") : T("Processo interrompido.", "Process interrupted."));
+            Log(results.All(r => r.Ok) ? T("✓ Processo concluído.", "✓ Process finished.", "✓ Proceso concluido.") : T("Processo interrompido.", "Process interrupted.", "Proceso interrumpido."));
         }
         catch (Exception ex) { Log(ex.Message); }
         finally { _run.Dispose(); _run = null; RunButton.IsEnabled = true; StopButton.IsEnabled = false; }
@@ -244,13 +245,13 @@ public partial class ProcessesWindow : Window
     {
         using var ui = new WindowsUiService(new WindowsUiPolicy([process.ProcessName]));
         var window = ui.FindWindow(process.ProcessName)
-                     ?? throw new InvalidOperationException(T($"O app {process.ProcessName} não está aberto.", $"App {process.ProcessName} is not open."));
+                     ?? throw new InvalidOperationException(T($"O app {process.ProcessName} não está aberto.", $"App {process.ProcessName} is not open.", $"La app {process.ProcessName} no está abierta."));
         var driver = ui.Driver(window);
         return await UiProcessRunner.RunAsync(process, driver,
             new Progress<UiStepResult>(r => log($"{(r.Ok ? "✓" : "✗")} {r.Index + 1}. {r.Message}")), ct,
             (step, live, _) => Task.FromResult(owner.Dispatcher.Invoke(() => MessageBox.Show(owner,
-                T($"O passo vai EXCLUIR:\n\n  {step.Describe()}\n  (na tela: \"{live}\")\n\nAutorizar esta exclusão?", $"This step will DELETE:\n\n  {step.Describe()}\n  (on screen: \"{live}\")\n\nAuthorize this deletion?"),
-                T("NXPilot — confirmar exclusão", "NXPilot — confirm deletion"), MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes)));
+                T($"O passo vai EXCLUIR:\n\n  {step.Describe()}\n  (na tela: \"{live}\")\n\nAutorizar esta exclusão?", $"This step will DELETE:\n\n  {step.Describe()}\n  (on screen: \"{live}\")\n\nAuthorize this deletion?", $"Este paso va a ELIMINAR:\n\n  {step.Describe()}\n  (en pantalla: \"{live}\")\n\n¿Autoriza esta eliminación?"),
+                T("NXPilot — confirmar exclusão", "NXPilot — confirm deletion", "NXPilot — confirmar eliminación"), MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes)));
     }
 
     private void Log(string text) => RunLog.AppendText((RunLog.Text.Length > 0 ? Environment.NewLine : "") + text);

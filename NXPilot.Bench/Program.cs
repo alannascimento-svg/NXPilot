@@ -7,6 +7,7 @@
 //   NXPilot.Bench.exe [--no-llama] [--no-gpu] [--onnx-root C:\IA_LOCAL\ONNX]
 //   NXPilot.Bench.exe --smoke   (teste do build: Regras + ONNX CPU, sem download, exit 1 se piorar)
 //   NXPilot.Bench.exe --test [filtro]   (testes críticos pela fachada NXPilot.Testing)
+//   --lang es-ES (ou en-US) roda qualquer modo com os textos naquele idioma
 using NXPilot.Benchmark;
 using NXPilot.Llama;
 using NXPilot.Messaging;
@@ -18,6 +19,12 @@ var noLlama = args.Contains("--no-llama");
 var noGpu = args.Contains("--no-gpu");
 var rootIdx = Array.IndexOf(args, "--onnx-root");
 var store = new OnnxModelStore(rootIdx >= 0 && rootIdx + 1 < args.Length ? args[rootIdx + 1] : null);
+var langIdx = Array.IndexOf(args, "--lang");
+if (langIdx >= 0 && langIdx + 1 < args.Length)
+{
+    NXPilot.NxText.Language = NXPilot.NxText.Normalize(args[langIdx + 1]);
+    args = args.Where((_, i) => i != langIdx && i != langIdx + 1).ToArray();
+}
 
 if (args.Contains("--smoke"))
     return await SmokeAsync(store);

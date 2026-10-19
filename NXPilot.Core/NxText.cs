@@ -14,11 +14,23 @@ public static class NxText
 {
     public const string Portuguese = "pt-BR";
     public const string English = "en-US";
+    public const string Spanish = "es-ES";
 
     public static string Language { get; set; } = Portuguese;
 
     public static bool IsEnglish => Language == English;
 
-    /// <summary>Português ou inglês conforme o idioma ativo.</summary>
-    public static string T(string pt, string en) => IsEnglish ? en : pt;
+    public static bool IsSpanish => Language == Spanish;
+
+    /// <summary>Português, inglês ou espanhol conforme o idioma ativo (sem texto em espanhol, vale o inglês).</summary>
+    public static string T(string pt, string en, string? es = null) => IsSpanish ? es ?? en : IsEnglish ? en : pt;
+
+    /// <summary>Código de idioma suportado: "es…" → espanhol, "en…" → inglês, o resto → português.</summary>
+    public static string Normalize(string code) =>
+        code.StartsWith("es", StringComparison.OrdinalIgnoreCase) ? Spanish
+        : code.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? English
+        : Portuguese;
+
+    /// <summary>Idioma do Windows: pt → português, es → espanhol, senão inglês.</summary>
+    public static string FromSystem(string twoLetter) => twoLetter switch { "pt" => Portuguese, "es" => Spanish, _ => English };
 }
