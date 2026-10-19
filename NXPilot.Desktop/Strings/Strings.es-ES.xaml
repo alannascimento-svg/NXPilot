@@ -163,7 +163,7 @@
     <sys:String x:Key="Task_Interromper">■  Interrumpir</sys:String>
     <sys:String x:Key="Task_AbrirWorktree">Abrir worktree</sys:String>
     <sys:String x:Key="Task_CriteriosLabel">Criterios de aceptación</sys:String>
-    <sys:String x:Key="NewTask_Revisor">Revisor (verificación cruzada)</sys:String>
+    <sys:String x:Key="NewTask_Revisor">Revisor (sesión nueva, solo lectura)</sys:String>
     <sys:String x:Key="NewTask_RevisorCodex">Codex — solo lectura (recomendado)</sys:String>
     <sys:String x:Key="NewTask_RevisorClaude">Claude — en una sesión nueva</sys:String>
     <sys:String x:Key="NewTask_RevisorNenhum">Sin verificación</sys:String>

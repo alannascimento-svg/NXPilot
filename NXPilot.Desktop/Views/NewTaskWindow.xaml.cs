@@ -33,6 +33,8 @@ public partial class NewTaskWindow : Window
     public NewTaskWindow()
     {
         InitializeComponent();
+        RefreshCodexModelsButton.Content = T("↻ Modelos", "↻ Models", "↻ Modelos");
+        UpdateCodexButton.Content = T("Atualizar Codex", "Update Codex", "Actualizar Codex");
         MaxHeight = SystemParameters.WorkArea.Height - 40;
         var s = AppSettings.Load();
         RepoBox.Text = s.LastRepo ?? "";
@@ -60,25 +62,65 @@ public partial class NewTaskWindow : Window
 
     /// <summary>
     /// Lista do "Modelo do Codex" vinda da PRÓPRIA conta (model/list do Codex) — evita o erro
-    /// de modelo não aceito pela conta ChatGPT. Marca os modelos já testados com o NXPilot.
+    /// de modelo não aceito pela conta ChatGPT. Mostra a versão do cliente e o padrão da conta.
     /// </summary>
     private async Task LoadCodexModelsAsync()
     {
-        var tested = string.Join(", ", NXPilot.Agents.CodexAppServerAdapter.TestedModels);
+        if (_loadingCodexModels) return;
+        _loadingCodexModels = true;
+        RefreshCodexModelsButton.IsEnabled = UpdateCodexButton.IsEnabled = false;
         CodexModelHint.Text = T("Consultando os modelos da sua conta no Codex…", "Querying your account's Codex models…", "Consultando los modelos de Codex de su cuenta…");
-        var models = await NXPilot.Agents.CodexAppServerAdapter.ListModelsAsync();
-        var typed = CodexModelBox.Text;
-        CodexModelBox.ItemsSource = models.Select(m => m.Id).ToList();
-        if (typed.Length == 0)
-            CodexModelBox.Text = models.FirstOrDefault(m => m.Tested)?.Id ?? models.FirstOrDefault(m => m.IsDefault)?.Id ?? "";
-        CodexModelHint.Text = models.Count == 0
-            ? T($"Não deu para listar (Codex instalado e logado?). Testado com o NXPilot: {tested}.", $"Could not list models (is Codex installed and signed in?). Tested with NXPilot: {tested}.", $"No se pudieron listar los modelos (¿Codex está instalado y con sesión iniciada?). Probado con NXPilot: {tested}.")
-            : T($"{models.Count} modelo(s) da sua conta · testado com o NXPilot: {string.Join(", ", models.Where(m => m.Tested).Select(m => m.Id + " ✓").DefaultIfEmpty(tested + " (não está na sua lista)"))}",
-                $"{models.Count} model(s) on your account · tested with NXPilot: {string.Join(", ", models.Where(m => m.Tested).Select(m => m.Id + " ✓").DefaultIfEmpty(tested + " (not on your list)"))}",
-                $"{models.Count} modelo(s) en su cuenta · probado con NXPilot: {string.Join(", ", models.Where(m => m.Tested).Select(m => m.Id + " ✓").DefaultIfEmpty(tested + " (no está en su lista)"))}");
+        try
+        {
+            var executable = CodexAdapter.Locate();
+            var version = executable == null ? null : await Task.Run(() => NXData.AgentInstaller.AgentLocator.Version(executable));
+            var models = await CodexAppServerAdapter.ListModelsAsync(executable);
+            var selected = CodexAppServerAdapter.SelectModel(models, CodexModelBox.Text);
+            CodexModelBox.ItemsSource = models.Select(m => m.Id).ToList();
+            CodexModelBox.Text = selected;
+            var defaultModel = models.FirstOrDefault(m => m.IsDefault)?.Id ?? "—";
+            CodexModelHint.Text = models.Count == 0
+                ? T($"Codex {version ?? "—"}: não foi possível listar. Verifique o login ou use Atualizar Codex.", $"Codex {version ?? "—"}: could not list models. Check sign-in or use Update Codex.", $"Codex {version ?? "—"}: no se pudieron listar los modelos. Compruebe el inicio de sesión o use Actualizar Codex.")
+                : T($"{models.Count} modelo(s) · Codex {version ?? "—"} · padrão da conta: {defaultModel}",
+                    $"{models.Count} model(s) · Codex {version ?? "—"} · account default: {defaultModel}",
+                    $"{models.Count} modelo(s) · Codex {version ?? "—"} · predeterminado de la cuenta: {defaultModel}");
+            if (models.Count > 0 && !models.Any(m => m.Id.Equals(selected, StringComparison.OrdinalIgnoreCase)))
+                CodexModelHint.Text += T(" O modelo informado não está no catálogo atual.", " The entered model is not in the current catalog.", " El modelo indicado no está en el catálogo actual.");
+        }
+        catch (Exception ex)
+        {
+            CodexModelHint.Text = T("Falha ao consultar modelos: ", "Could not load models: ", "Error al consultar los modelos: ") + ex.Message;
+        }
+        finally
+        {
+            _loadingCodexModels = false;
+            RefreshCodexModelsButton.IsEnabled = UpdateCodexButton.IsEnabled = true;
+        }
     }
 
-    private readonly bool _claudeInstalled, _codexInstalled;
+    private bool _loadingCodexModels;
+
+    private async void OnRefreshCodexModelsClick(object sender, RoutedEventArgs e) => await LoadCodexModelsAsync();
+
+    private async void OnUpdateCodexClick(object sender, RoutedEventArgs e)
+    {
+        RefreshCodexModelsButton.IsEnabled = UpdateCodexButton.IsEnabled = false;
+        try
+        {
+            var installer = new NXData.AgentInstaller.AgentInstaller();
+            await installer.InstallAsync(NXData.AgentInstaller.AgentCli.Codex, NXData.AgentInstaller.InstallMode.Internal,
+                NXData.AgentInstaller.VersionChoice.Latest, new Progress<string>(message => CodexModelHint.Text = message));
+            _codexInstalled = ReviewerChoice.IsInstalled(AgentKind.Codex);
+            AgentCodexItem.Content = "Codex";
+            UpdateAgentHint();
+            await LoadCodexModelsAsync();
+        }
+        catch (Exception ex) { CodexModelHint.Text = T("Falha ao atualizar Codex: ", "Could not update Codex: ", "Error al actualizar Codex: ") + ex.Message; }
+        finally { RefreshCodexModelsButton.IsEnabled = UpdateCodexButton.IsEnabled = true; }
+    }
+
+    private readonly bool _claudeInstalled;
+    private bool _codexInstalled;
 
     /// <summary>Edição comercial (repositório privado): já aparece na lista, mas ainda não executa tarefas.</summary>
     private bool NXAgenticSelected => AgentBox.SelectedItem == AgentNXAgenticItem;
@@ -103,10 +145,12 @@ public partial class NewTaskWindow : Window
         var hint = T($"O {name} executa sob o mesmo gate: cada comando e arquivo passa pela cascata e pelas suas decisões.",
                      $"{name} runs under the same gate: every command and file goes through the cascade and your decisions.",
                      $"{name} se ejecuta bajo el mismo gate: cada comando y archivo pasa por la cascada y por sus decisiones.");
-        if (_claudeInstalled != _codexInstalled)
-            hint += " " + T($"Só o {(_codexInstalled ? "Codex" : "Claude Code")} está instalado: a revisão será dele mesmo, numa sessão nova e somente leitura.",
-                            $"Only {(_codexInstalled ? "Codex" : "Claude Code")} is installed: it reviews itself, in a new read-only session.",
-                            $"Solo {(_codexInstalled ? "Codex" : "Claude Code")} está instalado: se revisará a sí mismo, en una sesión nueva y de solo lectura.");
+        if (ReviewerBox?.SelectedItem is ComboBoxItem { Tag: string reviewer })
+            hint += reviewer == nameof(ReviewerKind.None)
+                ? T(" Revisão desligada.", " Review is off.", " Revisión desactivada.")
+                : T($" Revisor escolhido: {(reviewer == nameof(ReviewerKind.Codex) ? "Codex" : "Claude Code")}, em sessão nova e somente leitura.",
+                    $" Selected reviewer: {(reviewer == nameof(ReviewerKind.Codex) ? "Codex" : "Claude Code")}, in a new read-only session.",
+                    $" Revisor elegido: {(reviewer == nameof(ReviewerKind.Codex) ? "Codex" : "Claude Code")}, en una sesión nueva de solo lectura.");
         AgentHint.Text = hint;
     }
 
@@ -144,7 +188,7 @@ public partial class NewTaskWindow : Window
         else if (TitleBox.Text.Trim().Length == 0) error = T("Dê um título à tarefa.", "Give the task a title.", "Dé un título a la tarea.");
         else if (IntentBox.Text.Trim().Length < 10) error = T("Descreva a intenção (o que deve ser feito).", "Describe the intent (what should be done).", "Describa la intención (qué se debe hacer).");
         else if (executor == ExecutorKind.Codex && CodexModelBox.Text.Trim().Length == 0)
-            error = T("Com o Codex executando, informe o modelo do Codex (ex.: gpt-5.6-terra).", "With Codex executing, set the Codex model (e.g. gpt-5.6-terra).", "Con Codex como ejecutor, defina el modelo de Codex (p. ej., gpt-5.6-terra).");
+            error = T("Com o Codex executando, escolha um modelo da sua conta; use ↻ Modelos para atualizar a lista.", "With Codex executing, choose an account model; use ↻ Models to refresh the list.", "Con Codex como ejecutor, elija un modelo de su cuenta; use ↻ Modelos para actualizar la lista.");
 
         if (error != null)
         {

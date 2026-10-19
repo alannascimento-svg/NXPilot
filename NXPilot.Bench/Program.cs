@@ -15,6 +15,8 @@ using NXPilot.Onnx;
 using NXPilot.Risk;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
+if (args.FirstOrDefault() == "app-server" && Environment.GetEnvironmentVariable(NXPilot.Testing.CodexModelFixture.EnvironmentKey) == "1")
+    return await NXPilot.Testing.CodexModelFixture.RunAsync();
 var noLlama = args.Contains("--no-llama");
 var noGpu = args.Contains("--no-gpu");
 var rootIdx = Array.IndexOf(args, "--onnx-root");

@@ -16,7 +16,7 @@ logs everything for auditing and **asks for your decision** before any risky act
 3. **Execution under the gate** — every command or file the agent wants to use goes through the **risk cascade**:
    **Rules → ONNX (local, ~2 ms) → LLM only when in doubt**. Only LOW-risk actions with high confidence go through on their own;
    MEDIUM and HIGH always come to you. Writing outside the worktree is always HIGH.
-4. **One commit per phase** and **cross-verification**: the other agent reviews the diff (read-only) against the plan and the criteria.
+4. **One commit per phase** and **review**: the selected agent reviews the diff in a new read-only session against the plan and the criteria.
 
 Also: task history, notifications, Azure DevOps work items (read-only), Power BI projects (PBIP) edited as code,
 reading and monitoring app windows (clicks only through an approved process), local AI (LLaMA) or providers
@@ -87,6 +87,20 @@ desktop shortcut — so it needs internet access:
 
 > `NXPilot-Release.zip` alone does **not** run on a new machine: it has no .NET runtime. Always install with
 > `NXPilot-Setup.zip` first.
+
+### Codex models and updates
+
+In **New task**, use **Update Codex** to install the latest stable version through the
+internal installer, with SHA-256 verification. **↻ Models** reloads the signed-in account's
+catalog, including all pages. The CLI version and the account's default model appear below
+the list. Updating NXPilot and updating Codex are separate actions.
+
+Without a saved choice, the app uses the account's default model. An explicit selection is
+preserved when reloading; models absent from the catalog are flagged. Availability depends
+on the account and client, as described in the [official app-server documentation](https://learn.chatgpt.com/docs/app-server#models).
+
+The selected **Reviewer** is honored even when it also executed the task: review runs in a
+new read-only session. If it is not installed, the app logs the use of another available agent.
 
 ## Development
 

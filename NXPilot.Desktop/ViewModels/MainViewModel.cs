@@ -243,9 +243,8 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Verificação cruzada: o OUTRO agente (somente leitura) revisa o diff contra o plano e os
-    /// critérios. Quem só tem um agente instalado é revisado por ele mesmo numa sessão NOVA,
-    /// somente leitura (não a mesma que escreveu o código).
+    /// O revisor escolhido revisa o diff contra o plano e os critérios numa sessão NOVA,
+    /// somente leitura, inclusive quando também executou a tarefa.
     /// </summary>
     private async Task VerifyAsync(TaskSession task, string diff)
     {
@@ -268,11 +267,17 @@ public sealed partial class MainViewModel : ObservableObject
             ? new CodexAdapter(task.Info.CodexModel) { OutputSchema = TaskPlanning.VerificationSchema }
             : NewClaude();
         if (choice.SameAsExecutor)
-            AddLog("Gate", "info", T($"Só o {reviewer.Name} está instalado — ele revisa numa sessão nova, somente leitura (com os dois agentes a revisão é cruzada).",
-                $"Only {reviewer.Name} is installed — it reviews in a new read-only session (with both agents the review is cross-checked).",
-                $"Solo {reviewer.Name} está instalado — revisa en una sesión nueva, de solo lectura (con los dos agentes la revisión es cruzada)."));
+            AddLog("Gate", "info", T($"{reviewer.Name} também executou a tarefa — a revisão usa uma sessão nova, somente leitura.",
+                $"{reviewer.Name} also executed the task — review uses a new read-only session.",
+                $"{reviewer.Name} también ejecutó la tarea — la revisión usa una sesión nueva, de solo lectura."));
 
-        SetAgent(reviewer.Name, "Revisando", T("verificação cruzada (somente leitura)", "cross-verification (read-only)", "verificación cruzada (solo lectura)"));
+        var requestedReviewer = task.Info.Reviewer == ReviewerKind.Codex ? AgentKind.Codex : AgentKind.Claude;
+        if (choice.Reviewer != requestedReviewer)
+            AddLog("Gate", T("aviso", "warning", "aviso"), T($"O revisor escolhido não está instalado; usando {reviewer.Name} nesta revisão.",
+                $"The selected reviewer is not installed; using {reviewer.Name} for this review.",
+                $"El revisor elegido no está instalado; se usará {reviewer.Name} en esta revisión."));
+
+        SetAgent(reviewer.Name, "Revisando", T("revisão em sessão nova (somente leitura)", "review in a new session (read-only)", "revisión en una sesión nueva (solo lectura)"));
         var answer = await RunAgentAsync(task, reviewer, new AgentRequest(prompt, task.Worktree!, AgentMode.Plan,
             Model: reviewer is CodexAdapter ? task.Info.CodexModel : task.Info.Model), failTask: false);
 
@@ -409,7 +414,7 @@ public sealed partial class MainViewModel : ObservableObject
         return finalText;
     }
 
-    /// <summary>Revisor efetivo: o outro agente se instalado; senão o mesmo, em sessão nova (ver ReviewerChoice).</summary>
+    /// <summary>Revisor escolhido pela pessoa; se indisponível, usa um agente instalado (ver ReviewerChoice).</summary>
     private static (AgentKind Reviewer, bool SameAsExecutor)? ChooseReviewer(TaskSession task) =>
         task.Info.Reviewer == ReviewerKind.None ? null : ReviewerChoice.Choose(
             task.Info.Reviewer == ReviewerKind.Codex ? AgentKind.Codex : AgentKind.Claude,

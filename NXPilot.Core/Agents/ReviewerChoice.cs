@@ -8,9 +8,8 @@ namespace NXPilot.Agents;
 public enum AgentKind { Claude, Codex }
 
 /// <summary>
-/// Quem faz a verificação cruzada. O ideal é o OUTRO agente (outro modelo pega o que o primeiro
-/// deixou passar); quem só tem um agente instalado não fica sem revisão: o mesmo agente revisa
-/// numa sessão NOVA e somente leitura (não a que escreveu o código).
+/// Respeita o revisor escolhido. Mesmo quando ele também executou a tarefa, a revisão ocorre
+/// numa sessão NOVA e somente leitura. Só recorre a outro agente se o escolhido não estiver instalado.
 /// </summary>
 public static class ReviewerChoice
 {
@@ -18,8 +17,6 @@ public static class ReviewerChoice
     public static (AgentKind Reviewer, bool SameAsExecutor)? Choose(AgentKind preferred, AgentKind executor, Func<AgentKind, bool> isInstalled)
     {
         var other = executor == AgentKind.Claude ? AgentKind.Codex : AgentKind.Claude;
-        // Preferência = o próprio executor, mas o outro existe: cruza (é o que dá valor à revisão).
-        if (preferred == executor && isInstalled(other)) return (other, false);
         if (isInstalled(preferred)) return (preferred, preferred == executor);
         if (isInstalled(other)) return (other, false);
         if (isInstalled(executor)) return (executor, true); // só o executor existe: ele revisa em sessão nova

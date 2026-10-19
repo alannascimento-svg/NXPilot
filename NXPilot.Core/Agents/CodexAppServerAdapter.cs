@@ -43,6 +43,11 @@ public sealed class CodexAppServerAdapter(Func<GateRequest, Task<GateResponse>> 
         public bool Tested => TestedModels.Contains(Id, StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>Preserva a escolha explícita; sem escolha, usa o padrão atual da conta.</summary>
+    public static string SelectModel(IReadOnlyList<CodexModel> models, string? selected = null) =>
+        !string.IsNullOrWhiteSpace(selected) ? selected
+        : models.FirstOrDefault(m => m.IsDefault)?.Id ?? models.FirstOrDefault()?.Id ?? "";
+
     /// <summary>
     /// Modelos que a conta do usuário aceita, perguntando ao próprio Codex (model/list do
     /// app-server). Resolve o erro "model is not supported when using Codex with a ChatGPT
@@ -78,12 +83,27 @@ public sealed class CodexAppServerAdapter(Func<GateRequest, Task<GateResponse>> 
             }
             await Call(1, "initialize", new JsonObject { ["clientInfo"] = new JsonObject { ["name"] = "nxpilot", ["version"] = "0.1" } });
             await p.StandardInput.WriteLineAsync(new JsonObject { ["jsonrpc"] = "2.0", ["method"] = "initialized" }.ToJsonString());
-            var result = await Call(2, "model/list", new JsonObject());
-            return (result?["data"] as JsonArray ?? new JsonArray())
-                .Select(m => new CodexModel(m?["model"]?.ToString() ?? m?["id"]?.ToString() ?? "?",
-                                            m?["displayName"]?.ToString() ?? "", m?["isDefault"]?.GetValue<bool>() == true))
-                .Where(m => m.Id != "?")
-                .ToList();
+            var models = new Dictionary<string, CodexModel>(StringComparer.OrdinalIgnoreCase);
+            var cursors = new HashSet<string>(StringComparer.Ordinal);
+            string? cursor = null;
+            var requestId = 2;
+            do
+            {
+                var parameters = new JsonObject { ["limit"] = 100, ["includeHidden"] = false };
+                if (cursor != null) parameters["cursor"] = cursor;
+                var result = await Call(requestId++, "model/list", parameters);
+                foreach (var m in result?["data"] as JsonArray ?? new JsonArray())
+                {
+                    var id = m?["model"]?.ToString() ?? m?["id"]?.ToString();
+                    if (string.IsNullOrWhiteSpace(id) || m?["hidden"]?.GetValue<bool>() == true) continue;
+                    models.TryAdd(id, new CodexModel(id, m?["displayName"]?.ToString() ?? id,
+                        m?["isDefault"]?.GetValue<bool>() == true));
+                }
+                cursor = result?["nextCursor"]?.GetValue<string>();
+                if (cursor != null && !cursors.Add(cursor))
+                    throw new InvalidOperationException("Codex returned a repeated model cursor.");
+            } while (cursor != null);
+            return models.Values.ToList();
         }
         catch { return Array.Empty<CodexModel>(); }
         finally { try { p.Kill(entireProcessTree: true); } catch { /* já saiu */ } }

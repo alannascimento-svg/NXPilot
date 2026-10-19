@@ -16,7 +16,7 @@ registra todo para auditoría y **le pide su decisión** antes de cualquier acci
 3. **Ejecución bajo el gate** — cada comando o archivo que el agente quiere usar pasa por la **cascada de riesgo**:
    **Reglas → ONNX (local, ~2 ms) → LLM solo en caso de duda**. Solo las acciones de riesgo BAJO con confianza alta pasan solas;
    las de riesgo MEDIO y ALTO siempre llegan a usted. Escribir fuera del worktree es siempre ALTO.
-4. **Un commit por fase** y **verificación cruzada**: el otro agente revisa el diff (solo lectura) contra el plan y los criterios.
+4. **Un commit por fase** y **revisión**: el agente elegido revisa el diff en una sesión nueva de solo lectura contra el plan y los criterios.
 
 Además: historial de tareas, notificaciones, work items de Azure DevOps (solo lectura), proyectos de Power BI (PBIP)
 editados como código, lectura y monitoreo de ventanas de aplicaciones (clics solo mediante un proceso aprobado), IA local (LLaMA)
@@ -87,6 +87,20 @@ acceso directo en el escritorio — por eso necesita internet:
 
 > `NXPilot-Release.zip` por sí solo **no** funciona en una máquina nueva: no incluye el runtime de .NET. Instale
 > siempre primero con `NXPilot-Setup.zip`.
+
+### Modelos y actualización de Codex
+
+En **Nueva tarea**, use **Actualizar Codex** para instalar la última versión estable con el
+instalador interno y verificación SHA-256. **↻ Modelos** vuelve a consultar el catálogo de la
+cuenta conectada, incluidas todas las páginas. La versión del CLI y el modelo predeterminado
+de la cuenta aparecen debajo de la lista. Actualizar NXPilot y actualizar Codex son acciones separadas.
+
+Sin una elección guardada, la aplicación usa el modelo predeterminado de la cuenta. Al
+recargar se conserva una selección explícita y se señalan los modelos ausentes del catálogo.
+La disponibilidad depende de la cuenta y del cliente, según la [documentación oficial del app-server](https://learn.chatgpt.com/docs/app-server#models).
+
+Se respeta el **Revisor** elegido, incluso cuando también ejecutó la tarea: la revisión usa
+una sesión nueva de solo lectura. Si no está instalado, se registra el uso de otro agente disponible.
 
 ## Desarrollo
 

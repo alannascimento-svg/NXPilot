@@ -16,7 +16,7 @@ registra tudo para auditoria e **pede a sua decisão** antes de qualquer ação 
 3. **Execução sob o gate** — cada comando ou arquivo que o agente quer usar passa pela **cascata de risco**:
    **Regras → ONNX (local, ~2 ms) → LLM só na dúvida**. Só ações de risco BAIXO com confiança alta passam sozinhas;
    MÉDIO e ALTO sempre vêm para você. Escrever fora do worktree é sempre ALTO.
-4. **Commit por fase** e **verificação cruzada**: o outro agente revisa o diff (somente leitura) contra o plano e os critérios.
+4. **Commit por fase** e **revisão**: o agente escolhido revisa o diff em uma sessão nova, somente leitura, contra o plano e os critérios.
 
 Também: histórico de tarefas, notificações, work items do Azure DevOps (somente leitura), projetos Power BI (PBIP)
 editados como código, leitura e monitoramento de janelas de apps (cliques só por processo aprovado), IA local (LLaMA) ou
@@ -87,6 +87,21 @@ O NXPilot é publicado em duas partes separadas, como o NXProject:
 
 > O `NXPilot-Release.zip` sozinho **não** roda numa máquina nova: ele não tem o runtime .NET. Instale sempre
 > primeiro com o `NXPilot-Setup.zip`.
+
+### Modelos e atualização do Codex
+
+Em **Nova tarefa**, use **Atualizar Codex** para instalar a última versão estável pelo
+instalador interno, com conferência de SHA-256. **↻ Modelos** consulta novamente o catálogo
+da conta conectada, incluindo todas as páginas. A versão do CLI e o modelo padrão da conta
+aparecem abaixo da lista. Atualizar o NXPilot e atualizar o Codex são ações separadas.
+
+Sem uma escolha salva, o app usa o modelo padrão informado pela conta. Uma seleção explícita
+é preservada ao recarregar; modelos ausentes do catálogo são sinalizados. A disponibilidade
+depende da conta e do cliente, conforme a [documentação oficial do app-server](https://learn.chatgpt.com/docs/app-server#models).
+
+O **Revisor** escolhido é respeitado, inclusive quando também executou a tarefa: ele revisa
+em uma sessão nova, somente leitura. Se não estiver instalado, o app registra o uso de outro
+agente disponível no log.
 
 ## Desenvolvimento
 

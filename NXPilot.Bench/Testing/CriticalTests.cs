@@ -132,15 +132,42 @@ public static class CriticalTests
             AssertEqual("ls -la", CodexAppServerAdapter.Unwrap("ls -la"), "Sem embrulho: igual.");
             return Task.CompletedTask;
         }),
-        new("Revisor: o outro agente quando existe; só um instalado → ele mesmo (sessão nova)", () =>
+        new("Revisor: respeita a escolha explícita, inclusive o executor em sessão nova", () =>
         {
             Func<AgentKind, bool> both = _ => true, onlyCodex = k => k == AgentKind.Codex, onlyClaude = k => k == AgentKind.Claude;
-            AssertEqual((AgentKind.Claude, false), ReviewerChoice.Choose(AgentKind.Codex, AgentKind.Codex, both), "Codex executa e pede Codex: com os dois, cruza para o Claude.");
+            AssertEqual((AgentKind.Codex, true), ReviewerChoice.Choose(AgentKind.Codex, AgentKind.Codex, both), "Codex escolhido deve revisar mesmo com Claude instalado.");
+            AssertEqual((AgentKind.Claude, true), ReviewerChoice.Choose(AgentKind.Claude, AgentKind.Claude, both), "Claude escolhido deve revisar mesmo com Codex instalado.");
             AssertEqual((AgentKind.Codex, false), ReviewerChoice.Choose(AgentKind.Codex, AgentKind.Claude, both), "Claude executa, Codex revisa.");
             AssertEqual((AgentKind.Codex, true), ReviewerChoice.Choose(AgentKind.Codex, AgentKind.Codex, onlyCodex), "Só Codex: ele mesmo revisa.");
             AssertEqual((AgentKind.Codex, true), ReviewerChoice.Choose(AgentKind.Claude, AgentKind.Codex, onlyCodex), "Pediu Claude sem Claude instalado: Codex revisa.");
             AssertEqual((AgentKind.Claude, true), ReviewerChoice.Choose(AgentKind.Codex, AgentKind.Claude, onlyClaude), "Só Claude: ele mesmo revisa.");
             AssertTrue(ReviewerChoice.Choose(AgentKind.Codex, AgentKind.Codex, _ => false) == null, "Nenhum instalado: sem revisor.");
+            return Task.CompletedTask;
+        }),
+        new("Codex modelos: percorre todas as páginas do catálogo da conta", async () =>
+        {
+            var key = CodexModelFixture.EnvironmentKey;
+            var previous = Environment.GetEnvironmentVariable(key);
+            try
+            {
+                Environment.SetEnvironmentVariable(key, "1");
+                var models = await CodexAppServerAdapter.ListModelsAsync(Environment.ProcessPath);
+                AssertEqual(2, models.Count, "Modelos da segunda página também devem aparecer.");
+                AssertTrue(models.Any(m => m.Id == "gpt-6.1-sol" && m.IsDefault), "O modelo atual da conta deve aparecer como padrão.");
+            }
+            finally { Environment.SetEnvironmentVariable(key, previous); }
+        }),
+        new("Codex modelos: padrão atual da conta e escolha explícita têm prioridade", () =>
+        {
+            var models = new[]
+            {
+                new CodexAppServerAdapter.CodexModel("gpt-5.6-terra", "Terra", false),
+                new CodexAppServerAdapter.CodexModel("gpt-6.1-sol", "Sol", true),
+            };
+            AssertEqual("gpt-6.1-sol", CodexAppServerAdapter.SelectModel(models), "Sem escolha: padrão da conta, mesmo com modelo antigo testado.");
+            AssertEqual("gpt-5.6-terra", CodexAppServerAdapter.SelectModel(models, "gpt-5.6-terra"), "Uma escolha explícita não é alterada ao recarregar.");
+            AssertEqual("modelo-manual", CodexAppServerAdapter.SelectModel(models, "modelo-manual"), "Preserva a entrada manual quando o catálogo está desatualizado.");
+            AssertEqual("", CodexAppServerAdapter.SelectModel(Array.Empty<CodexAppServerAdapter.CodexModel>()), "Sem catálogo: não inventa um modelo.");
             return Task.CompletedTask;
         }),
         new("Planejador Basic (Community) = plano de sempre, pela fachada IAgentPlanner", async () =>
